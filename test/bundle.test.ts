@@ -33,6 +33,8 @@ test("writes recovery bundle with selected project files", () => {
   });
 
   assert.equal(fs.existsSync(path.join(dir, "RECOVERY.md")), true);
+  assert.equal(fs.existsSync(path.join(dir, "RECENT_THREAD_CONTEXT.md")), true);
   assert.match(fs.readFileSync(path.join(dir, "project-files.txt"), "utf8"), /README\.md/);
   assert.match(fs.readFileSync(path.join(dir, "selected-files.md"), "utf8"), /console\.log/);
+  assert.match(fs.readFileSync(path.join(dir, "RECOVERY.md"), "utf8"), /Priority Recovery Evidence/);
 });

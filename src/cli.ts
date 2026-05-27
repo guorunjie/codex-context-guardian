@@ -8,6 +8,8 @@ import { watch, tick } from "./watch.ts";
 import { buildRecoveryPlan } from "./recovery.ts";
 import { writeRecoveryBundle } from "./bundle.ts";
 import { shellQuote } from "./exec.ts";
+import { buildDesktopHandoffPrompt, createDesktopHandoff, defaultDesktopTitle, defaultGoalObjective } from "./appServer.ts";
+import { latestGoalObjective, readRecentThreadContext } from "./threadContext.ts";
 
 type ParsedArgs = {
   command: string;
@@ -177,6 +179,51 @@ async function handoffCommand(parsed: ParsedArgs): Promise<void> {
     signal: initialPlan.signal,
     bundleDir: dir
   });
+  if (parsed.flags.desktop) {
+    const title = stringFlag(parsed, "title") || defaultDesktopTitle(initialPlan.thread?.title);
+    const planMode = Boolean(parsed.flags.planMode);
+    const goalMode = Boolean(parsed.flags.goalMode);
+    const explicitGoal = stringFlag(parsed, "goal");
+    const goalBudget = numberFlag(parsed, "goalBudget");
+    const recentContext = readRecentThreadContext(initialPlan.thread, { home: stringFlag(parsed, "home") });
+    const recoveredGoal = latestGoalObjective(recentContext);
+    const goalObjective = explicitGoal || (goalMode ? recoveredGoal || defaultGoalObjective({
+      sourceTitle: initialPlan.thread?.title,
+      sourceThreadId: initialPlan.thread?.id
+    }) : undefined);
+    const prompt = buildDesktopHandoffPrompt({
+      sourceThreadId: initialPlan.thread?.id,
+      sourceTitle: initialPlan.thread?.title,
+      bundleDir: dir,
+      cwd: initialPlan.cwd,
+      prompt: plan.prompt
+    });
+    const result = await createDesktopHandoff({
+      home: stringFlag(parsed, "home"),
+      cwd: initialPlan.cwd,
+      model: stringFlag(parsed, "primary") || initialPlan.thread?.model || "gpt-5.5",
+      title,
+      prompt,
+      planMode,
+      goal: goalObjective ? {
+        objective: goalObjective,
+        tokenBudget: goalBudget,
+        status: "active"
+      } : undefined,
+      startTurn: !Boolean(parsed.flags.noStartTurn)
+    });
+    if (parsed.flags.json) {
+      console.log(JSON.stringify({ bundleDir: dir, desktop: result, plan }, null, 2));
+      return;
+    }
+    console.log(`Recovery bundle: ${dir}`);
+    console.log(`Desktop conversation: ${result.title}`);
+    console.log(`Thread id: ${result.threadId}`);
+    console.log(`Turn started: ${result.turnStarted ? "yes" : "no"}`);
+    console.log(`Plan mode: ${result.planModeApplied ? "yes" : "no"}`);
+    console.log(`Goal mode: ${result.goalApplied ? "yes" : "no"}`);
+    return;
+  }
   const commandLine = [plan.command, ...plan.args].map(shellQuote).join(" ");
   if (parsed.flags.json) {
     console.log(JSON.stringify({ bundleDir: dir, command: commandLine, plan }, null, 2));
@@ -216,6 +263,16 @@ function strategyFlag(parsed: ParsedArgs): "auto" | "fallback-model" | "fork" | 
   throw new Error(`Unknown strategy: ${value}`);
 }
 
+function numberFlag(parsed: ParsedArgs, name: string): number | undefined {
+  const value = stringFlag(parsed, name);
+  if (!value) return undefined;
+  const parsedNumber = Number(value);
+  if (!Number.isFinite(parsedNumber) || parsedNumber <= 0) {
+    throw new Error(`Invalid value for --${name.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}: ${value}`);
+  }
+  return Math.floor(parsedNumber);
+}
+
 function guardianBinPath(): string {
   const srcDir = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(srcDir, "../bin/guardian.js");
@@ -230,7 +287,7 @@ Usage:
   guardian hook --phase <precompact|postcompact> [--thread <id>]
   guardian watch [--auto] [--once] [--dry-run] [--home <CODEX_HOME>]
   guardian pack --thread <id>|--last [--home <CODEX_HOME>]
-  guardian handoff --thread <id>|--last [--json] [--home <CODEX_HOME>]
+  guardian handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--json] [--home <CODEX_HOME>]
   guardian recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
   guardian recover --last [--dry-run]
 `;

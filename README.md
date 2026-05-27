@@ -38,6 +38,9 @@ Guardian automates both. It does not click the UI or mutate global model setting
 - `guardian watch --auto` monitors Codex logs for compaction failure signals and starts recovery.
 - `guardian pack --thread <id>` creates a recovery bundle for a fresh conversation.
 - `guardian handoff --thread <id>` creates a recovery bundle and prints the exact new-session command.
+- `guardian handoff --thread <id> --desktop` creates a Desktop-visible continuation conversation and injects the recovery prompt automatically.
+- `guardian handoff --desktop --plan-mode --goal-mode` can preconfigure the new Desktop thread with plan collaboration mode and an active goal.
+- Recovery bundles include `RECENT_THREAD_CONTEXT.md`, which promotes the source thread's latest goal and recent user messages over older titles or abandoned early plans.
 - `guardian recover --thread <id> --strategy auto` builds and executes the recovery plan.
 - Model-incompatibility recovery is two-stage:
   - `codex exec resume --model <fallback>` produces a durable handoff summary.
@@ -91,6 +94,18 @@ Create a recovery bundle and use it in a new conversation:
 
 ```bash
 guardian handoff --last
+```
+
+Create a Desktop-visible handoff thread and immediately continue in plan/goal mode:
+
+```bash
+guardian handoff --thread <stuck-thread-id> --desktop --plan-mode --goal-mode
+```
+
+Set a custom goal objective and budget:
+
+```bash
+guardian handoff --thread <stuck-thread-id> --desktop --plan-mode --goal "继续完成影刀RPA任务交付" --goal-budget 120000
 ```
 
 Start the watcher without auto-recovery:

@@ -4,6 +4,7 @@ import { queryJson } from "./sqlite.ts";
 
 export type ThreadInfo = {
   id: string;
+  rolloutPath?: string;
   title: string;
   cwd: string;
   model: string;
@@ -25,8 +26,9 @@ export function getThread(threadId: string, home?: string): ThreadInfo | null {
   const db = stateDbPath(home);
   if (!fs.existsSync(db)) return null;
   const escaped = threadId.replaceAll("'", "''");
+  const rolloutSelect = columnExists(db, "threads", "rollout_path") ? "rollout_path as rolloutPath," : "null as rolloutPath,";
   const rows = queryJson(db, `
-    select id, title, cwd, model, model_provider as modelProvider,
+    select id, ${rolloutSelect} title, cwd, model, model_provider as modelProvider,
            tokens_used as tokensUsed, updated_at as updatedAt
     from threads
     where id = '${escaped}'
@@ -38,8 +40,9 @@ export function getThread(threadId: string, home?: string): ThreadInfo | null {
 export function getLatestThread(home?: string): ThreadInfo | null {
   const db = stateDbPath(home);
   if (!fs.existsSync(db)) return null;
+  const rolloutSelect = columnExists(db, "threads", "rollout_path") ? "rollout_path as rolloutPath," : "null as rolloutPath,";
   const rows = queryJson(db, `
-    select id, title, cwd, model, model_provider as modelProvider,
+    select id, ${rolloutSelect} title, cwd, model, model_provider as modelProvider,
            tokens_used as tokensUsed, updated_at as updatedAt
     from threads
     where archived = 0
@@ -88,6 +91,7 @@ export function getMaxLogId(home?: string): number {
 function normalizeThread(row: Record<string, unknown>): ThreadInfo {
   return {
     id: String(row.id || ""),
+    rolloutPath: row.rolloutPath ? String(row.rolloutPath) : undefined,
     title: String(row.title || ""),
     cwd: String(row.cwd || process.cwd()),
     model: String(row.model || ""),
@@ -95,6 +99,13 @@ function normalizeThread(row: Record<string, unknown>): ThreadInfo {
     tokensUsed: Number(row.tokensUsed || 0),
     updatedAt: Number(row.updatedAt || 0)
   };
+}
+
+function columnExists(db: string, table: string, column: string): boolean {
+  const escapedTable = table.replaceAll("'", "''");
+  const escapedColumn = column.replaceAll("'", "''");
+  const rows = queryJson(db, `pragma table_info('${escapedTable}');`);
+  return rows.some((row) => String(row.name || "") === escapedColumn);
 }
 
 function normalizeLogRow(row: Record<string, unknown>): LogRow {

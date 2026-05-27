@@ -16,6 +16,9 @@
 - Implemented recovery bundles for fresh-conversation handoff.
 - Added `guardian pack` for manually creating a project recovery bundle.
 - Added `guardian handoff` to create a bundle and print the exact fresh-session command.
+- Added Desktop app-server handoff: `guardian handoff --desktop` now creates a left-sidebar-visible Desktop conversation and can auto-start the first continuation turn.
+- Added Desktop continuation presets: `--plan-mode`, `--goal-mode`, `--goal`, and `--goal-budget` wire thread settings and active goal into the new handoff conversation.
+- Added recent rollout context extraction so recovery bundles and default Desktop goals prioritize late-stage user intent over stale thread titles.
 - Shifted watcher behavior so repeated recovery attempts move toward fresh session instead of repeated compact retries.
 - Implemented watcher with cooldown and per-thread retry limits.
 - Added unit tests for classifier, recovery strategy, hooks, snapshots, and CLI parsing.

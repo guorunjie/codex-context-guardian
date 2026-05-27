@@ -10,3 +10,25 @@ test("parses flags and positional args", () => {
   assert.equal(parsed.flags.strategy, "auto");
   assert.deepEqual(parsed.positional, ["extra"]);
 });
+
+test("parses desktop handoff mode flags", () => {
+  const parsed = parseArgs([
+    "handoff",
+    "--thread",
+    "thread-1",
+    "--desktop",
+    "--plan-mode",
+    "--goal-mode",
+    "--goal",
+    "continue the task",
+    "--goal-budget",
+    "50000"
+  ]);
+  assert.equal(parsed.command, "handoff");
+  assert.equal(parsed.flags.thread, "thread-1");
+  assert.equal(parsed.flags.desktop, true);
+  assert.equal(parsed.flags.planMode, true);
+  assert.equal(parsed.flags.goalMode, true);
+  assert.equal(parsed.flags.goal, "continue the task");
+  assert.equal(parsed.flags.goalBudget, "50000");
+});
