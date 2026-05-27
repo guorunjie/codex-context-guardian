@@ -37,6 +37,7 @@ Guardian automates both. It does not click the UI or mutate global model setting
 - `guardian install-hooks` installs `PreCompact` and `PostCompact` snapshot hooks.
 - `guardian watch --auto` monitors Codex logs for compaction failure signals and starts recovery.
 - `guardian pack --thread <id>` creates a recovery bundle for a fresh conversation.
+- `guardian handoff --thread <id>` creates a recovery bundle and prints the exact new-session command.
 - `guardian recover --thread <id> --strategy auto` builds and executes the recovery plan.
 - Model-incompatibility recovery is two-stage:
   - `codex exec resume --model <fallback>` produces a durable handoff summary.
@@ -89,8 +90,7 @@ guardian recover --thread 019e6a4a-22e6-7962-862b-cfb5ad04ac41 --strategy auto
 Create a recovery bundle and use it in a new conversation:
 
 ```bash
-guardian pack --last
-guardian recover --last --strategy new-session
+guardian handoff --last
 ```
 
 Start the watcher without auto-recovery:

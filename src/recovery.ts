@@ -18,6 +18,7 @@ export type RecoveryOptions = {
   dryRun?: boolean;
   cwd?: string;
   signal?: FailureSignal;
+  bundleDir?: string;
 };
 
 export type RecoveryPlan = {
@@ -50,7 +51,7 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
   const cwd = options.cwd || thread?.cwd || process.cwd();
   const summaryFile = recoverySummaryFile(options.home, thread?.id || signal.threadId || "unknown");
   const bundleDir = strategy === "new-session"
-    ? plannedBundleDir(options.home, thread?.id || signal.threadId || "unknown")
+    ? options.bundleDir || plannedBundleDir(options.home, thread?.id || signal.threadId || "unknown")
     : null;
   const prompt = strategy === "fallback-model"
     ? buildPrimaryResumePrompt({ thread, signal, primaryModel, fallbackModel, home: options.home, summaryFile })

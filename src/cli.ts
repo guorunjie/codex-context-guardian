@@ -7,6 +7,7 @@ import { recover } from "./recovery.ts";
 import { watch, tick } from "./watch.ts";
 import { buildRecoveryPlan } from "./recovery.ts";
 import { writeRecoveryBundle } from "./bundle.ts";
+import { shellQuote } from "./exec.ts";
 
 type ParsedArgs = {
   command: string;
@@ -16,6 +17,10 @@ type ParsedArgs = {
 
 export async function main(argv: string[]): Promise<void> {
   const parsed = parseArgs(argv);
+  if (parsed.flags.help || parsed.flags.h) {
+    console.log(helpText());
+    return;
+  }
   switch (parsed.command) {
     case "doctor":
       return doctorCommand(parsed);
@@ -27,6 +32,8 @@ export async function main(argv: string[]): Promise<void> {
       return recoverCommand(parsed);
     case "pack":
       return packCommand(parsed);
+    case "handoff":
+      return handoffCommand(parsed);
     case "watch":
       return watchCommand(parsed);
     case "help":
@@ -143,6 +150,43 @@ async function packCommand(parsed: ParsedArgs): Promise<void> {
   console.log(dir);
 }
 
+async function handoffCommand(parsed: ParsedArgs): Promise<void> {
+  const initialPlan = buildRecoveryPlan({
+    home: stringFlag(parsed, "home"),
+    threadId: stringFlag(parsed, "thread") || parsed.positional[0],
+    last: Boolean(parsed.flags.last),
+    strategy: "new-session",
+    dryRun: true,
+    cwd: stringFlag(parsed, "cwd")
+  });
+  if (!initialPlan.bundleDir) throw new Error("Could not plan recovery bundle");
+  const dir = writeRecoveryBundle({
+    home: stringFlag(parsed, "home"),
+    bundleDir: initialPlan.bundleDir,
+    thread: initialPlan.thread,
+    signal: initialPlan.signal,
+    prompt: initialPlan.prompt,
+    projectRoot: initialPlan.cwd
+  });
+  const plan = buildRecoveryPlan({
+    home: stringFlag(parsed, "home"),
+    threadId: initialPlan.thread?.id,
+    strategy: "new-session",
+    dryRun: true,
+    cwd: initialPlan.cwd,
+    signal: initialPlan.signal,
+    bundleDir: dir
+  });
+  const commandLine = [plan.command, ...plan.args].map(shellQuote).join(" ");
+  if (parsed.flags.json) {
+    console.log(JSON.stringify({ bundleDir: dir, command: commandLine, plan }, null, 2));
+    return;
+  }
+  console.log(`Recovery bundle: ${dir}`);
+  console.log("New conversation command:");
+  console.log(commandLine);
+}
+
 async function watchCommand(parsed: ParsedArgs): Promise<void> {
   if (parsed.flags.once) {
     const message = await tick({
@@ -186,6 +230,7 @@ Usage:
   guardian hook --phase <precompact|postcompact> [--thread <id>]
   guardian watch [--auto] [--once] [--dry-run] [--home <CODEX_HOME>]
   guardian pack --thread <id>|--last [--home <CODEX_HOME>]
+  guardian handoff --thread <id>|--last [--json] [--home <CODEX_HOME>]
   guardian recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
   guardian recover --last [--dry-run]
 `;

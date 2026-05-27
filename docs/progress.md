@@ -15,6 +15,7 @@
 - Implemented fork and new-session fallback strategies.
 - Implemented recovery bundles for fresh-conversation handoff.
 - Added `guardian pack` for manually creating a project recovery bundle.
+- Added `guardian handoff` to create a bundle and print the exact fresh-session command.
 - Shifted watcher behavior so repeated recovery attempts move toward fresh session instead of repeated compact retries.
 - Implemented watcher with cooldown and per-thread retry limits.
 - Added unit tests for classifier, recovery strategy, hooks, snapshots, and CLI parsing.
