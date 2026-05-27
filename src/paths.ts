@@ -44,3 +44,7 @@ export function recoveriesDir(home = codexHome()): string {
 export function bundlesDir(home = codexHome()): string {
   return path.join(guardianHome(home), "bundles");
 }
+
+export function monitorLogsDir(home = codexHome()): string {
+  return path.join(guardianHome(home), "logs");
+}

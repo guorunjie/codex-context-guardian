@@ -32,3 +32,11 @@ test("parses desktop handoff mode flags", () => {
   assert.equal(parsed.flags.goal, "continue the task");
   assert.equal(parsed.flags.goalBudget, "50000");
 });
+
+test("parses monitor command flags", () => {
+  const parsed = parseArgs(["monitor", "install", "--dry-run", "--home", "/tmp/codex-home"]);
+  assert.equal(parsed.command, "monitor");
+  assert.deepEqual(parsed.positional, ["install"]);
+  assert.equal(parsed.flags.dryRun, true);
+  assert.equal(parsed.flags.home, "/tmp/codex-home");
+});

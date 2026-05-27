@@ -8,6 +8,8 @@ export type GuardianConfig = {
   recoveryCooldownMs: number;
   maxConsecutiveRecoveries: number;
   freshSessionAfterAttempts: number;
+  fallbackAttempts: number;
+  autoDestination: "cli" | "desktop";
 };
 
 export function readCodexPrimaryModel(home?: string): string {
@@ -25,7 +27,9 @@ export function defaultGuardianConfig(home?: string): GuardianConfig {
     pollIntervalMs: numberFromEnv("GUARDIAN_POLL_MS", 5000),
     recoveryCooldownMs: numberFromEnv("GUARDIAN_COOLDOWN_MS", 10 * 60 * 1000),
     maxConsecutiveRecoveries: numberFromEnv("GUARDIAN_MAX_RECOVERIES", 3),
-    freshSessionAfterAttempts: numberFromEnv("GUARDIAN_FRESH_SESSION_AFTER", 2)
+    freshSessionAfterAttempts: numberFromEnv("GUARDIAN_FRESH_SESSION_AFTER", 2),
+    fallbackAttempts: numberFromEnv("GUARDIAN_FALLBACK_ATTEMPTS", 2),
+    autoDestination: autoDestinationFromEnv()
   };
 }
 
@@ -44,4 +48,9 @@ function numberFromEnv(name: string, fallback: number): number {
   if (!value) return fallback;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function autoDestinationFromEnv(): GuardianConfig["autoDestination"] {
+  const value = process.env.GUARDIAN_AUTO_DESTINATION;
+  return value === "cli" ? "cli" : "desktop";
 }

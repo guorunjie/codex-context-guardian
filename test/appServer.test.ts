@@ -13,6 +13,8 @@ test("builds desktop handoff prompt with source and bundle", () => {
   assert.match(prompt, /Desktop-visible continuation/);
   assert.match(prompt, /Source thread: thread-1/);
   assert.match(prompt, /Recovery bundle: \/tmp\/bundle/);
+  assert.match(prompt, /HANDOFF_MEMORY\.json/);
+  assert.match(prompt, /Do not revive directions listed as superseded/);
   assert.match(prompt, /Recover this task\./);
 });
 

@@ -17,10 +17,13 @@ Implemented:
 - `guardian recover` for fallback-model, fork, and new-session plans.
 - `guardian pack` for recovery bundle generation.
 - `guardian handoff` for bundle generation plus exact fresh-session command output.
+- Desktop-visible handoff through Codex app-server remote control.
+- `guardian monitor install|start|status|stop|uninstall` for macOS LaunchAgent background watching.
 - Log classification and prompt-echo filtering.
 - Per-thread cooldown/retry state.
-- Recovery bundles with selected files, git status, diff, and a `RECOVERY.md`.
-- 15 local tests covering classifier, recovery planning, hooks, snapshots, bundles, and CLI parsing.
+- Recovery bundles with selected files, git status, diff, `HANDOFF_MEMORY.json`, `RECENT_THREAD_CONTEXT.md`, and `RECOVERY.md`.
+- `HANDOFF_MEMORY.json` schema v2 captures latest active goal, latest user intent, assistant progress after that intent, progress tail, superseded directions, next action, and handoff directive.
+- 27 local tests covering classifier, recovery planning, hooks, snapshots, bundles, CLI parsing, context extraction, handoff memory, monitor plist generation, and watcher strategy.
 
 Remote repository:
 
@@ -37,7 +40,10 @@ npm link
 guardian doctor
 guardian install-hooks
 guardian handoff --thread 019e6792-dcbb-7ef3-a511-0adf14bac709 --json
+guardian monitor install --dry-run --home /tmp/guardian-codex-home
+guardian watch --once --dry-run --home /tmp/guardian-empty-codex-home
 npm test
+git diff --check
 ```
 
 `guardian doctor` reports:
@@ -70,6 +76,8 @@ Recovery bundle generated:
 
 Bundle contents:
 
+- `HANDOFF_MEMORY.json`
+- `RECENT_THREAD_CONTEXT.md`
 - `RECOVERY.md`
 - `project-files.txt`
 - `selected-files.md`
@@ -101,16 +109,15 @@ What worked:
 
 What did not fully work yet:
 
-- Guardian cannot directly create a Codex Desktop thread; it can print or execute CLI commands, but Desktop API integration is still future work.
 - Log classification did not find a fresh compact error for the screenshot thread because the latest stored logs did not include a clear `ERROR`/`WARN` compaction failure. The high token count and stale UI state were enough to choose fresh-session recovery manually.
 - The recovery bundle is capped and file-selected; for very large workspaces, it should become more semantic and project-aware.
 
 ## Next Iteration Roadmap
 
-1. Desktop-aware recovery
+1. Desktop-aware recovery UX
    - Detect the currently selected Desktop thread.
    - Offer a one-click "create recovery handoff" action.
-   - Deep-link or remote-control into a new Codex Desktop conversation when a stable API exists.
+   - Add a small terminal dashboard showing watched thread, last failure, and recovery attempts.
 
 2. Better failure detection
    - Add state-table heuristics: very high `tokens_used`, stale updated_at, repeated same title, and UI stuck signal.

@@ -26,12 +26,14 @@ Desktop handoff is now technically working, but the generated continuation can r
   - New module that reads source rollout JSONL.
   - Extracts latest `thread_goal_updated`.
   - Extracts recent user/assistant/system messages.
+  - Extracts assistant progress after the latest user request, so the continuation resumes from the latest task process instead of the beginning of a broad plan.
   - Normalizes `<goal_context>` to only the active objective.
   - Marks `<turn_aborted>` as an incomplete interrupted turn.
   - Renders `RECENT_THREAD_CONTEXT.md`.
 - `src/bundle.ts`
+  - Now writes structured `HANDOFF_MEMORY.json` v2.
   - Now writes `RECENT_THREAD_CONTEXT.md`.
-  - `RECOVERY.md` now tells the next session to read recent context first and treat latest goals/user messages as higher priority than old docs.
+  - `RECOVERY.md` now tells the next session to read `HANDOFF_MEMORY.json`, then recent context, then git state, and treat latest goals/user messages as higher priority than old docs.
 - `src/cli.ts`
   - Desktop handoff default goal now prefers the latest rollout active goal over the source thread title.
 
@@ -53,22 +55,20 @@ Desktop handoff is now technically working, but the generated continuation can r
 
 The recovery bundle should use a four-layer hierarchy:
 
-1. Latest user intent and active goal from source rollout.
+1. Latest user intent, active goal, and assistant progress after that user intent from source rollout.
 2. Latest assistant final/progress messages and interrupted turn state.
 3. Current working tree/git diff/project files.
 4. Older project docs and previous summaries.
 
-The handoff prompt should explicitly say:
+The handoff prompt now explicitly says:
 
-- read `RECENT_THREAD_CONTEXT.md` before `selected-files.md`;
+- read `HANDOFF_MEMORY.json` and `RECENT_THREAD_CONTEXT.md` before `selected-files.md`;
 - if source title conflicts with latest active goal, latest active goal wins;
+- if assistant progress after the latest user request exists, resume there and do not restart the user's older plan from the beginning;
 - if recent context says a direction was abandoned, do not revive it;
 - inspect current worktree before editing because interrupted turns may have partially applied changes.
 
 ## Remaining Work
 
-- Consider adding a compact machine-readable `memory.json` with fields:
-  `active_goal`, `latest_user_intent`, `superseded_directions`, `completed`, `pending`, `blockers`, `next_action`, `evidence_files`.
-- Add tests for:
-  - old direction is not the first recovery instruction when newer goal exists.
-- Re-run `npm test`.
+- Add a small terminal dashboard showing watched thread, last failure, and recovery attempts.
+- Add optional desktop notification integration.

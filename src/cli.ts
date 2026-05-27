@@ -7,9 +7,8 @@ import { recover } from "./recovery.ts";
 import { watch, tick } from "./watch.ts";
 import { buildRecoveryPlan } from "./recovery.ts";
 import { writeRecoveryBundle } from "./bundle.ts";
-import { shellQuote } from "./exec.ts";
-import { buildDesktopHandoffPrompt, createDesktopHandoff, defaultDesktopTitle, defaultGoalObjective } from "./appServer.ts";
-import { latestGoalObjective, readRecentThreadContext } from "./threadContext.ts";
+import { createHandoffRecovery } from "./handoff.ts";
+import { installMonitor, monitorStatus, startMonitor, stopMonitor, uninstallMonitor } from "./monitor.ts";
 
 type ParsedArgs = {
   command: string;
@@ -38,6 +37,8 @@ export async function main(argv: string[]): Promise<void> {
       return handoffCommand(parsed);
     case "watch":
       return watchCommand(parsed);
+    case "monitor":
+      return monitorCommand(parsed);
     case "help":
     case "":
       console.log(helpText());
@@ -153,85 +154,40 @@ async function packCommand(parsed: ParsedArgs): Promise<void> {
 }
 
 async function handoffCommand(parsed: ParsedArgs): Promise<void> {
-  const initialPlan = buildRecoveryPlan({
+  const result = await createHandoffRecovery({
     home: stringFlag(parsed, "home"),
     threadId: stringFlag(parsed, "thread") || parsed.positional[0],
     last: Boolean(parsed.flags.last),
-    strategy: "new-session",
-    dryRun: true,
-    cwd: stringFlag(parsed, "cwd")
-  });
-  if (!initialPlan.bundleDir) throw new Error("Could not plan recovery bundle");
-  const dir = writeRecoveryBundle({
-    home: stringFlag(parsed, "home"),
-    bundleDir: initialPlan.bundleDir,
-    thread: initialPlan.thread,
-    signal: initialPlan.signal,
-    prompt: initialPlan.prompt,
-    projectRoot: initialPlan.cwd
-  });
-  const plan = buildRecoveryPlan({
-    home: stringFlag(parsed, "home"),
-    threadId: initialPlan.thread?.id,
-    strategy: "new-session",
-    dryRun: true,
-    cwd: initialPlan.cwd,
-    signal: initialPlan.signal,
-    bundleDir: dir
+    cwd: stringFlag(parsed, "cwd"),
+    desktop: Boolean(parsed.flags.desktop),
+    planMode: Boolean(parsed.flags.planMode),
+    goalMode: Boolean(parsed.flags.goalMode),
+    goal: stringFlag(parsed, "goal"),
+    goalBudget: numberFlag(parsed, "goalBudget"),
+    startTurn: !Boolean(parsed.flags.noStartTurn),
+    title: stringFlag(parsed, "title"),
+    primaryModel: stringFlag(parsed, "primary")
   });
   if (parsed.flags.desktop) {
-    const title = stringFlag(parsed, "title") || defaultDesktopTitle(initialPlan.thread?.title);
-    const planMode = Boolean(parsed.flags.planMode);
-    const goalMode = Boolean(parsed.flags.goalMode);
-    const explicitGoal = stringFlag(parsed, "goal");
-    const goalBudget = numberFlag(parsed, "goalBudget");
-    const recentContext = readRecentThreadContext(initialPlan.thread, { home: stringFlag(parsed, "home") });
-    const recoveredGoal = latestGoalObjective(recentContext);
-    const goalObjective = explicitGoal || (goalMode ? recoveredGoal || defaultGoalObjective({
-      sourceTitle: initialPlan.thread?.title,
-      sourceThreadId: initialPlan.thread?.id
-    }) : undefined);
-    const prompt = buildDesktopHandoffPrompt({
-      sourceThreadId: initialPlan.thread?.id,
-      sourceTitle: initialPlan.thread?.title,
-      bundleDir: dir,
-      cwd: initialPlan.cwd,
-      prompt: plan.prompt
-    });
-    const result = await createDesktopHandoff({
-      home: stringFlag(parsed, "home"),
-      cwd: initialPlan.cwd,
-      model: stringFlag(parsed, "primary") || initialPlan.thread?.model || "gpt-5.5",
-      title,
-      prompt,
-      planMode,
-      goal: goalObjective ? {
-        objective: goalObjective,
-        tokenBudget: goalBudget,
-        status: "active"
-      } : undefined,
-      startTurn: !Boolean(parsed.flags.noStartTurn)
-    });
     if (parsed.flags.json) {
-      console.log(JSON.stringify({ bundleDir: dir, desktop: result, plan }, null, 2));
+      console.log(JSON.stringify({ bundleDir: result.bundleDir, desktop: result.desktop, plan: result.plan }, null, 2));
       return;
     }
-    console.log(`Recovery bundle: ${dir}`);
-    console.log(`Desktop conversation: ${result.title}`);
-    console.log(`Thread id: ${result.threadId}`);
-    console.log(`Turn started: ${result.turnStarted ? "yes" : "no"}`);
-    console.log(`Plan mode: ${result.planModeApplied ? "yes" : "no"}`);
-    console.log(`Goal mode: ${result.goalApplied ? "yes" : "no"}`);
+    console.log(`Recovery bundle: ${result.bundleDir}`);
+    console.log(`Desktop conversation: ${result.desktop?.title}`);
+    console.log(`Thread id: ${result.desktop?.threadId}`);
+    console.log(`Turn started: ${result.desktop?.turnStarted ? "yes" : "no"}`);
+    console.log(`Plan mode: ${result.desktop?.planModeApplied ? "yes" : "no"}`);
+    console.log(`Goal mode: ${result.desktop?.goalApplied ? "yes" : "no"}`);
     return;
   }
-  const commandLine = [plan.command, ...plan.args].map(shellQuote).join(" ");
   if (parsed.flags.json) {
-    console.log(JSON.stringify({ bundleDir: dir, command: commandLine, plan }, null, 2));
+    console.log(JSON.stringify({ bundleDir: result.bundleDir, command: result.command, plan: result.plan }, null, 2));
     return;
   }
-  console.log(`Recovery bundle: ${dir}`);
+  console.log(`Recovery bundle: ${result.bundleDir}`);
   console.log("New conversation command:");
-  console.log(commandLine);
+  console.log(result.command);
 }
 
 async function watchCommand(parsed: ParsedArgs): Promise<void> {
@@ -239,7 +195,10 @@ async function watchCommand(parsed: ParsedArgs): Promise<void> {
     const message = await tick({
       home: stringFlag(parsed, "home"),
       auto: Boolean(parsed.flags.auto),
-      dryRun: Boolean(parsed.flags.dryRun)
+      dryRun: Boolean(parsed.flags.dryRun),
+      desktop: Boolean(parsed.flags.desktop),
+      planMode: Boolean(parsed.flags.planMode),
+      goalMode: Boolean(parsed.flags.goalMode)
     });
     console.log(message);
     return;
@@ -247,8 +206,48 @@ async function watchCommand(parsed: ParsedArgs): Promise<void> {
   await watch({
     home: stringFlag(parsed, "home"),
     auto: Boolean(parsed.flags.auto),
-    dryRun: Boolean(parsed.flags.dryRun)
+    dryRun: Boolean(parsed.flags.dryRun),
+    desktop: Boolean(parsed.flags.desktop),
+    planMode: Boolean(parsed.flags.planMode),
+    goalMode: Boolean(parsed.flags.goalMode)
   });
+}
+
+async function monitorCommand(parsed: ParsedArgs): Promise<void> {
+  const action = parsed.positional[0] || "status";
+  if (action === "install") {
+    const result = installMonitor({
+      home: stringFlag(parsed, "home"),
+      nodeBin: process.execPath,
+      guardianBin: guardianBinPath(),
+      dryRun: Boolean(parsed.flags.dryRun)
+    });
+    if (parsed.flags.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else if (parsed.flags.dryRun) {
+      console.log(result.plist);
+    } else {
+      console.log(JSON.stringify(result, null, 2));
+    }
+    return;
+  }
+  if (action === "uninstall") {
+    console.log(JSON.stringify(uninstallMonitor(), null, 2));
+    return;
+  }
+  if (action === "start") {
+    console.log(JSON.stringify(startMonitor(), null, 2));
+    return;
+  }
+  if (action === "stop") {
+    console.log(JSON.stringify(stopMonitor(), null, 2));
+    return;
+  }
+  if (action === "status") {
+    console.log(JSON.stringify(monitorStatus(stringFlag(parsed, "home")), null, 2));
+    return;
+  }
+  throw new Error(`Unknown monitor action: ${action}`);
 }
 
 function stringFlag(parsed: ParsedArgs, name: string): string | undefined {
@@ -285,7 +284,8 @@ Usage:
   guardian doctor [--json] [--home <CODEX_HOME>]
   guardian install-hooks [--dry-run] [--home <CODEX_HOME>]
   guardian hook --phase <precompact|postcompact> [--thread <id>]
-  guardian watch [--auto] [--once] [--dry-run] [--home <CODEX_HOME>]
+  guardian watch [--auto] [--desktop] [--goal-mode] [--once] [--dry-run] [--home <CODEX_HOME>]
+  guardian monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   guardian pack --thread <id>|--last [--home <CODEX_HOME>]
   guardian handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--json] [--home <CODEX_HOME>]
   guardian recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]

@@ -15,10 +15,10 @@ Model switching helps only when the failure is tied to model/compact-endpoint co
 
 The durable strategy is:
 
-1. Try a fallback model once when logs indicate model-level compact incompatibility.
+1. Try the configured fallback model for the first two eligible compaction failures on the same source thread.
 2. If the thread keeps failing, stop fighting the old context.
-3. Package the project state into a recovery bundle.
-4. Start a fresh Codex conversation with a concise recovery prompt and the bundle path.
+3. Package the project state into a recovery bundle with structured handoff memory.
+4. Start a fresh Desktop-visible Codex conversation with a concise recovery prompt and the bundle path.
 
 This matches the lower-level failure mode: once history, tool traces, repeated summaries, or context state are already unhealthy, another compact attempt often reuses the same bad input. A fresh conversation plus a project bundle avoids that state.
 
@@ -35,18 +35,19 @@ Guardian automates both. It does not click the UI or mutate global model setting
 
 - `guardian doctor` checks Codex CLI, SQLite state, logs, configured models, and hook status.
 - `guardian install-hooks` installs `PreCompact` and `PostCompact` snapshot hooks.
-- `guardian watch --auto` monitors Codex logs for compaction failure signals and starts recovery.
+- `guardian watch --auto --desktop --goal-mode` monitors Codex logs for compaction failure signals and starts the recovery ladder.
+- `guardian monitor install` installs a macOS LaunchAgent that keeps the watcher running in the background.
 - `guardian pack --thread <id>` creates a recovery bundle for a fresh conversation.
 - `guardian handoff --thread <id>` creates a recovery bundle and prints the exact new-session command.
 - `guardian handoff --thread <id> --desktop` creates a Desktop-visible continuation conversation and injects the recovery prompt automatically.
 - `guardian handoff --desktop --plan-mode --goal-mode` can preconfigure the new Desktop thread with plan collaboration mode and an active goal.
-- Recovery bundles include `RECENT_THREAD_CONTEXT.md`, which promotes the source thread's latest goal and recent user messages over older titles or abandoned early plans.
+- Recovery bundles include `HANDOFF_MEMORY.json` and `RECENT_THREAD_CONTEXT.md`, which promote the source thread's latest goal, latest user intent, assistant progress after that intent, recent tail, superseded directions, and interruption state over older titles or abandoned early plans.
 - `guardian recover --thread <id> --strategy auto` builds and executes the recovery plan.
 - Model-incompatibility recovery is two-stage:
   - `codex exec resume --model <fallback>` produces a durable handoff summary.
   - `codex resume --model <primary>` continues the same task with the primary model.
-- General compaction failure recovery uses `codex fork --model <primary>`.
-- Final fallback starts a new Codex session in the original working directory.
+- Automatic recovery tries the fallback model twice before giving up on the unhealthy old thread and creating a Desktop-visible handoff.
+- Final fallback starts a new Codex session in the original working directory when Desktop handoff is unavailable.
 - Per-thread cooldown and recovery limits prevent runaway loops.
 
 ## Install
@@ -117,13 +118,21 @@ guardian watch
 Start fully automatic recovery:
 
 ```bash
-guardian watch --auto
+guardian watch --auto --desktop --goal-mode
+```
+
+Install the background monitor on macOS:
+
+```bash
+guardian monitor install
+guardian monitor start
+guardian monitor status
 ```
 
 Use a different fallback model:
 
 ```bash
-GUARDIAN_FALLBACK_MODEL=gpt-5.4 guardian watch --auto
+GUARDIAN_FALLBACK_MODEL=gpt-5.4 guardian watch --auto --desktop --goal-mode
 ```
 
 ## Recovery Strategy
@@ -138,10 +147,20 @@ Guardian classifies recent Codex logs into:
 
 The automatic strategy is:
 
-1. If the compact endpoint or model looks unsupported, run a fallback-model summary stage and then resume with the primary model.
-2. If compaction itself failed but the thread is readable, fork the thread with a recovery prompt.
-3. If the same thread needs recovery again, create a recovery bundle and start a new session.
-4. If the thread cannot be loaded, start a new session in the original working directory when available.
+1. On the first eligible compaction failure for a thread, run a fallback-model summary stage and then resume with the primary model.
+2. On the second eligible failure for the same source thread, try the fallback-model recovery once more.
+3. On the third eligible failure, stop fighting the unhealthy old thread and create a recovery bundle plus Desktop-visible handoff.
+4. If Desktop handoff is unavailable, print or run the CLI new-session recovery command in the original working directory.
+
+Recovery bundles are read in this priority order:
+
+1. `HANDOFF_MEMORY.json`
+2. `RECENT_THREAD_CONTEXT.md`
+3. `git-status.txt`, `git-diff-stat.txt`, and `git-diff.patch`
+4. `selected-files.md` and older project documents
+5. the old thread title
+
+Inside `HANDOFF_MEMORY.json`, `handoffDirective` and `latestAssistantProgress` are the highest-signal continuation hints. They are generated from the assistant messages after the latest user request, so a new session resumes from the actual late-stage task process instead of restarting an older plan.
 
 ## Safety Model
 

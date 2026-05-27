@@ -178,7 +178,7 @@ Source title: ${input.sourceTitle || "unknown"}
 Recovery bundle: ${input.bundleDir}
 Workspace: ${input.cwd}
 
-Continue the interrupted task in this new Desktop conversation. Start by reading RECOVERY.md in the recovery bundle, then continue from the recovered context. Do not repeat old history unless it is needed to move the task forward.
+Continue the interrupted task in this new Desktop conversation. Start by reading HANDOFF_MEMORY.json, RECENT_THREAD_CONTEXT.md, and then RECOVERY.md in the recovery bundle. If those files conflict with the old source title or older project documents, follow the handoff memory. If latestAssistantProgress or handoffDirective shows work advanced after the latest user request, resume from that progress instead of restarting the older plan. Do not revive directions listed as superseded or parked. Before editing, inspect the current git status and diff so the continuation matches the actual workspace.
 
 ${input.prompt}`;
 }

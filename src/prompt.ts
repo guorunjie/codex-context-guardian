@@ -52,7 +52,10 @@ export function buildRecoveryPrompt(input: RecoveryPromptInput): string {
 
   if (input.bundleDir) {
     lines.push(`Recovery bundle: ${input.bundleDir}`);
-    lines.push("- Start by reading RECOVERY.md inside the recovery bundle.");
+    lines.push("- Start by reading HANDOFF_MEMORY.json, then RECENT_THREAD_CONTEXT.md, then RECOVERY.md inside the recovery bundle.");
+    lines.push("- If the handoff memory conflicts with the old thread title or older project docs, follow the handoff memory.");
+    lines.push("- If latestAssistantProgress or handoffDirective shows work advanced after the latest user request, resume from that progress instead of restarting the older plan.");
+    lines.push("- Do not revive directions listed as superseded or parked in the handoff memory.");
   }
 
   return lines.join("\n");

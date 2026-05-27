@@ -19,6 +19,11 @@
 - Added Desktop app-server handoff: `guardian handoff --desktop` now creates a left-sidebar-visible Desktop conversation and can auto-start the first continuation turn.
 - Added Desktop continuation presets: `--plan-mode`, `--goal-mode`, `--goal`, and `--goal-budget` wire thread settings and active goal into the new handoff conversation.
 - Added recent rollout context extraction so recovery bundles and default Desktop goals prioritize late-stage user intent over stale thread titles.
+- Added structured `HANDOFF_MEMORY.json` v2 with current task, latest user intent, latest assistant progress after that intent, bounded recent tail, superseded directions, handoff directive, next action, warnings, and telemetry.
+- Upgraded `RECENT_THREAD_CONTEXT.md` so evidence is clearly labeled as source evidence, not new instructions, and interrupted turns force a worktree check before editing.
+- Added continuation-point extraction so handoff sessions resume from late-stage assistant progress after the latest user request instead of restarting a broad implementation plan.
+- Changed watcher auto-recovery to try fallback-model recovery twice per source thread, then create a Desktop-visible handoff instead of repeatedly compacting the old thread.
+- Added `guardian monitor install|uninstall|status|start|stop` for macOS LaunchAgent background monitoring.
 - Shifted watcher behavior so repeated recovery attempts move toward fresh session instead of repeated compact retries.
 - Implemented watcher with cooldown and per-thread retry limits.
 - Added unit tests for classifier, recovery strategy, hooks, snapshots, and CLI parsing.

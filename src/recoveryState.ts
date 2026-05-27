@@ -6,6 +6,11 @@ export type ThreadRecoveryState = {
   lastRecoveryAt: number;
   consecutiveRecoveries: number;
   lastLogId: number;
+  fallbackAttempts: number;
+  lastFallbackAt?: number;
+  lastFailureLogId?: number;
+  desktopHandoffCreated?: boolean;
+  lastDesktopHandoffThreadId?: string;
 };
 
 export type GuardianRecoveryState = {
@@ -35,6 +40,9 @@ export function canRecoverThread(state: GuardianRecoveryState, threadId: string,
 }): { ok: true } | { ok: false; reason: string } {
   const current = state.threads[threadId];
   if (!current) return { ok: true };
+  if (current.desktopHandoffCreated) {
+    return { ok: false, reason: "desktop handoff already created" };
+  }
   if (current.consecutiveRecoveries >= options.maxConsecutiveRecoveries) {
     return { ok: false, reason: `recovery limit reached (${current.consecutiveRecoveries})` };
   }
@@ -45,15 +53,57 @@ export function canRecoverThread(state: GuardianRecoveryState, threadId: string,
 }
 
 export function recordRecoveryAttempt(state: GuardianRecoveryState, threadId: string, logId: number, now: number): void {
-  const current = state.threads[threadId] || {
-    lastRecoveryAt: 0,
-    consecutiveRecoveries: 0,
-    lastLogId: 0
-  };
+  const current = normalizeThreadState(state.threads[threadId]);
   state.threads[threadId] = {
     lastRecoveryAt: now,
     consecutiveRecoveries: current.consecutiveRecoveries + 1,
+    lastLogId: Math.max(current.lastLogId || 0, logId || 0),
+    fallbackAttempts: current.fallbackAttempts,
+    lastFallbackAt: current.lastFallbackAt,
+    lastFailureLogId: logId || current.lastFailureLogId,
+    desktopHandoffCreated: current.desktopHandoffCreated,
+    lastDesktopHandoffThreadId: current.lastDesktopHandoffThreadId
+  };
+  state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
+}
+
+export function recordFallbackAttempt(state: GuardianRecoveryState, threadId: string, logId: number, now: number): void {
+  const current = normalizeThreadState(state.threads[threadId]);
+  state.threads[threadId] = {
+    ...current,
+    lastRecoveryAt: now,
+    consecutiveRecoveries: current.consecutiveRecoveries + 1,
+    fallbackAttempts: current.fallbackAttempts + 1,
+    lastFallbackAt: now,
+    lastFailureLogId: logId || current.lastFailureLogId,
     lastLogId: Math.max(current.lastLogId || 0, logId || 0)
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
+}
+
+export function recordDesktopHandoff(state: GuardianRecoveryState, threadId: string, logId: number, now: number, desktopThreadId?: string): void {
+  const current = normalizeThreadState(state.threads[threadId]);
+  state.threads[threadId] = {
+    ...current,
+    lastRecoveryAt: now,
+    consecutiveRecoveries: current.consecutiveRecoveries + 1,
+    lastFailureLogId: logId || current.lastFailureLogId,
+    lastLogId: Math.max(current.lastLogId || 0, logId || 0),
+    desktopHandoffCreated: true,
+    lastDesktopHandoffThreadId: desktopThreadId || current.lastDesktopHandoffThreadId
+  };
+  state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
+}
+
+export function normalizeThreadState(current?: Partial<ThreadRecoveryState>): ThreadRecoveryState {
+  return {
+    lastRecoveryAt: Number(current?.lastRecoveryAt || 0),
+    consecutiveRecoveries: Number(current?.consecutiveRecoveries || 0),
+    lastLogId: Number(current?.lastLogId || 0),
+    fallbackAttempts: Number(current?.fallbackAttempts || 0),
+    lastFallbackAt: current?.lastFallbackAt,
+    lastFailureLogId: current?.lastFailureLogId,
+    desktopHandoffCreated: Boolean(current?.desktopHandoffCreated),
+    lastDesktopHandoffThreadId: current?.lastDesktopHandoffThreadId
+  };
 }
