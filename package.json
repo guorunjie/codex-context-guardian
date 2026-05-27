@@ -1,0 +1,27 @@
+{
+  "name": "codex-context-guardian",
+  "version": "0.1.0",
+  "description": "Recover Codex long-running tasks when context compaction fails.",
+  "type": "module",
+  "bin": {
+    "guardian": "./bin/guardian.js",
+    "codex-context-guardian": "./bin/guardian.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "doctor": "node ./bin/guardian.js doctor",
+    "watch": "node ./bin/guardian.js watch",
+    "recover:dry": "node ./bin/guardian.js recover --last --dry-run"
+  },
+  "keywords": [
+    "codex",
+    "context-compaction",
+    "ai-agents",
+    "recovery",
+    "developer-tools"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=26"
+  }
+}
