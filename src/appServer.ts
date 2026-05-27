@@ -11,6 +11,7 @@ export type DesktopHandoffOptions = {
   prompt: string;
   startTurn?: boolean;
   planMode?: boolean;
+  titleStabilizeDelayMs?: number;
   goal?: {
     objective: string;
     tokenBudget?: number;
@@ -64,10 +65,7 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
     const threadId = started?.thread?.id;
     if (!threadId) throw new Error("app-server thread/start did not return a thread id");
 
-    await client.request("thread/name/set", {
-      threadId,
-      name: options.title
-    });
+    await setTitleOnClient(client, threadId, options.title);
 
     let planModeApplied = false;
     if (options.planMode) {
@@ -120,11 +118,9 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
         sandboxPolicy: { type: "dangerFullAccess" },
         model: options.model
       });
-      // Keep the sidebar title stable; first-turn auto-titling can overwrite it.
-      await client.request("thread/name/set", {
-        threadId,
-        name: options.title
-      });
+      // Keep the sidebar title stable; first-turn auto-titling can arrive shortly after turn/start.
+      await sleep(options.titleStabilizeDelayMs ?? 1_000);
+      await setTitleOnClient(client, threadId, options.title);
       turnStarted = true;
     }
 
@@ -136,6 +132,33 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
       planModeApplied,
       goalApplied
     };
+  } finally {
+    client.close();
+  }
+}
+
+export async function setDesktopThreadTitle(options: {
+  home?: string;
+  threadId: string;
+  title: string;
+  timeoutMs?: number;
+}): Promise<void> {
+  const socketPath = ensureRemoteControlSocket(options.home);
+  const client = new AppServerClient(socketPath, options.timeoutMs || 15_000);
+  await client.connect();
+  try {
+    await client.request("initialize", {
+      clientInfo: {
+        name: "guardian",
+        title: "Codex Context Guardian",
+        version: "0.1.0"
+      },
+      capabilities: {
+        experimentalApi: true,
+        requestAttestation: false
+      }
+    });
+    await setTitleOnClient(client, options.threadId, options.title);
   } finally {
     client.close();
   }
@@ -190,6 +213,17 @@ function ensureRemoteControlSocket(home?: string): string {
   }
   const codexHome = home || process.env.CODEX_HOME || path.join(process.env.HOME || "", ".codex");
   return path.join(codexHome, "app-server-control", "app-server-control.sock");
+}
+
+function setTitleOnClient(client: AppServerClient, threadId: string, title: string): Promise<any> {
+  return client.request("thread/name/set", {
+    threadId,
+    name: title
+  });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 class AppServerClient {
