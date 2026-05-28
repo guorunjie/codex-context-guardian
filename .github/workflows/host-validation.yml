@@ -1,0 +1,94 @@
+name: Host Validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-latest
+          - platform: windows
+            os: windows-latest
+          - platform: macos
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+      - name: Install SQLite on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3
+      - name: Install SQLite on macOS
+        if: runner.os == 'macOS'
+        run: command -v sqlite3 || brew install sqlite
+      - name: Install SQLite on Windows
+        if: runner.os == 'Windows'
+        run: choco install sqlite -y --no-progress
+      - run: npm ci
+      - run: npm run build
+      - name: Install Relay Baton from package
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm pack --json > pack.json
+          package_file="$(node -e "const fs = require('fs'); const pack = JSON.parse(fs.readFileSync('pack.json', 'utf8')); console.log(pack[0].filename);")"
+          npm install -g "$package_file"
+          relay-baton --help
+      - name: Install Codex CLI
+        run: npm install -g @openai/codex
+      - name: Prepare minimal Codex home
+        shell: bash
+        run: |
+          set -euo pipefail
+          CODEX_HOME="$RUNNER_TEMP/codex-home"
+          mkdir -p "$CODEX_HOME"
+          printf 'model = "gpt-5.5"\n' > "$CODEX_HOME/config.toml"
+          printf '{"models":["gpt-5.5","gpt-5.4"]}\n' > "$CODEX_HOME/models_cache.json"
+          sqlite3 "$CODEX_HOME/state_5.sqlite" "create table threads (id text primary key, title text, cwd text, model text, model_provider text, tokens_used integer, updated_at integer, archived integer, rollout_path text);"
+          sqlite3 "$CODEX_HOME/state_5.sqlite" "insert into threads values ('host-validation-thread', 'Relay Baton host validation', '$PWD', 'gpt-5.5', 'openai', 0, 0, 0, null);"
+          sqlite3 "$CODEX_HOME/logs_2.sqlite" "create table logs (id integer primary key autoincrement, ts integer not null, ts_nanos integer not null default 0, level text not null, target text not null default '', feedback_log_body text, module_path text, file text, line integer, thread_id text, process_uuid text, estimated_bytes integer not null default 0);"
+          echo "CODEX_HOME=$CODEX_HOME" >> "$GITHUB_ENV"
+      - name: Install and start monitor
+        continue-on-error: true
+        shell: bash
+        run: |
+          relay-baton follow install
+          relay-baton follow start
+          sleep 5
+          relay-baton follow status || true
+      - name: Write host validation report
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          relay-baton validate host --output "host-validation/${{ matrix.platform }}"
+          echo "validation_exit=$?" >> "$GITHUB_ENV"
+          exit 0
+      - name: Upload host validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-validation-${{ matrix.platform }}
+          path: host-validation/${{ matrix.platform }}
+      - name: Stop monitor
+        if: always()
+        continue-on-error: true
+        run: relay-baton follow stop
+      - name: Require healthy host validation
+        if: always()
+        shell: bash
+        run: |
+          node -e "const fs=require('fs'); const report=JSON.parse(fs.readFileSync('host-validation/${{ matrix.platform }}/VALIDATION_REPORT.json','utf8')); if (!report.summary?.ok) { console.error(JSON.stringify(report.summary, null, 2)); process.exit(1); }"

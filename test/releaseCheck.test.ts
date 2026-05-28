@@ -56,6 +56,48 @@ test("v1 release readiness surfaces evidence blockers", () => {
   assert.match(readiness.nextActions.join("\n"), /real compact-failure recovery/);
 });
 
+test("v1 host validation reports must be platform-matched and healthy", () => {
+  const root = makeReleaseFixture("1.2.3");
+  fs.mkdirSync(path.join(root, "docs", "assets"), { recursive: true });
+  fs.writeFileSync(path.join(root, "docs", "assets", "relay-baton-demo.png"), "png");
+  fs.writeFileSync(path.join(root, "docs", "case-study-codex-compact-failure.md"), "Evidence status: complete\n");
+
+  writeHostReport(root, "macos", { os: "darwin" });
+  writeHostReport(root, "linux", { os: "darwin" });
+  writeHostReport(root, "windows", { os: "win32", monitorLoaded: false });
+
+  const readiness = evaluateReleaseReadiness({
+    root,
+    v1: true,
+    online: true,
+    runner: fakeOnlineRunner({
+      npmAuth: true,
+      npmPublished: true
+    })
+  });
+
+  assert.equal(readiness.ok, false);
+  assert.equal(readiness.checks.find((check) => check.name === "macOS host validation report")?.status, "pass");
+  assert.equal(readiness.checks.find((check) => check.name === "Linux host validation report")?.status, "fail");
+  assert.match(readiness.checks.find((check) => check.name === "Linux host validation report")?.detail || "", /platform\.os must be linux/);
+  assert.equal(readiness.checks.find((check) => check.name === "Windows host validation report")?.status, "fail");
+  assert.match(readiness.checks.find((check) => check.name === "Windows host validation report")?.detail || "", /summary\.monitorLoaded must be true/);
+
+  writeHostReport(root, "linux", { os: "linux" });
+  writeHostReport(root, "windows", { os: "win32" });
+  const fixed = evaluateReleaseReadiness({
+    root,
+    v1: true,
+    online: true,
+    runner: fakeOnlineRunner({
+      npmAuth: true,
+      npmPublished: true
+    })
+  });
+
+  assert.equal(fixed.ok, true);
+});
+
 function makeReleaseFixture(version: string): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "relay-baton-release-"));
   fs.mkdirSync(path.join(root, "dist"), { recursive: true });
@@ -111,7 +153,43 @@ function makeReleaseFixture(version: string): string {
     "npm publish --provenance",
     "NODE_AUTH_TOKEN"
   ].join("\n"));
+  fs.writeFileSync(path.join(root, ".github", "workflows", "host-validation.yml"), [
+    "workflow_dispatch:",
+    "runs-on: ${{ matrix.os }}",
+    "ubuntu-latest",
+    "windows-latest",
+    "relay-baton validate host",
+    "actions/upload-artifact"
+  ].join("\n"));
   return root;
+}
+
+function writeHostReport(
+  root: string,
+  platform: "macos" | "linux" | "windows",
+  options: {
+    os: NodeJS.Platform;
+    schemaVersion?: number;
+    ok?: boolean;
+    doctorOk?: boolean;
+    monitorInstalled?: boolean;
+    monitorLoaded?: boolean;
+  }
+): void {
+  const reportDir = path.join(root, "docs", "validation-reports", platform);
+  fs.mkdirSync(reportDir, { recursive: true });
+  fs.writeFileSync(path.join(reportDir, "VALIDATION_REPORT.json"), JSON.stringify({
+    schemaVersion: options.schemaVersion ?? 1,
+    platform: {
+      os: options.os
+    },
+    summary: {
+      ok: options.ok ?? true,
+      doctorOk: options.doctorOk ?? true,
+      monitorInstalled: options.monitorInstalled ?? true,
+      monitorLoaded: options.monitorLoaded ?? true
+    }
+  }, null, 2));
 }
 
 const cleanGitRunner: CommandRunner = (command) => {

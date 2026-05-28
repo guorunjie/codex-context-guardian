@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.4 - 2026-05-28
+
+- Added a manual `Host Validation` GitHub Actions workflow that installs the packed package globally and collects Linux, macOS, and Windows validation artifacts.
+- Strengthened the v1 release gate so host validation reports must be healthy and platform-matched instead of merely present.
+- Documented the host-validation artifact workflow and clarified that failed artifacts are debugging evidence, not v1.0 support proof.
+
 ## 0.8.3 - 2026-05-28
 
 - Added a redacted macOS host validation report under `docs/validation-reports/macos/`.

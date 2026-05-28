@@ -13,6 +13,7 @@ npm publish --dry-run --json
 ```
 
 `relay-baton release check` verifies package metadata, npm-safe bin paths, package-lock sync, changelog entry, built CLI, README install paths, v1 docs, v1 launch audit, support intake template, competitive analysis, cross-platform CI, publish dry-run coverage, npm publish workflow presence, and clean git state.
+It also verifies that the manual host-validation workflow exists so maintainers can collect packed-CLI evidence on Linux, macOS, and Windows.
 
 ## Online Gate
 
@@ -28,6 +29,20 @@ Online checks add matching GitHub Release tag, latest GitHub CI success for the 
 For v1.0, `--v1 --online` must pass. Before npm publication, it is expected to fail on `npm auth` or `npm package version`; that failure is the distribution blocker.
 
 Before tagging `v1.0.0`, reconcile every row in [docs/v1-launch-audit.md](v1-launch-audit.md) and attach the required validation evidence to the release notes.
+
+## Host Validation Evidence
+
+For v1.0 candidates, run the manual workflow and download its artifacts:
+
+```bash
+gh workflow run host-validation.yml
+gh run list --workflow "Host Validation"
+gh run download <run-id> --name host-validation-linux
+gh run download <run-id> --name host-validation-windows
+gh run download <run-id> --name host-validation-macos
+```
+
+Commit or attach only redacted reports whose `VALIDATION_REPORT.json` proves `summary.ok`, `summary.doctorOk`, `summary.monitorInstalled`, and `summary.monitorLoaded` are all `true`. Failed artifacts are useful for debugging, but they do not satisfy the v1 support matrix.
 
 Run the strict v1 gate before creating the final tag:
 

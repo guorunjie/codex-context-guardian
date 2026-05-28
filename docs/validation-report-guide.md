@@ -31,6 +31,22 @@ For final release validation, include online GitHub/npm checks:
 relay-baton validate host --online --output ./relay-baton-validation
 ```
 
+## GitHub Host Validation Workflow
+
+Maintainers can collect cross-platform artifacts from GitHub Actions before a release:
+
+```bash
+gh workflow run host-validation.yml
+gh run list --workflow "Host Validation"
+gh run download <run-id> --name host-validation-linux
+gh run download <run-id> --name host-validation-windows
+gh run download <run-id> --name host-validation-macos
+```
+
+The workflow installs the packed package globally and runs the public `relay-baton` command, so it catches packaging and service-manager regressions that local source commands can miss.
+
+Only attach or commit reports whose `VALIDATION_REPORT.json` has `summary.ok: true`, `summary.doctorOk: true`, `summary.monitorInstalled: true`, and `summary.monitorLoaded: true`. Treat failed workflow artifacts as debugging evidence, not as v1.0 support proof.
+
 ## Files To Attach
 
 Attach these files to GitHub issues or release notes:
@@ -65,4 +81,4 @@ For v1.0, maintainers should collect one report from each supported monitor envi
 - Linux with systemd user service running;
 - Windows with Task Scheduler task running.
 
-Store final release evidence outside the npm package unless the report is fully redacted.
+Store final release evidence outside the npm package unless the report is fully redacted. Redacted reports committed under `docs/validation-reports/<platform>/` must still preserve platform, Node, Codex CLI, monitor status, release-check status, and next-action fields.

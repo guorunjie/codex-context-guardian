@@ -51,6 +51,14 @@ The report writes:
 
 See [docs/validation-report-guide.md](validation-report-guide.md) for redaction rules and the full support-evidence checklist.
 
+Maintainers can also run the manual `Host Validation` GitHub Actions workflow to collect Linux, macOS, and Windows artifacts from the packed global CLI:
+
+```bash
+gh workflow run host-validation.yml
+```
+
+Those artifacts are useful for release triage, but v1.0 support claims require healthy reports. The release gate validates report contents, not just file presence: `schemaVersion` must be `1`, `platform.os` must match the report directory, and `summary.ok`, `summary.doctorOk`, `summary.monitorInstalled`, and `summary.monitorLoaded` must all be `true`.
+
 For v1.0, attach validation reports from:
 
 - macOS with LaunchAgent running;

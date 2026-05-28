@@ -90,6 +90,15 @@ export function evaluateReleaseReadiness(options: {
     publishWorkflow.includes("workflow_dispatch") && publishWorkflow.includes("npm publish --provenance") && publishWorkflow.includes("NODE_AUTH_TOKEN"),
     ".github/workflows/publish-npm.yml should publish manually with provenance and NPM_TOKEN");
 
+  const hostValidationWorkflow = readText(path.join(root, ".github", "workflows", "host-validation.yml"));
+  add(checks, "host validation workflow",
+    hostValidationWorkflow.includes("workflow_dispatch")
+      && hostValidationWorkflow.includes("relay-baton validate host")
+      && hostValidationWorkflow.includes("actions/upload-artifact")
+      && hostValidationWorkflow.includes("ubuntu-latest")
+      && hostValidationWorkflow.includes("windows-latest"),
+    ".github/workflows/host-validation.yml should collect host validation artifacts on Linux and Windows");
+
   const gitStatus = runner("git", ["status", "--short"], { cwd: root, timeoutMs: 5000 });
   if (gitStatus.status === 0) {
     add(checks, "git worktree clean", gitStatus.stdout.trim().length === 0, gitStatus.stdout.trim() || "clean");
@@ -180,12 +189,12 @@ function addV1Checks(checks: ReleaseCheck[], root: string, online: boolean): voi
 
   add(checks, "public visual demo", hasVisualDemo(root),
     "docs/assets/relay-baton-demo.gif, .mp4, or .png should exist before v1.0");
-  add(checks, "macOS host validation report", hasHostValidationReport(root, "macos"),
-    "docs/validation-reports/macos/VALIDATION_REPORT.json");
-  add(checks, "Linux host validation report", hasHostValidationReport(root, "linux"),
-    "docs/validation-reports/linux/VALIDATION_REPORT.json");
-  add(checks, "Windows host validation report", hasHostValidationReport(root, "windows"),
-    "docs/validation-reports/windows/VALIDATION_REPORT.json");
+  const macosReport = hostValidationReportStatus(root, "macos");
+  add(checks, "macOS host validation report", macosReport.ok, macosReport.detail);
+  const linuxReport = hostValidationReportStatus(root, "linux");
+  add(checks, "Linux host validation report", linuxReport.ok, linuxReport.detail);
+  const windowsReport = hostValidationReportStatus(root, "windows");
+  add(checks, "Windows host validation report", windowsReport.ok, windowsReport.detail);
 
   const audit = readText(path.join(root, "docs", "v1-launch-audit.md"));
   add(checks, "stable CLI surface",
@@ -203,6 +212,7 @@ function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
     else if (check.name === "npm-safe bin paths") actions.push("Use npm-normalized bin paths such as bin/relay-baton.js.");
     else if (check.name === "publish dry-run CI") actions.push("Add npm publish --dry-run to CI.");
     else if (check.name === "npm publish workflow") actions.push("Add a manual npm publish workflow using NODE_AUTH_TOKEN.");
+    else if (check.name === "host validation workflow") actions.push("Add a manual host validation workflow that uploads Linux and Windows validation artifacts.");
     else if (check.name === "v1 launch audit") actions.push("Add docs/v1-launch-audit.md with requirement evidence and blockers.");
     else if (check.name === "support intake template") actions.push("Update bug reports to request validation reports and bundle audit output.");
     else if (check.name === "npm auth") actions.push("Log in with npm adduser before publishing to the registry.");
@@ -245,8 +255,23 @@ function hasVisualDemo(root: string): boolean {
   return [".gif", ".mp4", ".png"].some((extension) => fs.existsSync(path.join(assetsDir, `relay-baton-demo${extension}`)));
 }
 
-function hasHostValidationReport(root: string, platform: string): boolean {
-  return fs.existsSync(path.join(root, "docs", "validation-reports", platform, "VALIDATION_REPORT.json"));
+function hostValidationReportStatus(root: string, platform: "macos" | "linux" | "windows"): { ok: boolean; detail: string } {
+  const file = path.join(root, "docs", "validation-reports", platform, "VALIDATION_REPORT.json");
+  if (!fs.existsSync(file)) return { ok: false, detail: file };
+  const report = readJson(file);
+  const expectedOs = platform === "macos" ? "darwin" : platform === "windows" ? "win32" : "linux";
+  const platformInfo = isObject(report.platform) ? report.platform : {};
+  const summary = isObject(report.summary) ? report.summary : {};
+  const failures: string[] = [];
+  if (Number(report.schemaVersion) !== 1) failures.push("schemaVersion must be 1");
+  if (platformInfo.os !== expectedOs) failures.push(`platform.os must be ${expectedOs}`);
+  if (summary.ok !== true) failures.push("summary.ok must be true");
+  if (summary.doctorOk !== true) failures.push("summary.doctorOk must be true");
+  if (summary.monitorInstalled !== true) failures.push("summary.monitorInstalled must be true");
+  if (summary.monitorLoaded !== true) failures.push("summary.monitorLoaded must be true");
+  return failures.length === 0
+    ? { ok: true, detail: `${file} proves ${expectedOs} host health and monitor loaded` }
+    : { ok: false, detail: `${file}: ${failures.join("; ")}` };
 }
 
 function readJson(file: string): Record<string, unknown> {
