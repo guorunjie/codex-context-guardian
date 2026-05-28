@@ -12,7 +12,7 @@ npm pack --dry-run --json
 npm publish --dry-run --json
 ```
 
-`relay-baton release check` verifies package metadata, npm-safe bin paths, package-lock sync, changelog entry, built CLI, README install paths, v1 docs, competitive analysis, cross-platform CI, publish dry-run coverage, npm publish workflow presence, and clean git state.
+`relay-baton release check` verifies package metadata, npm-safe bin paths, package-lock sync, changelog entry, built CLI, README install paths, v1 docs, v1 launch audit, support intake template, competitive analysis, cross-platform CI, publish dry-run coverage, npm publish workflow presence, and clean git state.
 
 ## Online Gate
 
@@ -25,6 +25,8 @@ relay-baton release check --online
 Online checks add matching GitHub Release tag, latest GitHub CI success for the current commit, npm authentication, and npm registry publication for the current package version.
 
 For v1.0, `--online` must pass. Before npm publication, it is expected to fail on `npm auth` or `npm package version`; that failure is the distribution blocker.
+
+Before tagging `v1.0.0`, reconcile every row in [docs/v1-launch-audit.md](v1-launch-audit.md) and attach the required validation evidence to the release notes.
 
 ## Cut A GitHub Release
 

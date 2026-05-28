@@ -16,6 +16,7 @@ export type ReleaseReadiness = {
   version: string;
   tag: string;
   online: boolean;
+  v1: boolean;
   checks: ReleaseCheck[];
   nextActions: string[];
 };
@@ -28,10 +29,12 @@ export type CommandRunner = (command: string, args?: string[], options?: {
 export function evaluateReleaseReadiness(options: {
   root?: string;
   online?: boolean;
+  v1?: boolean;
   runner?: CommandRunner;
 } = {}): ReleaseReadiness {
   const root = path.resolve(options.root || process.cwd());
   const online = options.online === true;
+  const v1 = options.v1 === true;
   const runner = options.runner || runCommand;
   const packageJson = readJson(path.join(root, "package.json"));
   const packageName = stringField(packageJson, "name") || "unknown";
@@ -63,7 +66,17 @@ export function evaluateReleaseReadiness(options: {
     "README documents GitHub and npm install paths");
 
   add(checks, "v1 roadmap", fs.existsSync(path.join(root, "docs", "v1-upgrade-roadmap.md")), "docs/v1-upgrade-roadmap.md");
+  const launchAudit = readText(path.join(root, "docs", "v1-launch-audit.md"));
+  add(checks, "v1 launch audit",
+    launchAudit.includes("Requirement Matrix") && launchAudit.includes("v1.0 Blockers") && launchAudit.includes("Evidence Pack For Release Notes"),
+    "docs/v1-launch-audit.md should list requirements, blockers, and release evidence");
   add(checks, "competitive analysis", fs.existsSync(path.join(root, "docs", "competitive-analysis.md")), "docs/competitive-analysis.md");
+  add(checks, "validation report guide", fs.existsSync(path.join(root, "docs", "validation-report-guide.md")), "docs/validation-report-guide.md");
+
+  const bugTemplate = readText(path.join(root, ".github", "ISSUE_TEMPLATE", "bug_report.md"));
+  add(checks, "support intake template",
+    bugTemplate.includes("VALIDATION_REPORT.json") && bugTemplate.includes("relay-baton validate host") && bugTemplate.includes("relay-baton audit"),
+    "bug reports should request validation reports, bundle audit output, and logs");
 
   const ci = readText(path.join(root, ".github", "workflows", "ci.yml"));
   add(checks, "cross-platform CI matrix",
@@ -85,6 +98,7 @@ export function evaluateReleaseReadiness(options: {
   }
 
   if (online) addOnlineChecks(checks, root, packageName, version, tag, runner);
+  if (v1) addV1Checks(checks, root, online);
 
   return {
     ok: checks.every((check) => check.status !== "fail"),
@@ -92,6 +106,7 @@ export function evaluateReleaseReadiness(options: {
     version,
     tag,
     online,
+    v1,
     checks,
     nextActions: nextActions(checks, online)
   };
@@ -103,6 +118,7 @@ export function formatReleaseReadiness(readiness: ReleaseReadiness): string {
     `package: ${readiness.packageName}@${readiness.version}`,
     `tag: ${readiness.tag}`,
     `online checks: ${readiness.online ? "enabled" : "disabled"}`,
+    `v1 checks: ${readiness.v1 ? "enabled" : "disabled"}`,
     "",
     "Checks:"
   ];
@@ -151,6 +167,32 @@ function addOnlineChecks(
     npmPackage.status === 0 ? `registry version ${npmPackage.stdout.trim()}` : `${packageName}@${version} not published`);
 }
 
+function addV1Checks(checks: ReleaseCheck[], root: string, online: boolean): void {
+  add(checks, "v1 online release gate", online,
+    online ? "online checks enabled" : "run relay-baton release check --v1 --online before v1.0");
+
+  const caseStudy = readText(path.join(root, "docs", "case-study-codex-compact-failure.md"));
+  add(checks, "real recovery case study",
+    caseStudy.includes("Evidence status: complete"),
+    caseStudy.includes("Evidence status:")
+      ? "case study has explicit evidence status"
+      : "case study needs real compact-failure evidence status");
+
+  add(checks, "public visual demo", hasVisualDemo(root),
+    "docs/assets/relay-baton-demo.gif, .mp4, or .png should exist before v1.0");
+  add(checks, "macOS host validation report", hasHostValidationReport(root, "macos"),
+    "docs/validation-reports/macos/VALIDATION_REPORT.json");
+  add(checks, "Linux host validation report", hasHostValidationReport(root, "linux"),
+    "docs/validation-reports/linux/VALIDATION_REPORT.json");
+  add(checks, "Windows host validation report", hasHostValidationReport(root, "windows"),
+    "docs/validation-reports/windows/VALIDATION_REPORT.json");
+
+  const audit = readText(path.join(root, "docs", "v1-launch-audit.md"));
+  add(checks, "stable CLI surface",
+    audit.includes("Stable CLI Surface") && audit.includes("doctor") && audit.includes("recover") && audit.includes("validate host"),
+    "docs/v1-launch-audit.md should document stable v1 commands and experimental boundaries");
+}
+
 function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
   const actions: string[] = [];
   for (const check of checks.filter((item) => item.status === "fail")) {
@@ -161,8 +203,16 @@ function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
     else if (check.name === "npm-safe bin paths") actions.push("Use npm-normalized bin paths such as bin/relay-baton.js.");
     else if (check.name === "publish dry-run CI") actions.push("Add npm publish --dry-run to CI.");
     else if (check.name === "npm publish workflow") actions.push("Add a manual npm publish workflow using NODE_AUTH_TOKEN.");
+    else if (check.name === "v1 launch audit") actions.push("Add docs/v1-launch-audit.md with requirement evidence and blockers.");
+    else if (check.name === "support intake template") actions.push("Update bug reports to request validation reports and bundle audit output.");
     else if (check.name === "npm auth") actions.push("Log in with npm adduser before publishing to the registry.");
     else if (check.name === "npm package version") actions.push("Publish the package with npm publish after authentication.");
+    else if (check.name === "validation report guide") actions.push("Add docs/validation-report-guide.md with collection and redaction instructions.");
+    else if (check.name === "v1 online release gate") actions.push("Run relay-baton release check --v1 --online before tagging v1.0.");
+    else if (check.name === "real recovery case study") actions.push("Record one redacted real compact-failure recovery and mark its case-study evidence status complete.");
+    else if (check.name === "public visual demo") actions.push("Add a short demo GIF, video, or screenshot sequence under docs/assets before v1.0.");
+    else if (check.name.endsWith("host validation report")) actions.push(`Attach a real ${check.name.replace(" host validation report", "")} VALIDATION_REPORT.json before v1.0.`);
+    else if (check.name === "stable CLI surface") actions.push("Document the stable v1 CLI surface and experimental boundaries in docs/v1-launch-audit.md.");
     else actions.push(`Fix failed check: ${check.name}.`);
   }
   if (!online) actions.push("Run relay-baton release check --online before declaring v1.0 distribution complete.");
@@ -188,6 +238,15 @@ function binPathDetail(bin: Record<string, unknown>): string {
   const entries = Object.entries(bin);
   if (entries.length === 0) return "no bin entries";
   return entries.map(([name, value]) => `${name} -> ${String(value)}`).join(", ");
+}
+
+function hasVisualDemo(root: string): boolean {
+  const assetsDir = path.join(root, "docs", "assets");
+  return [".gif", ".mp4", ".png"].some((extension) => fs.existsSync(path.join(assetsDir, `relay-baton-demo${extension}`)));
+}
+
+function hasHostValidationReport(root: string, platform: string): boolean {
+  return fs.existsSync(path.join(root, "docs", "validation-reports", platform, "VALIDATION_REPORT.json"));
 }
 
 function readJson(file: string): Record<string, unknown> {

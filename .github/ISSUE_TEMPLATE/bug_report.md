@@ -22,10 +22,23 @@ assignees: ""
 ```bash
 relay-baton doctor
 relay-baton status
+relay-baton validate host --output ./relay-baton-validation
 ```
+
+Attach `relay-baton-validation/VALIDATION_REPORT.json` when possible.
+
+## Recovery bundle
+
+If the issue is about a wrong, duplicate, or missing relay, run:
+
+```bash
+relay-baton audit /path/to/recovery-bundle --json
+```
+
+Paste the audit output and list the bundle files that were present.
 
 ## Relevant logs
 
 ```text
-Paste `~/.codex/relay-baton/logs/monitor.err.log` excerpts if relevant.
+Paste `~/.codex/relay-baton/logs/monitor.err.log` and `monitor.out.log` excerpts if relevant.
 ```

@@ -68,7 +68,19 @@ function makeReleaseFixture(version: string): string {
     "npm install -g codex-relay-baton-guardian"
   ].join("\n"));
   fs.writeFileSync(path.join(root, "docs", "v1-upgrade-roadmap.md"), "# v1\n");
+  fs.writeFileSync(path.join(root, "docs", "v1-launch-audit.md"), [
+    "# v1 Launch Audit",
+    "## Requirement Matrix",
+    "## v1.0 Blockers",
+    "## Evidence Pack For Release Notes"
+  ].join("\n"));
   fs.writeFileSync(path.join(root, "docs", "competitive-analysis.md"), "# Competitive\n");
+  fs.mkdirSync(path.join(root, ".github", "ISSUE_TEMPLATE"), { recursive: true });
+  fs.writeFileSync(path.join(root, ".github", "ISSUE_TEMPLATE", "bug_report.md"), [
+    "relay-baton validate host",
+    "VALIDATION_REPORT.json",
+    "relay-baton audit"
+  ].join("\n"));
   fs.writeFileSync(path.join(root, ".github", "workflows", "ci.yml"), [
     "os: [ubuntu-latest, macos-latest, windows-latest]",
     "Smoke test packed CLI",

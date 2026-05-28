@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.2 - 2026-05-28
+
+- Added `docs/v1-launch-audit.md` as the requirement-by-requirement v1.0 release decision record.
+- Release readiness now checks that the launch audit exists and that bug reports request validation reports plus bundle audit output.
+- Expanded the bug report template so support issues collect host validation, recovery bundle audit output, and monitor logs.
+
 ## 0.8.1 - 2026-05-28
 
 - Changed `relay-baton validate host` so host health and source-release readiness are separated.

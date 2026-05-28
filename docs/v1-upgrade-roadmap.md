@@ -2,6 +2,8 @@
 
 Relay Baton v1.0 means a new Codex user can install it, turn on following, survive a real compaction failure, and audit exactly why the continuation picked its next action.
 
+The requirement-by-requirement launch audit lives in [docs/v1-launch-audit.md](v1-launch-audit.md). Treat that file as the release decision record; this roadmap explains the workstream history and sequence.
+
 ## Current State
 
 - Public GitHub repository: `guorunjie/codex-relay-baton-guardian`.
