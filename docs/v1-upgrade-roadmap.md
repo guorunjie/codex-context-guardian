@@ -77,7 +77,7 @@ Status: partially complete in v0.5.0. Architecture, case study, competitive anal
 - Add CI matrix for macOS, Linux, and Windows where feasible.
 - Add uninstall and repair smoke tests for monitor service generation.
 
-Status: partially complete after v0.5. Linux systemd user service generation and CI matrix are implemented; real Linux/Windows host validation and service lifecycle tests remain.
+Status: partially complete after v0.8. Linux systemd user service generation, CI matrix, and `relay-baton validate host` report generation are implemented; real Linux/Windows host validation reports and service lifecycle tests remain.
 
 ### v0.9 Distribution Hardening
 

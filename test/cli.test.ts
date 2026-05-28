@@ -80,3 +80,13 @@ test("parses release check command", () => {
   assert.equal(parsed.flags.root, "/tmp/repo");
   assert.equal(parsed.flags.json, true);
 });
+
+test("parses validate host command", () => {
+  const parsed = parseArgs(["validate", "host", "--online", "--output", "/tmp/report", "--root", "/tmp/repo", "--json"]);
+  assert.equal(parsed.command, "validate");
+  assert.deepEqual(parsed.positional, ["host"]);
+  assert.equal(parsed.flags.online, true);
+  assert.equal(parsed.flags.output, "/tmp/report");
+  assert.equal(parsed.flags.root, "/tmp/repo");
+  assert.equal(parsed.flags.json, true);
+});

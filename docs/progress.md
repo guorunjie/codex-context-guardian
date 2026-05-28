@@ -36,6 +36,7 @@
 - Added `relay-baton release check` and `npm run release:check` as release-readiness gates.
 - Added release checklist and support matrix documentation.
 - Added manual npm publish workflow with provenance and CI publish dry-run coverage.
+- Added `relay-baton validate host` for shareable host validation reports.
 
 ## Next
 
@@ -44,6 +45,7 @@
 - Add optional desktop notification integration.
 - Add an upstream PR against `openai/codex` once the standalone behavior is validated locally.
 - Validate Linux and Windows monitor lifecycle on real hosts.
+- Attach `relay-baton validate host --output <dir>` reports for Linux and Windows.
 - Publish `codex-relay-baton-guardian` to npm after maintainer authentication.
 - Configure repository secret `NPM_TOKEN`, then run `gh workflow run publish-npm.yml -f tag=v1.0.0` for the v1.0 package.
 - Run `relay-baton release check --online` green before cutting v1.0.

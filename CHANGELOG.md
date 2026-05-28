@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 - 2026-05-28
+
+- Added `relay-baton validate host` to generate machine-readable and human-readable host validation reports.
+- Host validation reports include doctor checks, monitor status, release gate results, activity state, recovery state, platform details, and next actions.
+- Added validation report tests and documentation for real-host Linux/Windows/macOS evidence collection.
+
 ## 0.7.0 - 2026-05-28
 
 - Added a manual `Publish npm` GitHub Actions workflow for authenticated registry publication with npm provenance.

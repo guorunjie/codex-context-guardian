@@ -34,6 +34,7 @@ Relay Baton avoids that by combining:
 - `relay-baton demo` creates an auditable sample recovery bundle for trying the workflow without waiting for a real stuck thread.
 - `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
 - `relay-baton release check` verifies v1.0 release readiness locally, with optional online GitHub/npm checks.
+- `relay-baton validate host` writes a shareable host validation report for platform support evidence.
 - `relay-baton monitor install` installs a background monitor:
   - macOS: LaunchAgent at `~/Library/LaunchAgents/com.relay-baton.monitor.plist`
   - Linux: systemd user service at `~/.config/systemd/user/relay-baton-monitor.service`
@@ -209,6 +210,12 @@ Check release readiness:
 ```bash
 relay-baton release check
 relay-baton release check --online
+```
+
+Generate a host validation report:
+
+```bash
+relay-baton validate host --output ./relay-baton-validation
 ```
 
 ## Configuration

@@ -16,6 +16,7 @@ import { loadRecoveryState } from "./recoveryState.ts";
 import { auditHandoffMemory } from "./handoffQuality.ts";
 import { writeDemoBundle } from "./demo.ts";
 import { evaluateReleaseReadiness, formatReleaseReadiness } from "./releaseCheck.ts";
+import { buildHostValidationReport, renderHostValidationReport, writeHostValidationReport } from "./validationReport.ts";
 
 type ParsedArgs = {
   command: string;
@@ -58,6 +59,8 @@ export async function main(argv: string[]): Promise<void> {
       return activityCommand(parsed);
     case "release":
       return releaseCommand(parsed);
+    case "validate":
+      return validateCommand(parsed);
     case "help":
     case "":
       console.log(helpText());
@@ -466,6 +469,31 @@ async function releaseCommand(parsed: ParsedArgs): Promise<void> {
   if (!readiness.ok) process.exitCode = 1;
 }
 
+async function validateCommand(parsed: ParsedArgs): Promise<void> {
+  const action = parsed.positional[0] || "host";
+  if (action !== "host") throw new Error(`Unknown validate action: ${action}`);
+  const report = buildHostValidationReport({
+    home: stringFlag(parsed, "home"),
+    root: stringFlag(parsed, "root") || process.cwd(),
+    online: Boolean(parsed.flags.online)
+  });
+  const outputDir = stringFlag(parsed, "output");
+  if (outputDir) {
+    const written = writeHostValidationReport(report, outputDir);
+    if (parsed.flags.json) {
+      console.log(JSON.stringify({ report, written }, null, 2));
+    } else {
+      console.log(`Validation report: ${written.markdownFile}`);
+      console.log(`Validation JSON: ${written.jsonFile}`);
+    }
+  } else if (parsed.flags.json) {
+    console.log(JSON.stringify(report, null, 2));
+  } else {
+    console.log(renderHostValidationReport(report));
+  }
+  if (!report.summary.ok) process.exitCode = 1;
+}
+
 function stringFlag(parsed: ParsedArgs, name: string): string | undefined {
   const value = parsed.flags[name];
   return typeof value === "string" ? value : undefined;
@@ -570,6 +598,7 @@ Usage:
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]
   relay-baton release check [--online] [--json] [--root <repo>]
+  relay-baton validate host [--online] [--json] [--output <dir>] [--root <repo>] [--home <CODEX_HOME>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
   relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]
   relay-baton demo [--output <dir>] [--json] [--home <CODEX_HOME>]

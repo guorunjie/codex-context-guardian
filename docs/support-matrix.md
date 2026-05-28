@@ -26,3 +26,24 @@ Relay Baton is a local Codex companion. Support depends on Node.js, Codex CLI, S
 Relay Baton can claim cross-platform CLI packaging once CI remains green on Linux, macOS, and Windows.
 
 Relay Baton should not claim fully validated cross-platform background monitoring until `monitor install`, `monitor start`, `monitor status`, and `monitor stop` are run on real Linux and Windows hosts.
+
+## Host Validation Evidence
+
+Use `relay-baton validate host` to collect repeatable evidence on each platform:
+
+```bash
+relay-baton follow install
+relay-baton follow start
+relay-baton validate host --output ./relay-baton-validation
+```
+
+The report writes:
+
+- `VALIDATION_REPORT.json` for automated checks;
+- `VALIDATION_REPORT.md` for issue reports, release notes, or support-matrix updates.
+
+For v1.0, attach validation reports from:
+
+- macOS with LaunchAgent running;
+- Linux with systemd user service running;
+- Windows with Task Scheduler task running.
