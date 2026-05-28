@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { type FailureSignal } from "./classifier.ts";
 import { type ThreadInfo } from "./codexState.ts";
-import { commandExists, runCommand } from "./exec.ts";
+import { runCommand } from "./exec.ts";
 import { bundlesDir } from "./paths.ts";
 import { latestSnapshotPath } from "./prompt.ts";
 import {
@@ -79,17 +79,30 @@ export function writeRecoveryBundle(input: RecoveryBundleInput): string {
 }
 
 function listProjectFiles(root: string): string[] {
-  const result = commandExists("rg")
-    ? runCommand("rg", ["--files", "-g", "!node_modules", "-g", "!.git", "-g", "!dist", "-g", "!coverage"], { cwd: root, timeoutMs: 5000 })
-    : runCommand("find", [".", "-type", "f"], { cwd: root, timeoutMs: 5000 });
-  if (result.status !== 0) return [];
-  return result.stdout
-    .split("\n")
-    .map((line) => line.trim().replace(/^\.\//, ""))
-    .filter(Boolean)
-    .filter((file) => !file.split(/[\\/]/).some((part) => EXCLUDED_DIRS.has(part)))
+  return walkProjectFiles(root)
     .sort()
     .slice(0, 1000);
+}
+
+function walkProjectFiles(root: string, dir = root, files: string[] = []): string[] {
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return files;
+  }
+
+  for (const entry of entries) {
+    if (EXCLUDED_DIRS.has(entry.name)) continue;
+    const absolute = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      walkProjectFiles(root, absolute, files);
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    files.push(path.relative(root, absolute).split(path.sep).join("/"));
+  }
+  return files;
 }
 
 function selectImportantFiles(files: string[]): string[] {

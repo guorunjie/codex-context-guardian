@@ -5,6 +5,7 @@
 - Added a Linux, macOS, and Windows CI matrix for tests, build, package dry-run, and packed CLI smoke tests.
 - Made the test script shell-independent by relying on Node's test discovery.
 - Desktop remote-control startup now uses the resolved Codex binary, including `GUARDIAN_CODEX_BIN`, instead of assuming `codex` is on the service PATH.
+- Recovery bundle project-file discovery now uses Node filesystem traversal instead of platform-specific shell `find`.
 
 ## 0.4.0 - 2026-05-28
 
