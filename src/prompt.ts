@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { FailureSignal } from "./classifier.ts";
 import type { ThreadInfo } from "./codexState.ts";
+import type { HealthyCheckpoint } from "./activity.ts";
 import { snapshotsDir } from "./paths.ts";
 
 export type RecoveryPromptInput = {
@@ -11,6 +12,7 @@ export type RecoveryPromptInput = {
   fallbackModel: string;
   home?: string;
   bundleDir?: string | null;
+  healthyCheckpoint?: HealthyCheckpoint | null;
 };
 
 export function buildRecoveryPrompt(input: RecoveryPromptInput): string {
@@ -40,9 +42,31 @@ export function buildRecoveryPrompt(input: RecoveryPromptInput): string {
     "- Use the snapshot file if it exists.",
     "- Continue the last user goal from the recovered context.",
     "- If compaction failed because the previous model cannot compact, keep the task moving with the active model and avoid manually triggering compact until the context is stable.",
+    "- If the failure is context_overflow or the model ran out of room in the context window, recover from the last healthy checkpoint and do not retry the saturated source thread.",
     "- Create a short progress note before major edits so the new session has a durable handoff point.",
     ""
   ];
+
+  if (input.signal.kind === "context_overflow") {
+    lines.push("Context overflow recovery:");
+    lines.push("- This source thread reached the model context window limit.");
+    lines.push("- Prefer the last healthy checkpoint over the failing tail.");
+    lines.push("- Treat the error message itself as a recovery trigger, not as user task content.");
+    lines.push("- After reading the bundle, inspect git status and continue from the newest concrete work state.");
+    lines.push("");
+  }
+
+  if (input.healthyCheckpoint) {
+    lines.push("Last healthy checkpoint:");
+    lines.push(`- capturedAt: ${input.healthyCheckpoint.capturedAt}`);
+    lines.push(`- phase: ${input.healthyCheckpoint.phase}`);
+    lines.push(`- turnId: ${input.healthyCheckpoint.turnId || "unknown"}`);
+    lines.push(`- transcriptPath: ${input.healthyCheckpoint.transcriptPath || "unknown"}`);
+    lines.push("");
+  } else if (input.signal.kind === "context_overflow") {
+    lines.push("Last healthy checkpoint: unavailable; use the recovery bundle and working tree as the authoritative continuation state.");
+    lines.push("");
+  }
 
   if (snapshotPath) {
     lines.push(`Snapshot file: ${snapshotPath}`);

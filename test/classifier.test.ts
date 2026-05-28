@@ -18,6 +18,12 @@ test("classifies context overflow", () => {
   assert.equal(signal?.kind, "context_overflow");
 });
 
+test("classifies Codex ran out of room context window message", () => {
+  const signal = classifyText("Codex ran out of room in the model's context window. Start a new thread or clear earlier history before retrying.");
+  assert.equal(signal?.kind, "context_overflow");
+  assert.equal(signal?.confidence, "high");
+});
+
 test("selects newest matching log signal", () => {
   const signal = classifyLogs([
     {

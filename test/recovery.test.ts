@@ -25,6 +25,15 @@ test("chooses fork for readable thread on generic compact failure", () => {
   assert.equal(chooseStrategy("auto", signal, fakeThread()), "fork");
 });
 
+test("chooses last healthy fork for context overflow", () => {
+  const signal: FailureSignal = {
+    kind: "context_overflow",
+    confidence: "high",
+    reason: "Codex ran out of room"
+  };
+  assert.equal(chooseStrategy("auto", signal, fakeThread()), "last-healthy-fork");
+});
+
 test("fork recovery carries a structured handoff bundle", () => {
   const home = makeHome();
   createThreadDb(home);
@@ -43,6 +52,50 @@ test("fork recovery carries a structured handoff bundle", () => {
   assert.deepEqual(plan.steps[0].args.slice(0, 2), ["fork", "--model"]);
   assert.match(plan.prompt, /Recovery bundle:/);
   assert.match(plan.prompt, /HANDOFF_MEMORY\.json/);
+});
+
+test("context overflow recovery carries last healthy checkpoint instructions", () => {
+  const home = makeHome();
+  createThreadDb(home);
+  const activityDir = path.join(home, "relay-baton");
+  fs.mkdirSync(activityDir, { recursive: true });
+  fs.writeFileSync(path.join(activityDir, "activity-state.json"), JSON.stringify({
+    schemaVersion: 1,
+    updatedAt: 456,
+    threads: {
+      "019e6a4a-22e6-7962-862b-cfb5ad04ac41": {
+        threadId: "019e6a4a-22e6-7962-862b-cfb5ad04ac41",
+        lastEventAt: 456,
+        lastEventName: "Stop",
+        healthyCheckpoints: [{
+          capturedAt: "2026-05-29T00:00:00.000Z",
+          phase: "stop",
+          hookEventName: "Stop",
+          threadId: "019e6a4a-22e6-7962-862b-cfb5ad04ac41",
+          turnId: "turn-last-healthy",
+          transcriptPath: "/tmp/rollout.jsonl",
+          cwd: process.cwd(),
+          model: "gpt-5.5"
+        }],
+        recentEvents: []
+      }
+    }
+  }, null, 2));
+  const plan = buildRecoveryPlan({
+    home,
+    threadId: "019e6a4a-22e6-7962-862b-cfb5ad04ac41",
+    signal: {
+      kind: "context_overflow",
+      confidence: "high",
+      reason: "Codex ran out of room in the model context window"
+    }
+  });
+
+  assert.equal(plan.strategy, "last-healthy-fork");
+  assert.equal(plan.steps[0].name, "last-healthy-fork");
+  assert.equal(plan.healthyCheckpoint?.turnId, "turn-last-healthy");
+  assert.match(plan.prompt, /Context overflow recovery/);
+  assert.match(plan.prompt, /turn-last-healthy/);
 });
 
 test("fallback model recovery is a two-stage plan", () => {

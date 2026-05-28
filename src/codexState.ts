@@ -73,6 +73,8 @@ export function readRecentLogs(options: {
         feedback_log_body like '%compact%'
         or feedback_log_body like '%Compaction%'
         or feedback_log_body like '%context_length%'
+        or feedback_log_body like '%ran out of room%'
+        or feedback_log_body like '%clear earlier history%'
         or feedback_log_body like '%model%not%supported%'
       )
     order by id asc

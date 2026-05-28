@@ -16,6 +16,17 @@ export type ActivityEvent = {
   model?: string;
 };
 
+export type HealthyCheckpoint = {
+  capturedAt: string;
+  phase: "stop" | "postcompact";
+  hookEventName: string;
+  threadId: string;
+  turnId?: string;
+  transcriptPath?: string;
+  cwd?: string;
+  model?: string;
+};
+
 export type ThreadActivityState = {
   threadId: string;
   title?: string;
@@ -32,6 +43,7 @@ export type ThreadActivityState = {
   compactInFlight?: boolean;
   lastCompactStartedAt?: number;
   lastCompactCompletedAt?: number;
+  healthyCheckpoints?: HealthyCheckpoint[];
   recentEvents: ActivityEvent[];
 };
 
@@ -48,6 +60,7 @@ export type ActivityFailureOptions = {
 };
 
 const MAX_RECENT_EVENTS = 20;
+const MAX_HEALTHY_CHECKPOINTS = 12;
 
 export function recordActivityEvent(input: {
   home?: string;
@@ -120,6 +133,13 @@ export function detectActivityFailure(
   return null;
 }
 
+export function latestHealthyCheckpoint(state: ActivityState, threadId: string): HealthyCheckpoint | null {
+  const thread = state.threads[threadId];
+  if (!thread?.healthyCheckpoints?.length) return null;
+  return [...thread.healthyCheckpoints]
+    .sort((a, b) => Date.parse(b.capturedAt) - Date.parse(a.capturedAt))[0] || null;
+}
+
 export function readThreadIdFromPayload(payload?: Record<string, unknown>): string | undefined {
   const direct = payload?.thread_id || payload?.threadId || payload?.session_id || payload?.sessionId;
   return typeof direct === "string" && direct.trim() ? direct.trim() : undefined;
@@ -160,6 +180,7 @@ function updateActivityState(home: string | undefined, event: ActivityEvent, thr
   if (isStopEvent(event)) {
     next.lastStopAt = eventTime;
     next.activeTurnStartedAt = undefined;
+    addHealthyCheckpoint(next, event, "stop");
   }
   if (isPreCompactEvent(event)) {
     next.compactInFlight = true;
@@ -168,6 +189,7 @@ function updateActivityState(home: string | undefined, event: ActivityEvent, thr
   if (isPostCompactEvent(event)) {
     next.compactInFlight = false;
     next.lastCompactCompletedAt = eventTime;
+    addHealthyCheckpoint(next, event, "postcompact");
   }
 
   state.schemaVersion = 1;
@@ -195,8 +217,25 @@ function normalizeThreadActivityState(current: Partial<ThreadActivityState> | un
     compactInFlight: Boolean(current?.compactInFlight),
     lastCompactStartedAt: numberOrUndefined(current?.lastCompactStartedAt),
     lastCompactCompletedAt: numberOrUndefined(current?.lastCompactCompletedAt),
+    healthyCheckpoints: Array.isArray(current?.healthyCheckpoints)
+      ? current.healthyCheckpoints.slice(-MAX_HEALTHY_CHECKPOINTS)
+      : [],
     recentEvents: Array.isArray(current?.recentEvents) ? current.recentEvents.slice(-MAX_RECENT_EVENTS) : []
   };
+}
+
+function addHealthyCheckpoint(thread: ThreadActivityState, event: ActivityEvent, phase: HealthyCheckpoint["phase"]): void {
+  const checkpoint: HealthyCheckpoint = {
+    capturedAt: event.capturedAt,
+    phase,
+    hookEventName: event.hookEventName,
+    threadId: event.threadId,
+    turnId: event.turnId,
+    transcriptPath: event.transcriptPath || thread.rolloutPath,
+    cwd: event.cwd || thread.cwd,
+    model: event.model || thread.model
+  };
+  thread.healthyCheckpoints = [...(thread.healthyCheckpoints || []), checkpoint].slice(-MAX_HEALTHY_CHECKPOINTS);
 }
 
 function emptyActivityState(): ActivityState {

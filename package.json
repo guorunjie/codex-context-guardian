@@ -1,7 +1,7 @@
 {
   "name": "codex-relay-baton-guardian",
   "version": "1.0.0",
-  "description": "Reliable task relay for Codex: fork-first recovery, structured handoff memory, and visible automation for stuck long-running agent sessions.",
+  "description": "Sleep-safe Codex recovery: keep long tasks running through compact failures and context-window overflow with last-healthy fork relays.",
   "type": "module",
   "repository": {
     "type": "git",
@@ -41,6 +41,8 @@
     "relay",
     "handoff",
     "context-compaction",
+    "context-window",
+    "long-running-tasks",
     "ai-agents",
     "recovery",
     "developer-tools",

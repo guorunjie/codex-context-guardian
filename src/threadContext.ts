@@ -51,6 +51,23 @@ export type HandoffMemory = {
     model: string;
     tokensUsed: number | "unknown";
   };
+  sourceFailure?: {
+    kind: string;
+    confidence: Confidence;
+    reason: string;
+    sourceLogId: number | null;
+  };
+  lastHealthyCheckpoint?: {
+    capturedAt: string;
+    phase: string;
+    hookEventName: string;
+    threadId: string;
+    turnId?: string;
+    transcriptPath?: string;
+    cwd?: string;
+    model?: string;
+  } | null;
+  resumeFrom?: string;
   latestGoal: (ThreadGoalContext & {
     confidence: Confidence;
     evidence: HandoffEvidence[];

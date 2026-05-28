@@ -501,10 +501,10 @@ function stringFlag(parsed: ParsedArgs, name: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-function strategyFlag(parsed: ParsedArgs): "auto" | "fallback-model" | "fork" | "new-session" | undefined {
+function strategyFlag(parsed: ParsedArgs): "auto" | "fallback-model" | "last-healthy-fork" | "fork" | "new-session" | undefined {
   const value = stringFlag(parsed, "strategy");
   if (!value) return undefined;
-  if (value === "auto" || value === "fallback-model" || value === "fork" || value === "new-session") return value;
+  if (value === "auto" || value === "fallback-model" || value === "last-healthy-fork" || value === "fork" || value === "new-session") return value;
   throw new Error(`Unknown strategy: ${value}`);
 }
 
@@ -605,7 +605,7 @@ Usage:
   relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]
   relay-baton demo [--output <dir>] [--json] [--home <CODEX_HOME>]
   relay-baton handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
-  relay-baton recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
+  relay-baton recover --thread <id> [--strategy auto|fallback-model|last-healthy-fork|fork|new-session] [--dry-run]
   relay-baton recover --last [--dry-run]
 
 Legacy aliases remain available: guardian, codex-context-guardian.

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { detectActivityFailure, loadActivityState, recordActivityEvent } from "../src/activity.ts";
+import { detectActivityFailure, latestHealthyCheckpoint, loadActivityState, recordActivityEvent } from "../src/activity.ts";
 
 test("records hook activity and tracks compact lifecycle", () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "relay-baton-activity-"));
@@ -44,7 +44,31 @@ test("records hook activity and tracks compact lifecycle", () => {
   assert.equal(thread.model, "gpt-5.5");
   assert.equal(thread.compactInFlight, false);
   assert.equal(thread.recentEvents.length, 3);
+  assert.equal(thread.healthyCheckpoints?.length, 1);
+  assert.equal(latestHealthyCheckpoint(state, "thread-activity")?.phase, "postcompact");
   assert.equal(fs.existsSync(path.join(home, "relay-baton", "activity-events.jsonl")), true);
+});
+
+test("records stop hooks as healthy checkpoints for last-healthy fork recovery", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "relay-baton-activity-"));
+
+  recordActivityEvent({
+    home,
+    phase: "stop",
+    payload: {
+      session_id: "thread-stop",
+      turn_id: "turn-healthy",
+      hook_event_name: "Stop",
+      transcript_path: "/tmp/rollout.jsonl",
+      cwd: home,
+      model: "gpt-5.5"
+    }
+  });
+
+  const checkpoint = latestHealthyCheckpoint(loadActivityState(home), "thread-stop");
+  assert.equal(checkpoint?.phase, "stop");
+  assert.equal(checkpoint?.turnId, "turn-healthy");
+  assert.equal(checkpoint?.transcriptPath, "/tmp/rollout.jsonl");
 });
 
 test("detects compact stalls from hook activity", () => {

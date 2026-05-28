@@ -1,4 +1,5 @@
 import { classifyLogs } from "./classifier.ts";
+import type { FailureSignal } from "./classifier.ts";
 import { getLatestThread, getMaxLogId, getThread, readRecentLogs } from "./codexState.ts";
 import { defaultGuardianConfig, type GuardianConfig } from "./config.ts";
 import { createHandoffRecovery } from "./handoff.ts";
@@ -79,7 +80,8 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
   const strategy = thread
     ? chooseAutoRecoveryStrategy(state, threadId, {
       fallbackAttempts: config.fallbackAttempts,
-      autoDestination: destination
+      autoDestination: destination,
+      signal
     })
     : "new-session";
   const plan = buildRecoveryPlan({
@@ -139,7 +141,7 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
       return `desktop handoff launched: ${handoff.desktop?.threadId || "unknown"} for ${thread?.id || threadId}`;
     }
 
-    if (strategy === "fork" && !options.dryRun) {
+    if ((strategy === "fork" || strategy === "last-healthy-fork") && !options.dryRun) {
       recordForkHandoff(state, threadId, logId, now, { bundleDir: plan.bundleDir });
     } else {
       recordRecoveryAttempt(state, threadId, logId, now);
@@ -162,9 +164,12 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
 export function chooseAutoRecoveryStrategy(
   state: GuardianRecoveryState,
   threadId: string,
-  config: Pick<GuardianConfig, "fallbackAttempts" | "autoDestination">
-): "fallback-model" | "fork" | "new-session" {
+  config: Pick<GuardianConfig, "fallbackAttempts" | "autoDestination"> & { signal?: FailureSignal }
+): "fallback-model" | "last-healthy-fork" | "fork" | "new-session" {
   const current = normalizeThreadState(state.threads[threadId]);
+  if (config.signal?.kind === "context_overflow") {
+    return config.autoDestination === "fork" ? "last-healthy-fork" : "new-session";
+  }
   if (current.fallbackAttempts < config.fallbackAttempts) return "fallback-model";
   return config.autoDestination === "fork" ? "fork" : "new-session";
 }

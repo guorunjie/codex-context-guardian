@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { latestHealthyCheckpoint, loadActivityState, type HealthyCheckpoint } from "./activity.ts";
 import { classifyLogs, type FailureSignal } from "./classifier.ts";
 import { getLatestThread, getThread, readRecentLogs, type ThreadInfo } from "./codexState.ts";
 import { defaultGuardianConfig } from "./config.ts";
@@ -12,7 +13,7 @@ export type RecoveryOptions = {
   home?: string;
   threadId?: string;
   last?: boolean;
-  strategy?: "auto" | "fallback-model" | "fork" | "new-session";
+  strategy?: "auto" | "fallback-model" | "last-healthy-fork" | "fork" | "new-session";
   primaryModel?: string;
   fallbackModel?: string;
   dryRun?: boolean;
@@ -22,7 +23,7 @@ export type RecoveryOptions = {
 };
 
 export type RecoveryPlan = {
-  strategy: "fallback-model" | "fork" | "new-session";
+  strategy: "fallback-model" | "last-healthy-fork" | "fork" | "new-session";
   command: string;
   args: string[];
   steps: RecoveryStep[];
@@ -31,6 +32,7 @@ export type RecoveryPlan = {
   thread: ThreadInfo | null;
   signal: FailureSignal;
   bundleDir?: string;
+  healthyCheckpoint?: HealthyCheckpoint | null;
 };
 
 export type RecoveryStep = {
@@ -49,6 +51,7 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
   const thread = resolveThread(options);
   const signal = options.signal || inferFailureSignal(thread?.id, options.home);
   const strategy = chooseStrategy(options.strategy || "auto", signal, thread);
+  const healthyCheckpoint = thread ? latestHealthyCheckpoint(loadActivityState(options.home), thread.id) : null;
   const cwd = options.cwd || thread?.cwd || process.cwd();
   const summaryFile = recoverySummaryFile(options.home, thread?.id || signal.threadId || "unknown");
   const bundleDir = strategy !== "fallback-model"
@@ -56,7 +59,7 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
     : null;
   const prompt = strategy === "fallback-model"
     ? buildPrimaryResumePrompt({ thread, signal, primaryModel, fallbackModel, home: options.home, summaryFile })
-    : buildRecoveryPrompt({ thread, signal, primaryModel, fallbackModel, home: options.home, bundleDir });
+    : buildRecoveryPrompt({ thread, signal, primaryModel, fallbackModel, home: options.home, bundleDir, healthyCheckpoint });
 
   if (strategy === "fallback-model" && thread) {
     const fallbackPrompt = buildFallbackSummaryPrompt({
@@ -92,13 +95,14 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
       prompt,
       thread,
       signal,
-      bundleDir: bundleDir || undefined
+      bundleDir: bundleDir || undefined,
+      healthyCheckpoint
     };
   }
 
-  if (strategy === "fork" && thread) {
+  if ((strategy === "fork" || strategy === "last-healthy-fork") && thread) {
     const steps: RecoveryStep[] = [{
-      name: "primary-fork",
+      name: strategy === "last-healthy-fork" ? "last-healthy-fork" : "primary-fork",
       command: codexBin,
       args: ["fork", "--model", primaryModel, thread.id, prompt],
       cwd,
@@ -113,7 +117,8 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
       prompt,
       thread,
       signal,
-      bundleDir: bundleDir || undefined
+      bundleDir: bundleDir || undefined,
+      healthyCheckpoint
     };
   }
 
@@ -133,7 +138,8 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
     prompt,
     thread,
     signal,
-    bundleDir: bundleDir || undefined
+    bundleDir: bundleDir || undefined,
+    healthyCheckpoint
   };
 }
 
@@ -148,7 +154,8 @@ export async function recover(options: RecoveryOptions = {}): Promise<RecoveryPl
         thread: plan.thread,
         signal: plan.signal,
         prompt: plan.prompt,
-        projectRoot: plan.cwd
+        projectRoot: plan.cwd,
+        healthyCheckpoint: plan.healthyCheckpoint
       });
     }
     for (const step of plan.steps) {
@@ -166,6 +173,7 @@ export function chooseStrategy(
   if (requested && requested !== "auto") return requested;
   if (!thread) return "new-session";
   if (signal.kind === "model_compact_unsupported") return "fallback-model";
+  if (signal.kind === "context_overflow") return "last-healthy-fork";
   return "fork";
 }
 

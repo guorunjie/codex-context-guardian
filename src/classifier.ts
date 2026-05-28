@@ -33,6 +33,8 @@ const COMPACT_FAILED = [
 ];
 
 const CONTEXT_OVERFLOW = [
+  /ran out of room in the model'?s context window/i,
+  /start a new thread or clear earlier history before retrying/i,
   /context_length_exceeded/i,
   /maximum context/i,
   /context window/i,
@@ -49,7 +51,7 @@ const TRANSIENT = [
 
 export function classifyText(text: string): FailureSignal | null {
   const body = text || "";
-  if (!/compact|compaction|context_length|context window|not supported/i.test(body)) {
+  if (!/compact|compaction|context_length|context window|ran out of room|clear earlier history|not supported/i.test(body)) {
     return null;
   }
   if (MODEL_UNSUPPORTED.some((pattern) => pattern.test(body))) {
