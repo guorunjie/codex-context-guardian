@@ -64,3 +64,10 @@ test("parses audit command", () => {
   assert.deepEqual(parsed.positional, ["/tmp/bundle"]);
   assert.equal(parsed.flags.json, true);
 });
+
+test("parses demo command", () => {
+  const parsed = parseArgs(["demo", "--output", "/tmp/demo", "--json"]);
+  assert.equal(parsed.command, "demo");
+  assert.equal(parsed.flags.output, "/tmp/demo");
+  assert.equal(parsed.flags.json, true);
+});

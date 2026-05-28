@@ -26,3 +26,6 @@ jobs:
           TEST_DIR="$(mktemp -d)"
           npm install --prefix "$TEST_DIR" "$PWD/$TARBALL"
           "$TEST_DIR/node_modules/.bin/relay-baton" --help
+          DEMO_DIR="$(mktemp -d)"
+          "$TEST_DIR/node_modules/.bin/relay-baton" demo --output "$DEMO_DIR" --json
+          "$TEST_DIR/node_modules/.bin/relay-baton" audit "$DEMO_DIR" --json

@@ -31,6 +31,7 @@ Relay Baton avoids that by combining:
 - `relay-baton watch --auto --fork` monitors Codex logs and runs the recovery ladder automatically.
 - `relay-baton recover --thread <id> --strategy auto` executes fallback-model, fork, or new-session recovery.
 - `relay-baton audit <bundle>` scores a recovery bundle without creating a fork or Desktop conversation.
+- `relay-baton demo` creates an auditable sample recovery bundle for trying the workflow without waiting for a real stuck thread.
 - `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
 - `relay-baton monitor install` installs a background monitor:
   - macOS: LaunchAgent at `~/Library/LaunchAgents/com.relay-baton.monitor.plist`
@@ -79,6 +80,13 @@ Inspect recorded activity:
 
 ```bash
 relay-baton activity status
+```
+
+Generate and audit a demo bundle:
+
+```bash
+relay-baton demo
+relay-baton audit ~/.codex/relay-baton/bundles/<demo-bundle>
 ```
 
 Repair local following after moving Node/Codex/Homebrew paths:
@@ -233,4 +241,4 @@ See [docs/relay-baton-roadmap.md](docs/relay-baton-roadmap.md) for the productiz
 
 See [docs/monitor-trigger-evaluation.md](docs/monitor-trigger-evaluation.md) for the monitoring trigger evaluation and chosen hybrid design.
 
-See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch plan and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.
+See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch plan, [docs/architecture.md](docs/architecture.md) for the recovery flow, [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md) for a concrete stuck-thread scenario, and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.

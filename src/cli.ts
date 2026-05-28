@@ -13,7 +13,8 @@ import { createHandoffRecovery } from "./handoff.ts";
 import { installMonitor, monitorStatus, startMonitor, stopMonitor, uninstallMonitor } from "./monitor.ts";
 import { defaultGuardianConfig } from "./config.ts";
 import { loadRecoveryState } from "./recoveryState.ts";
-import { evaluateHandoffMemory } from "./handoffQuality.ts";
+import { auditHandoffMemory } from "./handoffQuality.ts";
+import { writeDemoBundle } from "./demo.ts";
 
 type ParsedArgs = {
   command: string;
@@ -42,6 +43,8 @@ export async function main(argv: string[]): Promise<void> {
       return packCommand(parsed);
     case "audit":
       return auditCommand(parsed);
+    case "demo":
+      return demoCommand(parsed);
     case "handoff":
       return handoffCommand(parsed);
     case "watch":
@@ -201,19 +204,41 @@ async function auditCommand(parsed: ParsedArgs): Promise<void> {
   if (!target) throw new Error("Usage: relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]");
   const memoryFile = resolveMemoryFile(target);
   const memory = JSON.parse(fs.readFileSync(memoryFile, "utf8"));
-  const quality = evaluateHandoffMemory(memory);
+  const audit = auditHandoffMemory(memory);
   if (parsed.flags.json) {
-    console.log(JSON.stringify({ memoryFile, quality }, null, 2));
+    console.log(JSON.stringify({ memoryFile, audit }, null, 2));
+    if (!audit.ok) process.exitCode = 1;
     return;
   }
   console.log([
     `Memory file: ${memoryFile}`,
-    `Quality: ${quality.grade} (${quality.score}/100)`,
-    `OK: ${quality.ok ? "yes" : "no"}`,
-    `Recommendation: ${quality.recommendation}`,
-    quality.blockers.length > 0 ? `Blockers:\n${quality.blockers.map((item) => `- ${item}`).join("\n")}` : "",
-    quality.reasons.length > 0 ? `Reasons:\n${quality.reasons.map((item) => `- ${item}`).join("\n")}` : ""
+    `Schema: ${audit.schemaOk ? "ok" : "invalid"}`,
+    `Quality: ${audit.quality.grade} (${audit.quality.score}/100)`,
+    `OK: ${audit.ok ? "yes" : "no"}`,
+    `Recommendation: ${audit.quality.recommendation}`,
+    audit.schemaErrors.length > 0 ? `Schema errors:\n${audit.schemaErrors.map((item) => `- ${item}`).join("\n")}` : "",
+    audit.quality.blockers.length > 0 ? `Blockers:\n${audit.quality.blockers.map((item) => `- ${item}`).join("\n")}` : "",
+    audit.quality.reasons.length > 0 ? `Reasons:\n${audit.quality.reasons.map((item) => `- ${item}`).join("\n")}` : ""
   ].filter(Boolean).join("\n"));
+  if (!audit.ok) process.exitCode = 1;
+}
+
+async function demoCommand(parsed: ParsedArgs): Promise<void> {
+  const result = writeDemoBundle({
+    home: stringFlag(parsed, "home"),
+    outputDir: stringFlag(parsed, "output")
+  });
+  if (parsed.flags.json) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  console.log([
+    `Demo bundle: ${result.bundleDir}`,
+    `Memory file: ${result.memoryFile}`,
+    `Audit: ${result.audit.quality.grade} (${result.audit.quality.score}/100)`,
+    "Try:",
+    `  relay-baton audit ${result.bundleDir}`
+  ].join("\n"));
 }
 
 async function handoffCommand(parsed: ParsedArgs): Promise<void> {
@@ -528,6 +553,7 @@ Usage:
   relay-baton activity status [--json] [--home <CODEX_HOME>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
   relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]
+  relay-baton demo [--output <dir>] [--json] [--home <CODEX_HOME>]
   relay-baton handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
   relay-baton recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
   relay-baton recover --last [--dry-run]

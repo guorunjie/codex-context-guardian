@@ -44,7 +44,7 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
       clientInfo: {
         name: "relay-baton",
         title: "Relay Baton",
-        version: "0.2.0"
+        version: "0.3.0"
       },
       capabilities: {
         experimentalApi: true,
@@ -151,7 +151,7 @@ export async function setDesktopThreadTitle(options: {
       clientInfo: {
         name: "relay-baton",
         title: "Relay Baton",
-        version: "0.2.0"
+        version: "0.3.0"
       },
       capabilities: {
         experimentalApi: true,

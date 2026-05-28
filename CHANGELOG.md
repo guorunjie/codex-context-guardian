@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 - 2026-05-28
+
+- Added schema validation to `relay-baton audit`.
+- `relay-baton audit` now exits non-zero when memory is invalid or blocked, so it can be used as a CI or release gate.
+- Added `relay-baton demo` to generate a sample recovery bundle without requiring a real stuck Codex thread.
+- Added architecture and case-study documentation for the v1.0 launch path.
+
 ## 0.2.0 - 2026-05-28
 
 - Added `relay-baton status` for a single doctor, monitor, activity, and recovery-state view.

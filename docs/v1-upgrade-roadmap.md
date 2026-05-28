@@ -57,6 +57,8 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 - Add `relay-baton status --json` fields for automation: doctor, monitor, activity, recovery, latest failures.
 - Add clearer recovery-state explanations for cooldown, fallback attempts, duplicate fork/Desktop prevention.
 
+Status: partially complete in v0.3.0. `audit` now validates schema and exits non-zero on blocked bundles, and `demo` writes an auditable sample recovery bundle. Remaining v0.3 work is richer recovery-state explanation and fixture rollout JSONL coverage.
+
 ### v0.5 Public Demo Package
 
 - Add screenshots or GIF of a stuck Codex thread being relayed.

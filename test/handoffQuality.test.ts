@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluateHandoffMemory } from "../src/handoffQuality.ts";
+import { auditHandoffMemory, evaluateHandoffMemory, validateHandoffMemory } from "../src/handoffQuality.ts";
 import type { HandoffMemory } from "../src/threadContext.ts";
 
 test("blocks handoff memory that only contains turn-aborted intent", () => {
@@ -38,6 +38,36 @@ test("accepts handoff memory anchored on latest user intent and assistant progre
 
   assert.equal(quality.ok, true);
   assert.equal(quality.grade, "excellent");
+});
+
+test("validates handoff memory schema before quality scoring", () => {
+  const errors = validateHandoffMemory({ schemaVersion: 1 });
+  assert.match(errors.join("\n"), /schemaVersion/);
+  assert.match(errors.join("\n"), /source/);
+
+  const audit = auditHandoffMemory({ schemaVersion: 1 });
+  assert.equal(audit.ok, false);
+  assert.equal(audit.schemaOk, false);
+  assert.equal(audit.quality.grade, "blocked");
+});
+
+test("audits valid handoff memory", () => {
+  const audit = auditHandoffMemory(memory({
+    latestUserIntent: "Continue v1.0 release hardening.",
+    latestAssistantProgress: "Implemented monitor repair and audit quality scoring.",
+    recentTail: [{
+      timestamp: "2026-05-28T01:00:00Z",
+      role: "user",
+      kind: "message",
+      text: "Continue v1.0 release hardening."
+    }],
+    interrupted: false,
+    nextAction: "Continue demo docs and release verification."
+  }));
+
+  assert.equal(audit.ok, true);
+  assert.equal(audit.schemaOk, true);
+  assert.equal(audit.schemaErrors.length, 0);
 });
 
 function memory(input: {
