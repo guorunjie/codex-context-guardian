@@ -1,6 +1,6 @@
 {
   "name": "codex-relay-baton-guardian",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Reliable task relay for Codex: fork-first recovery, structured handoff memory, and visible automation for stuck long-running agent sessions.",
   "type": "module",
   "repository": {
@@ -22,6 +22,7 @@
     "prepack": "npm run build",
     "test": "node --test",
     "doctor": "node ./bin/relay-baton.js doctor",
+    "release:check": "node ./bin/relay-baton.js release check",
     "watch": "node ./bin/relay-baton.js watch",
     "recover:dry": "node ./bin/relay-baton.js recover --last --dry-run"
   },

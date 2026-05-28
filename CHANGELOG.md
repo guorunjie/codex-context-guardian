@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 - 2026-05-28
+
+- Added `relay-baton release check` as a v1.0 readiness gate.
+- Release checks now verify package metadata, package-lock sync, changelog entry, built CLI, README install paths, v1 docs, competitive analysis, cross-platform CI, and clean git state.
+- `relay-baton release check --online` also checks the matching GitHub Release, latest GitHub CI, npm authentication, and npm package publication.
+- CI now runs the offline release readiness gate after build.
+
 ## 0.5.0 - 2026-05-28
 
 - Added a Linux, macOS, and Windows CI matrix for tests, build, package dry-run, and packed CLI smoke tests.

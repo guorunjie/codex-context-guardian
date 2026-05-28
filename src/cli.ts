@@ -15,6 +15,7 @@ import { defaultGuardianConfig } from "./config.ts";
 import { loadRecoveryState } from "./recoveryState.ts";
 import { auditHandoffMemory } from "./handoffQuality.ts";
 import { writeDemoBundle } from "./demo.ts";
+import { evaluateReleaseReadiness, formatReleaseReadiness } from "./releaseCheck.ts";
 
 type ParsedArgs = {
   command: string;
@@ -55,6 +56,8 @@ export async function main(argv: string[]): Promise<void> {
       return followCommand(parsed);
     case "activity":
       return activityCommand(parsed);
+    case "release":
+      return releaseCommand(parsed);
     case "help":
     case "":
       console.log(helpText());
@@ -448,6 +451,21 @@ async function activityCommand(parsed: ParsedArgs): Promise<void> {
   console.log(formatActivityState(state));
 }
 
+async function releaseCommand(parsed: ParsedArgs): Promise<void> {
+  const action = parsed.positional[0] || "check";
+  if (action !== "check") throw new Error(`Unknown release action: ${action}`);
+  const readiness = evaluateReleaseReadiness({
+    root: stringFlag(parsed, "root") || process.cwd(),
+    online: Boolean(parsed.flags.online)
+  });
+  if (parsed.flags.json) {
+    console.log(JSON.stringify(readiness, null, 2));
+  } else {
+    console.log(formatReleaseReadiness(readiness));
+  }
+  if (!readiness.ok) process.exitCode = 1;
+}
+
 function stringFlag(parsed: ParsedArgs, name: string): string | undefined {
   const value = parsed.flags[name];
   return typeof value === "string" ? value : undefined;
@@ -551,6 +569,7 @@ Usage:
   relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]
+  relay-baton release check [--online] [--json] [--root <repo>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
   relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]
   relay-baton demo [--output <dir>] [--json] [--home <CODEX_HOME>]

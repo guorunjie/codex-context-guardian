@@ -33,6 +33,8 @@
 - Added `relay-baton audit` and `relay-baton demo` for recovery-bundle scoring and public smoke testing.
 - Added unit tests for classifier, recovery strategy, hooks, snapshots, CLI parsing, audit quality, demo bundles, and monitor service generation.
 - Added GitHub Actions CI matrix for Linux, macOS, and Windows.
+- Added `relay-baton release check` and `npm run release:check` as release-readiness gates.
+- Added release checklist and support matrix documentation.
 
 ## Next
 
@@ -42,6 +44,7 @@
 - Add an upstream PR against `openai/codex` once the standalone behavior is validated locally.
 - Validate Linux and Windows monitor lifecycle on real hosts.
 - Publish `codex-relay-baton-guardian` to npm after maintainer authentication.
+- Run `relay-baton release check --online` green before cutting v1.0.
 
 ## Open Questions
 

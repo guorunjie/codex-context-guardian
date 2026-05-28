@@ -6,7 +6,7 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 
 - Public GitHub repository: `guorunjie/codex-relay-baton-guardian`.
 - GitHub install works through `npm install -g github:guorunjie/codex-relay-baton-guardian`.
-- CI, Release, MIT license, built `dist/` package, structured recovery bundles, demo/audit commands, and open-source templates exist.
+- CI, Release, MIT license, built `dist/` package, structured recovery bundles, demo/audit commands, release-readiness gate, and open-source templates exist.
 - macOS LaunchAgent, Linux systemd service generation, Windows Task Scheduler script generation, lifecycle hooks, compact-stall detection, fallback attempts, fork-first recovery, and Desktop handoff quality gates exist.
 - npm registry publishing is prepared but not complete until an authenticated maintainer runs `npm publish`.
 - Local validation on this Mac reports the monitor running and `relay-baton status` ok.
@@ -86,7 +86,7 @@ Status: partially complete after v0.5. Linux systemd user service generation and
 - Add npm publish dry-run documentation and provenance notes.
 - Add support matrix covering macOS, Linux, Windows, Codex CLI versions, and Node versions.
 
-Status: pending. npm package name is available, but npm publication is blocked until the maintainer logs in.
+Status: partially complete in v0.6.0. `relay-baton release check` verifies local release readiness, and `--online` checks GitHub Release, latest CI, npm auth, and npm package publication. Support matrix and release checklist docs exist. npm package publication is still blocked until the maintainer logs in.
 
 ### v1.0 Stable Launch
 
@@ -101,6 +101,7 @@ Status: pending. npm package name is available, but npm publication is blocked u
 npm test
 npm run build
 npm pack --dry-run --json
+npm run release:check
 relay-baton doctor
 relay-baton follow repair
 relay-baton status
