@@ -48,7 +48,7 @@ function makeReleaseFixture(version: string): string {
     name: "codex-relay-baton-guardian",
     version,
     bin: {
-      "relay-baton": "./bin/relay-baton.js"
+      "relay-baton": "bin/relay-baton.js"
     }
   }, null, 2));
   fs.writeFileSync(path.join(root, "package-lock.json"), JSON.stringify({
@@ -71,7 +71,13 @@ function makeReleaseFixture(version: string): string {
   fs.writeFileSync(path.join(root, "docs", "competitive-analysis.md"), "# Competitive\n");
   fs.writeFileSync(path.join(root, ".github", "workflows", "ci.yml"), [
     "os: [ubuntu-latest, macos-latest, windows-latest]",
-    "Smoke test packed CLI"
+    "Smoke test packed CLI",
+    "npm publish --dry-run"
+  ].join("\n"));
+  fs.writeFileSync(path.join(root, ".github", "workflows", "publish-npm.yml"), [
+    "workflow_dispatch:",
+    "npm publish --provenance",
+    "NODE_AUTH_TOKEN"
   ].join("\n"));
   return root;
 }

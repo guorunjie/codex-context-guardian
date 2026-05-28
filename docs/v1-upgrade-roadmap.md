@@ -86,7 +86,7 @@ Status: partially complete after v0.5. Linux systemd user service generation and
 - Add npm publish dry-run documentation and provenance notes.
 - Add support matrix covering macOS, Linux, Windows, Codex CLI versions, and Node versions.
 
-Status: partially complete in v0.6.0. `relay-baton release check` verifies local release readiness, and `--online` checks GitHub Release, latest CI, npm auth, and npm package publication. Support matrix and release checklist docs exist. npm package publication is still blocked until the maintainer logs in.
+Status: mostly complete in v0.7.0. `relay-baton release check` verifies local release readiness, npm-safe bin paths, publish dry-run coverage, and npm publish workflow presence; `--online` checks GitHub Release, latest CI, npm auth, and npm package publication. Support matrix and release checklist docs exist. npm package publication is still blocked until the maintainer adds `NPM_TOKEN` or logs in locally.
 
 ### v1.0 Stable Launch
 
@@ -101,6 +101,7 @@ Status: partially complete in v0.6.0. `relay-baton release check` verifies local
 npm test
 npm run build
 npm pack --dry-run --json
+npm publish --dry-run --json
 npm run release:check
 relay-baton doctor
 relay-baton follow repair

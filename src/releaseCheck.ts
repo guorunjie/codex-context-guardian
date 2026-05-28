@@ -44,6 +44,7 @@ export function evaluateReleaseReadiness(options: {
   const bin = isObject(packageJson.bin) ? packageJson.bin : {};
   add(checks, "primary CLI bin", typeof bin["relay-baton"] === "string",
     typeof bin["relay-baton"] === "string" ? `relay-baton -> ${bin["relay-baton"]}` : "relay-baton bin missing");
+  add(checks, "npm-safe bin paths", npmSafeBinPaths(bin), binPathDetail(bin));
 
   const lock = readJson(path.join(root, "package-lock.json"));
   add(checks, "package-lock version", stringField(lock, "version") === version,
@@ -68,6 +69,13 @@ export function evaluateReleaseReadiness(options: {
   add(checks, "cross-platform CI matrix",
     ci.includes("ubuntu-latest") && ci.includes("macos-latest") && ci.includes("windows-latest") && ci.includes("Smoke test packed CLI"),
     "CI should test Linux, macOS, Windows, and packed CLI smoke");
+  add(checks, "publish dry-run CI", ci.includes("npm publish --dry-run"),
+    "CI should run npm publish --dry-run before release");
+
+  const publishWorkflow = readText(path.join(root, ".github", "workflows", "publish-npm.yml"));
+  add(checks, "npm publish workflow",
+    publishWorkflow.includes("workflow_dispatch") && publishWorkflow.includes("npm publish --provenance") && publishWorkflow.includes("NODE_AUTH_TOKEN"),
+    ".github/workflows/publish-npm.yml should publish manually with provenance and NPM_TOKEN");
 
   const gitStatus = runner("git", ["status", "--short"], { cwd: root, timeoutMs: 5000 });
   if (gitStatus.status === 0) {
@@ -150,6 +158,9 @@ function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
     else if (check.name === "git worktree clean") actions.push("Commit or stash local changes before cutting a release.");
     else if (check.name === "GitHub release") actions.push("Create the matching GitHub Release after CI passes.");
     else if (check.name === "latest GitHub CI") actions.push("Wait for the latest GitHub CI run to pass on the current commit.");
+    else if (check.name === "npm-safe bin paths") actions.push("Use npm-normalized bin paths such as bin/relay-baton.js.");
+    else if (check.name === "publish dry-run CI") actions.push("Add npm publish --dry-run to CI.");
+    else if (check.name === "npm publish workflow") actions.push("Add a manual npm publish workflow using NODE_AUTH_TOKEN.");
     else if (check.name === "npm auth") actions.push("Log in with npm adduser before publishing to the registry.");
     else if (check.name === "npm package version") actions.push("Publish the package with npm publish after authentication.");
     else actions.push(`Fix failed check: ${check.name}.`);
@@ -166,6 +177,17 @@ function label(status: ReleaseCheckStatus): string {
   if (status === "pass") return "OK ";
   if (status === "warn") return "WARN";
   return "FAIL";
+}
+
+function npmSafeBinPaths(bin: Record<string, unknown>): boolean {
+  const values = Object.values(bin);
+  return values.length > 0 && values.every((value) => typeof value === "string" && !value.startsWith("./") && !path.isAbsolute(value));
+}
+
+function binPathDetail(bin: Record<string, unknown>): string {
+  const entries = Object.entries(bin);
+  if (entries.length === 0) return "no bin entries";
+  return entries.map(([name, value]) => `${name} -> ${String(value)}`).join(", ");
 }
 
 function readJson(file: string): Record<string, unknown> {

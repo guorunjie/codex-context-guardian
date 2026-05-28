@@ -9,9 +9,10 @@ npm test
 npm run build
 npm run release:check
 npm pack --dry-run --json
+npm publish --dry-run --json
 ```
 
-`relay-baton release check` verifies package metadata, package-lock sync, changelog entry, built CLI, README install paths, v1 docs, competitive analysis, cross-platform CI, and clean git state.
+`relay-baton release check` verifies package metadata, npm-safe bin paths, package-lock sync, changelog entry, built CLI, README install paths, v1 docs, competitive analysis, cross-platform CI, publish dry-run coverage, npm publish workflow presence, and clean git state.
 
 ## Online Gate
 
@@ -43,8 +44,9 @@ gh release create "v$VERSION" "$RELEASE_DIR/$TARBALL" "$RELEASE_DIR/SHA256SUMS" 
 ## npm Publish Gate
 
 ```bash
-npm whoami
-npm publish
+gh workflow run publish-npm.yml -f tag=v1.0.0
 npm view codex-relay-baton-guardian version
 relay-baton release check --online
 ```
+
+The workflow requires an `NPM_TOKEN` repository secret with publish permission. It checks out the requested tag, verifies the tag matches `package.json`, runs tests/build/release check, and publishes with npm provenance.

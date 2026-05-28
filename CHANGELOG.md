@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 - 2026-05-28
+
+- Added a manual `Publish npm` GitHub Actions workflow for authenticated registry publication with npm provenance.
+- CI now runs `npm publish --dry-run --json` so publish-time package warnings are caught before release.
+- Fixed package `bin` paths to npm-normalized values so global CLI shims are preserved during publication.
+- Release readiness now checks publish workflow presence, publish dry-run coverage, and npm-safe bin paths.
+
 ## 0.6.0 - 2026-05-28
 
 - Added `relay-baton release check` as a v1.0 readiness gate.

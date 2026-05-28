@@ -1,0 +1,43 @@
+name: Publish npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, for example v1.0.0
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - name: Install SQLite
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run release:check
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          test "v$VERSION" = "${{ inputs.tag }}"
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

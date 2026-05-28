@@ -1,6 +1,6 @@
 {
   "name": "codex-relay-baton-guardian",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Reliable task relay for Codex: fork-first recovery, structured handoff memory, and visible automation for stuck long-running agent sessions.",
   "type": "module",
   "repository": {
@@ -12,9 +12,9 @@
     "url": "https://github.com/guorunjie/codex-relay-baton-guardian/issues"
   },
   "bin": {
-    "relay-baton": "./bin/relay-baton.js",
-    "guardian": "./bin/guardian.js",
-    "codex-context-guardian": "./bin/guardian.js"
+    "relay-baton": "bin/relay-baton.js",
+    "guardian": "bin/guardian.js",
+    "codex-context-guardian": "bin/guardian.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

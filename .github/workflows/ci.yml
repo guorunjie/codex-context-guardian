@@ -36,6 +36,7 @@ jobs:
       - run: npm run build
       - run: npm run release:check
       - run: npm pack --dry-run
+      - run: npm publish --dry-run --json
       - name: Smoke test packed CLI
         shell: bash
         run: |
