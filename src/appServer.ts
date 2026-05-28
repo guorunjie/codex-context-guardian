@@ -265,7 +265,8 @@ class AppServerClient {
         ].join("\r\n"));
       });
       socket.on("data", (chunk) => {
-        this.buffer = Buffer.concat([this.buffer, chunk]);
+        const data = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+        this.buffer = Buffer.concat([this.buffer, data]);
         if (!this.upgraded) {
           const index = this.buffer.indexOf("\r\n\r\n");
           if (index === -1) return;

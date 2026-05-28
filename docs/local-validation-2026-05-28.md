@@ -27,7 +27,7 @@ Implemented:
 
 Remote repository:
 
-- Public repo: https://github.com/guorunjie/codex-context-guardian
+- Public repo: https://github.com/guorunjie/codex-relay-baton-guardian
 - Main branch pushed.
 - Description: `Automatic recovery for long-running Codex tasks when context compaction fails`
 

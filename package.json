@@ -1,15 +1,15 @@
 {
-  "name": "relay-baton",
+  "name": "codex-relay-baton-guardian",
   "version": "0.1.0",
   "description": "Reliable task relay for Codex: fork-first recovery, structured handoff memory, and visible automation for stuck long-running agent sessions.",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/guorunjie/codex-context-guardian.git"
+    "url": "git+ssh://git@github.com/guorunjie/codex-relay-baton-guardian.git"
   },
-  "homepage": "https://github.com/guorunjie/codex-context-guardian#readme",
+  "homepage": "https://github.com/guorunjie/codex-relay-baton-guardian#readme",
   "bugs": {
-    "url": "https://github.com/guorunjie/codex-context-guardian/issues"
+    "url": "https://github.com/guorunjie/codex-relay-baton-guardian/issues"
   },
   "bin": {
     "relay-baton": "./bin/relay-baton.js",
@@ -17,11 +17,21 @@
     "codex-context-guardian": "./bin/guardian.js"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "prepack": "npm run build",
     "test": "node --test test/*.test.ts",
     "doctor": "node ./bin/relay-baton.js doctor",
     "watch": "node ./bin/relay-baton.js watch",
     "recover:dry": "node ./bin/relay-baton.js recover --last --dry-run"
   },
+  "files": [
+    "bin/",
+    "dist/",
+    "docs/",
+    "LICENSE",
+    "README.md"
+  ],
   "keywords": [
     "codex",
     "relay",
@@ -35,5 +45,9 @@
   "license": "MIT",
   "engines": {
     "node": ">=26"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
   }
 }

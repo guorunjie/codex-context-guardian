@@ -89,17 +89,40 @@ The default fallback model is `gpt-5.4`; override it with `GUARDIAN_FALLBACK_MOD
 
 ## Install
 
+Install directly from GitHub:
+
 ```bash
-git clone git@github.com:guorunjie/codex-context-guardian.git relay-baton
+npm install -g github:guorunjie/codex-relay-baton-guardian
+relay-baton doctor
+relay-baton follow install
+relay-baton follow start
+```
+
+Install from npm after package publication:
+
+```bash
+npm install -g codex-relay-baton-guardian
+relay-baton doctor
+relay-baton follow install
+relay-baton follow start
+```
+
+Local development:
+
+```bash
+git clone git@github.com:guorunjie/codex-relay-baton-guardian.git relay-baton
 cd relay-baton
+npm install
+npm run build
 npm test
 npm link
 relay-baton doctor
 ```
 
-Use without linking:
+Use from a checkout without linking:
 
 ```bash
+npm run build
 node ./bin/relay-baton.js doctor
 ```
 
