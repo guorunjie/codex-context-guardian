@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Relay Baton recovery flow demo</title>
+  <desc id="desc">A visual overview showing Codex compaction failure, bounded fallback, fork-first relay, and auditable recovery bundle output.</desc>
+  <rect width="1280" height="720" fill="#f6f7f2"/>
+  <rect x="70" y="58" width="1140" height="604" rx="18" fill="#1d2329"/>
+  <rect x="70" y="58" width="1140" height="54" rx="18" fill="#30373f"/>
+  <circle cx="106" cy="85" r="9" fill="#ff5f57"/>
+  <circle cx="134" cy="85" r="9" fill="#ffbd2e"/>
+  <circle cx="162" cy="85" r="9" fill="#28c840"/>
+  <text x="197" y="91" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="18" fill="#d8dee9">relay-baton watch --auto --fork --goal-mode</text>
+
+  <text x="110" y="164" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="700" fill="#ffffff">One auditable continuation when Codex gets stuck</text>
+  <text x="112" y="202" font-family="Inter, Arial, sans-serif" font-size="20" fill="#b8c2cc">Latest task state wins over old titles, stale summaries, and duplicate relays.</text>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <rect x="110" y="258" width="232" height="128" rx="10" fill="#25303a" stroke="#ffb86b" stroke-width="2"/>
+    <text x="136" y="300" font-size="21" font-weight="700" fill="#ffffff">1. Failure Signal</text>
+    <text x="136" y="334" font-size="16" fill="#c7d0d9">remote compact failed</text>
+    <text x="136" y="360" font-size="16" fill="#c7d0d9">or compact stalled</text>
+
+    <path d="M356 322 H434" stroke="#8da2b5" stroke-width="4" fill="none"/>
+    <path d="M434 322 l-14 -9 v18 z" fill="#8da2b5"/>
+
+    <rect x="454" y="258" width="232" height="128" rx="10" fill="#25303a" stroke="#80cbc4" stroke-width="2"/>
+    <text x="480" y="300" font-size="21" font-weight="700" fill="#ffffff">2. Bounded Retry</text>
+    <text x="480" y="334" font-size="16" fill="#c7d0d9">fallback model x2</text>
+    <text x="480" y="360" font-size="16" fill="#c7d0d9">then stop old loop</text>
+
+    <path d="M700 322 H778" stroke="#8da2b5" stroke-width="4" fill="none"/>
+    <path d="M778 322 l-14 -9 v18 z" fill="#8da2b5"/>
+
+    <rect x="798" y="258" width="232" height="128" rx="10" fill="#25303a" stroke="#a7c7ff" stroke-width="2"/>
+    <text x="824" y="300" font-size="21" font-weight="700" fill="#ffffff">3. Fork First</text>
+    <text x="824" y="334" font-size="16" fill="#c7d0d9">one best continuation</text>
+    <text x="824" y="360" font-size="16" fill="#c7d0d9">duplicate relay blocked</text>
+
+    <path d="M914 398 V462" stroke="#8da2b5" stroke-width="4" fill="none"/>
+    <path d="M914 462 l-9 -14 h18 z" fill="#8da2b5"/>
+
+    <rect x="678" y="482" width="472" height="126" rx="10" fill="#111820" stroke="#d7ba7d" stroke-width="2"/>
+    <text x="706" y="522" font-size="21" font-weight="700" fill="#ffffff">Recovery Bundle</text>
+    <text x="706" y="556" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#f6d365">HANDOFF_MEMORY.json</text>
+    <text x="706" y="582" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#f6d365">RECENT_THREAD_CONTEXT.md + git diff/status</text>
+
+    <rect x="110" y="482" width="500" height="126" rx="10" fill="#101820" stroke="#72d18c" stroke-width="2"/>
+    <text x="138" y="522" font-size="21" font-weight="700" fill="#ffffff">Quality Gate</text>
+    <text x="138" y="556" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#b7f7c5">relay-baton audit ./bundle --json</text>
+    <text x="138" y="582" font-size="16" fill="#c7d0d9">evidence is marked as evidence, not a fresh instruction</text>
+  </g>
+</svg>

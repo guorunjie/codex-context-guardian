@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.3 - 2026-05-28
+
+- Added a redacted macOS host validation report under `docs/validation-reports/macos/`.
+- Added `docs/assets/relay-baton-demo.png` and linked it from the README as the first public recovery-flow visual.
+- Upgraded the compact-failure case study from a scenario note to a redacted local recovery record with bundle audit evidence.
+- Updated the v1 launch audit so macOS validation, public visual evidence, and the redacted recovery case study are tracked as current evidence.
+
 ## 0.8.2 - 2026-05-28
 
 - Added `docs/v1-launch-audit.md` as the requirement-by-requirement v1.0 release decision record.

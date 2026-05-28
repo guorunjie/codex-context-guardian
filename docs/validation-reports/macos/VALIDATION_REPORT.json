@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-28T08:00:20.460Z",
+  "platform": {
+    "os": "darwin",
+    "arch": "arm64",
+    "node": "26.0.0",
+    "cwd": "<HOME>/Documents/New project/codex-context-guardian",
+    "home": "<HOME>/.codex"
+  },
+  "summary": {
+    "ok": true,
+    "doctorOk": true,
+    "monitorInstalled": true,
+    "monitorLoaded": true,
+    "releaseOk": true,
+    "releaseRequired": false,
+    "activityThreads": 3,
+    "recoveryThreads": 1
+  },
+  "doctor": [
+    {
+      "name": "codex cli",
+      "ok": true,
+      "detail": "/opt/homebrew/bin/codex (codex-cli 0.133.0)"
+    },
+    {
+      "name": "sqlite3",
+      "ok": true,
+      "detail": "available"
+    },
+    {
+      "name": "config",
+      "ok": true,
+      "detail": "<HOME>/.codex/config.toml"
+    },
+    {
+      "name": "state database",
+      "ok": true,
+      "detail": "<HOME>/.codex/state_5.sqlite"
+    },
+    {
+      "name": "logs database",
+      "ok": true,
+      "detail": "<HOME>/.codex/logs_2.sqlite"
+    },
+    {
+      "name": "threads table",
+      "ok": true,
+      "detail": "state_5.sqlite"
+    },
+    {
+      "name": "logs table",
+      "ok": true,
+      "detail": "logs_2.sqlite"
+    },
+    {
+      "name": "relay-baton compact hooks",
+      "ok": true,
+      "detail": "<HOME>/.codex/hooks.json"
+    },
+    {
+      "name": "primary model",
+      "ok": true,
+      "detail": "gpt-5.5"
+    },
+    {
+      "name": "fallback model",
+      "ok": true,
+      "detail": "gpt-5.4"
+    },
+    {
+      "name": "monitor launch environment",
+      "ok": true,
+      "detail": "<HOME>/Library/LaunchAgents/com.relay-baton.monitor.plist includes PATH and GUARDIAN_CODEX_BIN"
+    }
+  ],
+  "monitor": {
+    "label": "com.relay-baton.monitor",
+    "plistPath": "<HOME>/Library/LaunchAgents/com.relay-baton.monitor.plist",
+    "installed": true,
+    "loaded": true,
+    "detail": "gui/501/com.relay-baton.monitor = {\n\tactive count = 1\n\tpath = <HOME>/Library/LaunchAgents/com.relay-baton.monitor.plist\n\ttype = LaunchAgent\n\tstate = running\n\n\tprogram = /opt/homebrew/Cellar/node/26.0.0/bin/node\n\targuments = {\n\t\t/opt/homebrew/Cellar/node/26.0.0/bin/node\n\t\t<HOME>/Documents/New project/codex-context-guardian/bin/relay-baton.js\n\t\twatch\n\t\t--auto\n\t\t--fork\n\t\t--goal-mode\n\t\t--home\n\t\t<HOME>/.codex\n\t}\n\n\tstdout path = <HOME>/.codex/relay-baton/logs/monitor.out.log\n\tstderr path = <HOME>/.codex/relay-baton/logs/monitor.err.log",
+    "recoveryStatePath": "<HOME>/.codex/relay-baton/recovery-state.json"
+  },
+  "release": {
+    "ok": true,
+    "packageName": "codex-relay-baton-guardian",
+    "version": "0.8.2",
+    "tag": "v0.8.2",
+    "online": false,
+    "v1": false,
+    "checks": [
+      {
+        "name": "package metadata",
+        "status": "pass",
+        "detail": "codex-relay-baton-guardian@0.8.2"
+      },
+      {
+        "name": "primary CLI bin",
+        "status": "pass",
+        "detail": "relay-baton -> bin/relay-baton.js"
+      },
+      {
+        "name": "npm-safe bin paths",
+        "status": "pass",
+        "detail": "relay-baton -> bin/relay-baton.js, guardian -> bin/guardian.js, codex-context-guardian -> bin/guardian.js"
+      },
+      {
+        "name": "package-lock version",
+        "status": "pass",
+        "detail": "package-lock version: 0.8.2"
+      },
+      {
+        "name": "changelog entry",
+        "status": "pass",
+        "detail": "CHANGELOG.md mentions 0.8.2"
+      },
+      {
+        "name": "built CLI",
+        "status": "pass",
+        "detail": "dist/cli.js exists"
+      },
+      {
+        "name": "README install commands",
+        "status": "pass",
+        "detail": "README documents GitHub and npm install paths"
+      },
+      {
+        "name": "v1 roadmap",
+        "status": "pass",
+        "detail": "docs/v1-upgrade-roadmap.md"
+      },
+      {
+        "name": "v1 launch audit",
+        "status": "pass",
+        "detail": "docs/v1-launch-audit.md should list requirements, blockers, and release evidence"
+      },
+      {
+        "name": "competitive analysis",
+        "status": "pass",
+        "detail": "docs/competitive-analysis.md"
+      },
+      {
+        "name": "validation report guide",
+        "status": "pass",
+        "detail": "docs/validation-report-guide.md"
+      },
+      {
+        "name": "support intake template",
+        "status": "pass",
+        "detail": "bug reports should request validation reports, bundle audit output, and logs"
+      },
+      {
+        "name": "cross-platform CI matrix",
+        "status": "pass",
+        "detail": "CI should test Linux, macOS, Windows, and packed CLI smoke"
+      },
+      {
+        "name": "publish dry-run CI",
+        "status": "pass",
+        "detail": "CI should run npm publish --dry-run before release"
+      },
+      {
+        "name": "npm publish workflow",
+        "status": "pass",
+        "detail": ".github/workflows/publish-npm.yml should publish manually with provenance and NPM_TOKEN"
+      },
+      {
+        "name": "git worktree clean",
+        "status": "pass",
+        "detail": "clean"
+      }
+    ],
+    "nextActions": [
+      "Run relay-baton release check --online before declaring v1.0 distribution complete."
+    ]
+  },
+  "activity": {
+    "updatedAt": 1779954026228,
+    "threadCount": 3,
+    "activeThreadCount": 0
+  },
+  "recovery": {
+    "lastSeenLogId": 14139614,
+    "threadCount": 1
+  },
+  "nextActions": []
+}

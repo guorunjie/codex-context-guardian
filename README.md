@@ -6,6 +6,8 @@
 
 **Fork-first task relay for stuck Codex sessions.**
 
+![Relay Baton recovery flow](docs/assets/relay-baton-demo.png)
+
 Relay Baton keeps long-running Codex work moving when remote context compaction fails, a model cannot compact its own history, or a Desktop conversation gets stuck in repeated interruption loops. It reads local Codex session state, creates structured handoff memory from rollout JSONL, and chooses the least lossy recovery path.
 
 The core rule is simple: preserve the real latest task state before creating a new visible conversation.
