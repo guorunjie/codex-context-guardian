@@ -3,7 +3,7 @@
 This audit is the source of truth for deciding whether Relay Baton is ready to call itself v1.0.
 
 Date: 2026-05-28
-Current package version: 0.8.5
+Current package version: 0.8.6
 Target package version: 1.0.0
 
 ## Launch Definition
@@ -18,8 +18,8 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 | npm distribution | `npm install -g codex-relay-baton-guardian` works on a clean machine. | Publish workflow exists; CI runs `npm publish --dry-run --json`; package name and bin paths are npm-safe. | Not complete | Maintainer must configure `NPM_TOKEN` or run `npm adduser`, publish, then verify `npm view codex-relay-baton-guardian version`. |
 | Local install from GitHub | GitHub install path works without TypeScript source stripping issues. | Package uses built `dist/` output, `files` whitelist, and packed CLI smoke tests. | Ready | Re-run smoke test from the final GitHub release tarball. |
 | macOS monitor | LaunchAgent install/start/status works and monitor can see Codex. | This Mac reports `com.relay-baton.monitor` loaded and running; `docs/validation-reports/macos/VALIDATION_REPORT.json` is attached and redacted. | Ready | Re-run validation on the final v1.0 tag. |
-| Linux monitor | systemd user service can be installed, started, inspected, stopped, and repaired. | systemd service generation exists; Linux CI covers CLI/build/package smoke; manual host-validation workflow can collect artifacts from the packed CLI. | Not complete | Run `follow install/start/status/stop` and `validate host` on a real Linux host, then attach a healthy redacted report. |
-| Windows monitor | Task Scheduler script can install, start, inspect, stop, and repair monitoring. | Task Scheduler script generation exists; Windows CI covers CLI/build/package smoke; manual host-validation workflow can collect artifacts from the packed CLI. | Not complete | Run generated scheduled task lifecycle and `validate host` on a real Windows host, then attach a healthy redacted report. |
+| Linux monitor | systemd user service can be installed, started, inspected, stopped, and repaired. | Linux CI covers CLI/build/package smoke; `docs/validation-reports/linux/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the systemd user service in the Host Validation workflow. | Ready | Re-run validation on the final v1.0 tag. |
+| Windows monitor | Task Scheduler script can install, start, inspect, stop, and repair monitoring. | Windows CI covers CLI/build/package smoke; `docs/validation-reports/windows/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the Task Scheduler task in the Host Validation workflow. | Ready | Re-run validation on the final v1.0 tag. |
 | Recovery correctness | Compact failures use two fallback attempts, then one best relay with duplicate protection. | Tests cover fallback, fork, CLI fallback, duplicate source recovery, bundle quality, turn-aborted handling, and `docs/case-study-codex-compact-failure.md` contains a redacted local recovery record. | Mostly ready | Repeat the drill on the final v1.0 tag. |
 | Handoff fidelity | New continuation prefers latest goal, latest user intent, recent assistant/tool progress, current worktree, and superseded directions. | `HANDOFF_MEMORY.json`, `RECENT_THREAD_CONTEXT.md`, `RECOVERY.md`, git diff/status, audit command, quality tests, and case-study audit excerpt exist. | Ready | Keep future case studies redacted before publication. |
 | Fork-first strategy | `codex fork` is preferred when the source session is readable; Desktop is explicit or fallback. | README, recovery strategy, tests, and local `codex fork --help` confirm fork path availability. | Ready | Keep Desktop path documented as less-lossless and experimental. |
@@ -32,8 +32,7 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 ## v1.0 Blockers
 
 1. npm package is not published.
-2. Linux and Windows background monitor lifecycle are not real-host validated.
-3. Final `relay-baton release check --v1 --online` has not passed.
+2. Final `relay-baton release check --v1 --online` has not passed.
 
 ## v1.0 Release Gate
 

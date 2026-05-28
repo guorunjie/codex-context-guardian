@@ -10,7 +10,7 @@ Relay Baton is a local Codex companion. Support depends on Node.js, Codex CLI, S
 | Packed CLI install smoke | Verified locally and in CI | Verified in CI | Verified in CI |
 | Recovery bundle generation | Verified locally and in CI | Verified in CI | Verified in CI |
 | Monitor install artifact | LaunchAgent implemented and locally running | systemd user service generated | Task Scheduler script generated |
-| Monitor lifecycle | Verified on this Mac | Needs real-host validation | Needs real-host validation |
+| Monitor lifecycle | Verified on this Mac | Verified in Host Validation workflow | Verified in Host Validation workflow |
 | Desktop app-server handoff | Experimental, macOS-focused | Not claimed | Not claimed |
 
 ## Required Runtime
@@ -59,8 +59,8 @@ gh workflow run host-validation.yml
 
 Those artifacts are useful for release triage, but v1.0 support claims require healthy reports. The release gate validates report contents, not just file presence: `schemaVersion` must be `1`, `platform.os` must match the report directory, and `summary.ok`, `summary.doctorOk`, `summary.monitorInstalled`, and `summary.monitorLoaded` must all be `true`.
 
-For v1.0, attach validation reports from:
+Current committed release evidence:
 
-- macOS with LaunchAgent running;
-- Linux with systemd user service running;
-- Windows with Task Scheduler task running.
+- macOS with LaunchAgent running: `docs/validation-reports/macos/`;
+- Linux with systemd user service running: `docs/validation-reports/linux/`;
+- Windows with Task Scheduler task running: `docs/validation-reports/windows/`.

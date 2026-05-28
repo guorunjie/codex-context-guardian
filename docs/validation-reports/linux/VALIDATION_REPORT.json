@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-28T08:49:48.151Z",
+  "platform": {
+    "os": "linux",
+    "arch": "x64",
+    "node": "26.2.0",
+    "cwd": "/home/runner/work/codex-relay-baton-guardian/codex-relay-baton-guardian",
+    "home": "/home/runner/work/_temp/codex-home"
+  },
+  "summary": {
+    "ok": true,
+    "doctorOk": true,
+    "monitorInstalled": true,
+    "monitorLoaded": true,
+    "releaseOk": false,
+    "releaseRequired": false,
+    "activityThreads": 0,
+    "recoveryThreads": 0
+  },
+  "doctor": [
+    {
+      "name": "codex cli",
+      "ok": true,
+      "detail": "/opt/hostedtoolcache/node/26.2.0/x64/bin/codex (codex-cli 0.134.0)"
+    },
+    {
+      "name": "sqlite3",
+      "ok": true,
+      "detail": "available"
+    },
+    {
+      "name": "config",
+      "ok": true,
+      "detail": "/home/runner/work/_temp/codex-home/config.toml"
+    },
+    {
+      "name": "state database",
+      "ok": true,
+      "detail": "/home/runner/work/_temp/codex-home/state_5.sqlite"
+    },
+    {
+      "name": "logs database",
+      "ok": true,
+      "detail": "/home/runner/work/_temp/codex-home/logs_2.sqlite"
+    },
+    {
+      "name": "threads table",
+      "ok": true,
+      "detail": "state_5.sqlite"
+    },
+    {
+      "name": "logs table",
+      "ok": true,
+      "detail": "logs_2.sqlite"
+    },
+    {
+      "name": "relay-baton compact hooks",
+      "ok": true,
+      "detail": "/home/runner/work/_temp/codex-home/hooks.json"
+    },
+    {
+      "name": "primary model",
+      "ok": true,
+      "detail": "gpt-5.5"
+    },
+    {
+      "name": "fallback model",
+      "ok": true,
+      "detail": "gpt-5.4"
+    }
+  ],
+  "monitor": {
+    "label": "relay-baton-monitor.service",
+    "plistPath": "/home/runner/.config/systemd/user/relay-baton-monitor.service",
+    "installed": true,
+    "loaded": true,
+    "detail": "● relay-baton-monitor.service - Relay Baton Codex recovery monitor\n     Loaded: loaded (/home/runner/.config/systemd/user/relay-baton-monitor.service; enabled; preset: enabled)\n     Active: active (running) since Thu 2026-05-28 08:49:42 UTC; 5s ago\n   Main PID: 2857 (node-MainThread)\n      Tasks: 7 (limit: 19151)\n     Memory: 15.5M (peak: 16.6M)\n        CPU: 66ms\n     CGroup: /user.slice/user-1001.slice/user@1001.service/app.slice/relay-baton-monitor.service\n             └─2857 /opt/hostedtoolcache/node/26.2.0/x64/bin/node /opt/hostedtoolcache/node/26.2.0/x64/lib/node_modules/codex-relay-baton-guardian/bin/relay-baton.js watch --auto --fork --goal-mode --home /home/runner/work/_temp/codex-home\n\nMay 28 08:49:42 REDACTED-GITHUB-RUNNER systemd[1023]: Started relay-baton-monitor.service - Relay Baton Codex recovery monitor.",
+    "recoveryStatePath": "/home/runner/work/_temp/codex-home/relay-baton/recovery-state.json"
+  },
+  "release": {
+    "ok": false,
+    "packageName": "codex-relay-baton-guardian",
+    "version": "0.8.5",
+    "tag": "v0.8.5",
+    "online": false,
+    "v1": false,
+    "checks": [
+      {
+        "name": "package metadata",
+        "status": "pass",
+        "detail": "codex-relay-baton-guardian@0.8.5"
+      },
+      {
+        "name": "primary CLI bin",
+        "status": "pass",
+        "detail": "relay-baton -> bin/relay-baton.js"
+      },
+      {
+        "name": "npm-safe bin paths",
+        "status": "pass",
+        "detail": "relay-baton -> bin/relay-baton.js, guardian -> bin/guardian.js, codex-context-guardian -> bin/guardian.js"
+      },
+      {
+        "name": "package-lock version",
+        "status": "pass",
+        "detail": "package-lock version: 0.8.5"
+      },
+      {
+        "name": "changelog entry",
+        "status": "pass",
+        "detail": "CHANGELOG.md mentions 0.8.5"
+      },
+      {
+        "name": "built CLI",
+        "status": "pass",
+        "detail": "dist/cli.js exists"
+      },
+      {
+        "name": "README install commands",
+        "status": "pass",
+        "detail": "README documents GitHub and npm install paths"
+      },
+      {
+        "name": "v1 roadmap",
+        "status": "pass",
+        "detail": "docs/v1-upgrade-roadmap.md"
+      },
+      {
+        "name": "v1 launch audit",
+        "status": "pass",
+        "detail": "docs/v1-launch-audit.md should list requirements, blockers, and release evidence"
+      },
+      {
+        "name": "competitive analysis",
+        "status": "pass",
+        "detail": "docs/competitive-analysis.md"
+      },
+      {
+        "name": "validation report guide",
+        "status": "pass",
+        "detail": "docs/validation-report-guide.md"
+      },
+      {
+        "name": "support intake template",
+        "status": "pass",
+        "detail": "bug reports should request validation reports, bundle audit output, and logs"
+      },
+      {
+        "name": "cross-platform CI matrix",
+        "status": "pass",
+        "detail": "CI should test Linux, macOS, Windows, and packed CLI smoke"
+      },
+      {
+        "name": "publish dry-run CI",
+        "status": "pass",
+        "detail": "CI should run npm publish --dry-run before release"
+      },
+      {
+        "name": "npm publish workflow",
+        "status": "pass",
+        "detail": ".github/workflows/publish-npm.yml should publish manually with provenance and NPM_TOKEN"
+      },
+      {
+        "name": "host validation workflow",
+        "status": "pass",
+        "detail": ".github/workflows/host-validation.yml should collect host validation artifacts on Linux and Windows"
+      },
+      {
+        "name": "git worktree clean",
+        "status": "fail",
+        "detail": "?? codex-relay-baton-guardian-0.8.5.tgz\n?? pack.json"
+      }
+    ],
+    "nextActions": [
+      "Commit or stash local changes before cutting a release.",
+      "Run relay-baton release check --online before declaring v1.0 distribution complete."
+    ]
+  },
+  "activity": {
+    "updatedAt": 0,
+    "threadCount": 0,
+    "activeThreadCount": 0
+  },
+  "recovery": {
+    "lastSeenLogId": 0,
+    "threadCount": 0
+  },
+  "nextActions": []
+}
