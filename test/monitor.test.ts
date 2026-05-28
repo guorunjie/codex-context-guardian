@@ -10,7 +10,9 @@ test("builds LaunchAgent plist for fork-first auto monitor", () => {
   const result = buildMonitorPlist({
     home,
     nodeBin: "/usr/local/bin/node",
-    guardianBin: "/repo/bin/relay-baton.js"
+    guardianBin: "/repo/bin/relay-baton.js",
+    codexBin: "/opt/homebrew/bin/codex",
+    pathEnv: "/usr/bin:/bin"
   });
 
   assert.match(result.plist, /com\.relay-baton\.monitor/);
@@ -18,6 +20,10 @@ test("builds LaunchAgent plist for fork-first auto monitor", () => {
   assert.match(result.plist, /<string>--auto<\/string>/);
   assert.match(result.plist, /<string>--fork<\/string>/);
   assert.match(result.plist, /<string>--goal-mode<\/string>/);
+  assert.match(result.plist, /<key>PATH<\/key>/);
+  assert.match(result.plist, /\/opt\/homebrew\/bin/);
+  assert.match(result.plist, /<key>GUARDIAN_CODEX_BIN<\/key>/);
+  assert.match(result.plist, /\/opt\/homebrew\/bin\/codex/);
   assert.match(result.stdoutPath, /monitor\.out\.log$/);
   assert.match(result.stderrPath, /monitor\.err\.log$/);
 });
@@ -27,7 +33,9 @@ test("builds Windows scheduled task script for fork-first auto monitor", () => {
   const result = buildWindowsMonitorScript({
     home,
     nodeBin: "C:\\Program Files\\nodejs\\node.exe",
-    guardianBin: "C:\\repo\\bin\\relay-baton.js"
+    guardianBin: "C:\\repo\\bin\\relay-baton.js",
+    codexBin: "C:\\Users\\me\\bin\\codex.cmd",
+    pathEnv: "C:\\Windows\\System32"
   });
 
   assert.match(result.plist, /schtasks\.exe \/Create/);
@@ -36,4 +44,5 @@ test("builds Windows scheduled task script for fork-first auto monitor", () => {
   assert.match(result.plist, /--goal-mode/);
   assert.match(result.plist, /monitor\.out\.log/);
   assert.match(result.plist, /monitor\.err\.log/);
+  assert.match(result.plist, /GUARDIAN_CODEX_BIN/);
 });

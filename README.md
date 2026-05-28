@@ -1,5 +1,9 @@
 # Relay Baton
 
+[![CI](https://github.com/guorunjie/codex-relay-baton-guardian/actions/workflows/ci.yml/badge.svg)](https://github.com/guorunjie/codex-relay-baton-guardian/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/guorunjie/codex-relay-baton-guardian)](https://github.com/guorunjie/codex-relay-baton-guardian/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **Fork-first task relay for stuck Codex sessions.**
 
 Relay Baton keeps long-running Codex work moving when remote context compaction fails, a model cannot compact its own history, or a Desktop conversation gets stuck in repeated interruption loops. It reads local Codex session state, creates structured handoff memory from rollout JSONL, and chooses the least lossy recovery path.
@@ -20,10 +24,13 @@ Relay Baton avoids that by combining:
 ## Features
 
 - `relay-baton doctor` checks Codex CLI, local SQLite state, logs, configured models, and compact hooks.
+- `relay-baton status` summarizes doctor, monitor, activity, and recovery state in one view.
 - `relay-baton install-hooks` installs Codex lifecycle hooks for activity tracking and compact snapshots.
 - `relay-baton follow install` installs Codex lifecycle hooks and the background monitor together.
+- `relay-baton follow repair` repairs hooks, LaunchAgent PATH, and monitor startup after shell or Homebrew path changes.
 - `relay-baton watch --auto --fork` monitors Codex logs and runs the recovery ladder automatically.
 - `relay-baton recover --thread <id> --strategy auto` executes fallback-model, fork, or new-session recovery.
+- `relay-baton audit <bundle>` scores a recovery bundle without creating a fork or Desktop conversation.
 - `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
 - `relay-baton monitor install` installs a background monitor:
   - macOS: LaunchAgent at `~/Library/LaunchAgents/com.relay-baton.monitor.plist`
@@ -72,6 +79,13 @@ Inspect recorded activity:
 
 ```bash
 relay-baton activity status
+```
+
+Repair local following after moving Node/Codex/Homebrew paths:
+
+```bash
+relay-baton follow repair
+relay-baton status
 ```
 
 ## Automatic Strategy
@@ -146,6 +160,12 @@ Create a recovery bundle for manual use:
 relay-baton handoff --last
 ```
 
+Audit a bundle before creating a visible continuation:
+
+```bash
+relay-baton audit ~/.codex/relay-baton/bundles/<bundle-id>
+```
+
 Create one Desktop-visible continuation:
 
 ```bash
@@ -212,3 +232,5 @@ Desktop handoff is useful, but less lossless than `codex fork` because it starts
 See [docs/relay-baton-roadmap.md](docs/relay-baton-roadmap.md) for the productization and memory-system roadmap, including Claude-style project memory, Codex fork-first recovery, and cross-platform monitor work.
 
 See [docs/monitor-trigger-evaluation.md](docs/monitor-trigger-evaluation.md) for the monitoring trigger evaluation and chosen hybrid design.
+
+See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch plan and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.

@@ -84,6 +84,27 @@ test("new session is used when no thread can be resolved", () => {
   assert.match(plan.prompt, /Recovery bundle:/);
 });
 
+test("recovery plan uses configured codex binary", () => {
+  const previous = process.env.GUARDIAN_CODEX_BIN;
+  process.env.GUARDIAN_CODEX_BIN = "/opt/example/bin/codex";
+  try {
+    const plan = buildRecoveryPlan({
+      signal: {
+        kind: "unknown",
+        confidence: "low",
+        reason: "no thread"
+      },
+      primaryModel: "gpt-5.5",
+      cwd: "/tmp/example"
+    });
+
+    assert.equal(plan.steps[0].command, "/opt/example/bin/codex");
+  } finally {
+    if (previous === undefined) delete process.env.GUARDIAN_CODEX_BIN;
+    else process.env.GUARDIAN_CODEX_BIN = previous;
+  }
+});
+
 function fakeThread() {
   return {
     id: "thread",

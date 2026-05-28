@@ -1,8 +1,10 @@
 import fs from "node:fs";
+import path from "node:path";
 import { commandExists, runCommand } from "./exec.ts";
 import { configPath, hooksPath, logsDbPath, stateDbPath } from "./paths.ts";
 import { tableExists } from "./sqlite.ts";
 import { defaultGuardianConfig, fallbackModelLooksAvailable } from "./config.ts";
+import { monitorPlistPath } from "./monitor.ts";
 
 export type Check = {
   name: string;
@@ -14,11 +16,11 @@ export function runDoctor(home?: string): Check[] {
   const config = defaultGuardianConfig(home);
   const checks: Check[] = [];
 
-  const codex = runCommand("codex", ["--version"], { timeoutMs: 5000 });
+  const codex = runCommand(config.codexBin, ["--version"], { timeoutMs: 5000 });
   checks.push({
     name: "codex cli",
     ok: codex.status === 0,
-    detail: codex.status === 0 ? codex.stdout.trim() : codex.stderr.trim() || "codex not found"
+    detail: codex.status === 0 ? `${config.codexBin} (${codex.stdout.trim()})` : codex.stderr.trim() || `${config.codexBin} not found`
   });
 
   checks.push({
@@ -67,6 +69,10 @@ export function runDoctor(home?: string): Check[] {
     detail: config.fallbackModel
   });
 
+  if (process.platform === "darwin") {
+    checks.push(monitorEnvironmentCheck(config.codexBin));
+  }
+
   return checks;
 }
 
@@ -81,5 +87,28 @@ function fileCheck(name: string, file: string): Check {
     name,
     ok: fs.existsSync(file),
     detail: file
+  };
+}
+
+function monitorEnvironmentCheck(codexBin: string): Check {
+  const file = monitorPlistPath();
+  if (!fs.existsSync(file)) {
+    return {
+      name: "monitor launch environment",
+      ok: false,
+      detail: `${file} missing`
+    };
+  }
+  const text = fs.readFileSync(file, "utf8");
+  const codexDir = codexBin.includes(path.sep) ? path.dirname(codexBin) : "";
+  const hasPath = text.includes("<key>PATH</key>");
+  const hasCodexDir = !codexDir || text.includes(codexDir);
+  const hasCodexBin = text.includes("<key>GUARDIAN_CODEX_BIN</key>");
+  return {
+    name: "monitor launch environment",
+    ok: hasPath && hasCodexDir && hasCodexBin,
+    detail: hasPath && hasCodexDir && hasCodexBin
+      ? `${file} includes PATH and GUARDIAN_CODEX_BIN`
+      : `${file} should be repaired with relay-baton follow repair`
   };
 }

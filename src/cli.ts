@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDoctor, formatDoctor } from "./doctor.ts";
@@ -10,6 +11,9 @@ import { buildRecoveryPlan } from "./recovery.ts";
 import { writeRecoveryBundle } from "./bundle.ts";
 import { createHandoffRecovery } from "./handoff.ts";
 import { installMonitor, monitorStatus, startMonitor, stopMonitor, uninstallMonitor } from "./monitor.ts";
+import { defaultGuardianConfig } from "./config.ts";
+import { loadRecoveryState } from "./recoveryState.ts";
+import { evaluateHandoffMemory } from "./handoffQuality.ts";
 
 type ParsedArgs = {
   command: string;
@@ -26,6 +30,8 @@ export async function main(argv: string[]): Promise<void> {
   switch (parsed.command) {
     case "doctor":
       return doctorCommand(parsed);
+    case "status":
+      return statusCommand(parsed);
     case "install-hooks":
       return installHooksCommand(parsed);
     case "hook":
@@ -34,6 +40,8 @@ export async function main(argv: string[]): Promise<void> {
       return recoverCommand(parsed);
     case "pack":
       return packCommand(parsed);
+    case "audit":
+      return auditCommand(parsed);
     case "handoff":
       return handoffCommand(parsed);
     case "watch":
@@ -90,6 +98,24 @@ async function doctorCommand(parsed: ParsedArgs): Promise<void> {
     return;
   }
   console.log(formatDoctor(checks));
+}
+
+async function statusCommand(parsed: ParsedArgs): Promise<void> {
+  const home = stringFlag(parsed, "home");
+  const checks = runDoctor(home);
+  const status = {
+    ok: checks.every((check) => check.ok),
+    config: defaultGuardianConfig(home),
+    doctor: checks,
+    monitor: monitorStatus(home),
+    activity: loadActivityState(home),
+    recovery: loadRecoveryState(home)
+  };
+  if (parsed.flags.json) {
+    console.log(JSON.stringify(status, null, 2));
+    return;
+  }
+  console.log(formatStatus(status));
 }
 
 async function installHooksCommand(parsed: ParsedArgs): Promise<void> {
@@ -168,6 +194,26 @@ async function packCommand(parsed: ParsedArgs): Promise<void> {
     projectRoot: plan.cwd
   });
   console.log(dir);
+}
+
+async function auditCommand(parsed: ParsedArgs): Promise<void> {
+  const target = stringFlag(parsed, "bundle") || parsed.positional[0];
+  if (!target) throw new Error("Usage: relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]");
+  const memoryFile = resolveMemoryFile(target);
+  const memory = JSON.parse(fs.readFileSync(memoryFile, "utf8"));
+  const quality = evaluateHandoffMemory(memory);
+  if (parsed.flags.json) {
+    console.log(JSON.stringify({ memoryFile, quality }, null, 2));
+    return;
+  }
+  console.log([
+    `Memory file: ${memoryFile}`,
+    `Quality: ${quality.grade} (${quality.score}/100)`,
+    `OK: ${quality.ok ? "yes" : "no"}`,
+    `Recommendation: ${quality.recommendation}`,
+    quality.blockers.length > 0 ? `Blockers:\n${quality.blockers.map((item) => `- ${item}`).join("\n")}` : "",
+    quality.reasons.length > 0 ? `Reasons:\n${quality.reasons.map((item) => `- ${item}`).join("\n")}` : ""
+  ].filter(Boolean).join("\n"));
 }
 
 async function handoffCommand(parsed: ParsedArgs): Promise<void> {
@@ -266,6 +312,7 @@ async function monitorCommand(parsed: ParsedArgs): Promise<void> {
       home: stringFlag(parsed, "home"),
       nodeBin: process.execPath,
       guardianBin: guardianBinPath(),
+      codexBin: defaultGuardianConfig(stringFlag(parsed, "home")).codexBin,
       dryRun: Boolean(parsed.flags.dryRun)
     });
     if (parsed.flags.json) {
@@ -299,18 +346,52 @@ async function monitorCommand(parsed: ParsedArgs): Promise<void> {
 async function followCommand(parsed: ParsedArgs): Promise<void> {
   const action = parsed.positional[0] || "status";
   if (action === "install") {
+    const home = stringFlag(parsed, "home");
+    const config = defaultGuardianConfig(home);
     const hooks = installHooks({
-      home: stringFlag(parsed, "home"),
+      home,
       guardianBin: guardianBinPath(),
       dryRun: Boolean(parsed.flags.dryRun)
     });
     const monitor = installMonitor({
-      home: stringFlag(parsed, "home"),
+      home,
       nodeBin: process.execPath,
       guardianBin: guardianBinPath(),
+      codexBin: config.codexBin,
       dryRun: Boolean(parsed.flags.dryRun)
     });
     console.log(JSON.stringify({ hooks, monitor }, null, 2));
+    return;
+  }
+  if (action === "repair") {
+    const home = stringFlag(parsed, "home");
+    const config = defaultGuardianConfig(home);
+    const hooks = installHooks({
+      home,
+      guardianBin: guardianBinPath(),
+      dryRun: Boolean(parsed.flags.dryRun)
+    });
+    const monitor = installMonitor({
+      home,
+      nodeBin: process.execPath,
+      guardianBin: guardianBinPath(),
+      codexBin: config.codexBin,
+      dryRun: Boolean(parsed.flags.dryRun)
+    });
+    if (parsed.flags.dryRun) {
+      console.log(JSON.stringify({ hooks, monitor }, null, 2));
+      return;
+    }
+    const stopped = stopMonitor();
+    const started = startMonitor();
+    console.log(JSON.stringify({
+      codexBin: config.codexBin,
+      hooks,
+      monitor,
+      stopped,
+      started,
+      status: monitorStatus(home)
+    }, null, 2));
     return;
   }
   if (action === "start") {
@@ -393,6 +474,41 @@ function formatActivityState(state: ActivityState): string {
   return lines.join("\n");
 }
 
+function resolveMemoryFile(target: string): string {
+  const resolved = path.resolve(target);
+  if (!fs.existsSync(resolved)) throw new Error(`Bundle or memory file not found: ${target}`);
+  const stat = fs.statSync(resolved);
+  const memoryFile = stat.isDirectory() ? path.join(resolved, "HANDOFF_MEMORY.json") : resolved;
+  if (!fs.existsSync(memoryFile)) throw new Error(`HANDOFF_MEMORY.json not found: ${memoryFile}`);
+  return memoryFile;
+}
+
+function formatStatus(status: {
+  ok: boolean;
+  config: ReturnType<typeof defaultGuardianConfig>;
+  doctor: ReturnType<typeof runDoctor>;
+  monitor: ReturnType<typeof monitorStatus>;
+  activity: ActivityState;
+  recovery: ReturnType<typeof loadRecoveryState>;
+}): string {
+  const failed = status.doctor.filter((check) => !check.ok);
+  const activeThreads = Object.values(status.activity.threads)
+    .filter((thread) => thread.compactInFlight || thread.activeTurnStartedAt)
+    .length;
+  const recoveryThreads = Object.keys(status.recovery.threads).length;
+  return [
+    `Relay Baton status: ${status.ok && status.monitor.loaded ? "ok" : "needs attention"}`,
+    `codex: ${status.config.codexBin}`,
+    `monitor: ${status.monitor.loaded ? "running" : "stopped"} (${status.monitor.label})`,
+    `activity threads: ${Object.keys(status.activity.threads).length}, active: ${activeThreads}`,
+    `recovery-tracked threads: ${recoveryThreads}`,
+    failed.length > 0 ? `failed checks: ${failed.map((check) => check.name).join(", ")}` : "failed checks: none",
+    "",
+    "Doctor:",
+    formatDoctor(status.doctor)
+  ].join("\n");
+}
+
 function guardianBinPath(): string {
   const srcDir = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(srcDir, "../bin/relay-baton.js");
@@ -403,13 +519,15 @@ function helpText(): string {
 
 Usage:
   relay-baton doctor [--json] [--home <CODEX_HOME>]
+  relay-baton status [--json] [--home <CODEX_HOME>]
   relay-baton install-hooks [--dry-run] [--home <CODEX_HOME>]
   relay-baton hook --phase <event-name> [--thread <id>] [--snapshot]
   relay-baton watch [--auto] [--fork|--desktop] [--goal-mode] [--once] [--dry-run] [--home <CODEX_HOME>]
-  relay-baton follow install|status|start|stop [--dry-run] [--home <CODEX_HOME>]
+  relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
+  relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]
   relay-baton handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
   relay-baton recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
   relay-baton recover --last [--dry-run]

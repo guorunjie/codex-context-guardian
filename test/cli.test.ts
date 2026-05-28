@@ -46,3 +46,21 @@ test("parses monitor command flags", () => {
   assert.equal(parsed.flags.dryRun, true);
   assert.equal(parsed.flags.home, "/tmp/codex-home");
 });
+
+test("parses status command and follow repair", () => {
+  const status = parseArgs(["status", "--json"]);
+  assert.equal(status.command, "status");
+  assert.equal(status.flags.json, true);
+
+  const repair = parseArgs(["follow", "repair", "--dry-run"]);
+  assert.equal(repair.command, "follow");
+  assert.deepEqual(repair.positional, ["repair"]);
+  assert.equal(repair.flags.dryRun, true);
+});
+
+test("parses audit command", () => {
+  const parsed = parseArgs(["audit", "/tmp/bundle", "--json"]);
+  assert.equal(parsed.command, "audit");
+  assert.deepEqual(parsed.positional, ["/tmp/bundle"]);
+  assert.equal(parsed.flags.json, true);
+});

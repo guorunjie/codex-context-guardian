@@ -43,6 +43,7 @@ export type RecoveryStep = {
 
 export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
   const config = defaultGuardianConfig(options.home);
+  const codexBin = config.codexBin;
   const primaryModel = options.primaryModel || config.primaryModel;
   const fallbackModel = options.fallbackModel || config.fallbackModel;
   const thread = resolveThread(options);
@@ -69,14 +70,14 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
     const steps: RecoveryStep[] = [
       {
         name: "fallback-summary",
-        command: "codex",
+        command: codexBin,
         args: ["exec", "resume", "--model", fallbackModel, "--output-last-message", summaryFile, thread.id, fallbackPrompt],
         cwd,
         interactive: false
       },
       {
         name: "primary-resume",
-        command: "codex",
+        command: codexBin,
         args: ["resume", "--model", primaryModel, thread.id, prompt],
         cwd,
         interactive: true
@@ -98,7 +99,7 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
   if (strategy === "fork" && thread) {
     const steps: RecoveryStep[] = [{
       name: "primary-fork",
-      command: "codex",
+      command: codexBin,
       args: ["fork", "--model", primaryModel, thread.id, prompt],
       cwd,
       interactive: true
@@ -118,7 +119,7 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
 
   const steps: RecoveryStep[] = [{
     name: "new-session",
-    command: "codex",
+    command: codexBin,
     args: ["-C", cwd, "--model", primaryModel, prompt],
     cwd,
     interactive: true

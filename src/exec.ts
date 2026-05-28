@@ -31,6 +31,14 @@ export function commandExists(command: string): boolean {
   return result.status === 0 && result.stdout.trim().length > 0;
 }
 
+export function resolveCommand(command: string): string | null {
+  if (command.includes("/") && commandExists(command)) return command;
+  const result = runCommand("sh", ["-lc", `command -v ${shellQuote(command)}`], { timeoutMs: 3000 });
+  if (result.status !== 0) return null;
+  const resolved = result.stdout.trim().split(/\r?\n/)[0];
+  return resolved || null;
+}
+
 export function spawnInteractive(command: string, args: string[], options: {
   cwd?: string;
   detached?: boolean;

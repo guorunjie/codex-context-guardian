@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import { configPath, modelsCachePath } from "./paths.ts";
+import { resolveCommand } from "./exec.ts";
 
 export type GuardianConfig = {
+  codexBin: string;
   primaryModel: string;
   fallbackModel: string;
   pollIntervalMs: number;
@@ -24,6 +26,7 @@ export function readCodexPrimaryModel(home?: string): string {
 
 export function defaultGuardianConfig(home?: string): GuardianConfig {
   return {
+    codexBin: process.env.GUARDIAN_CODEX_BIN || resolveCommand("codex") || "codex",
     primaryModel: readCodexPrimaryModel(home),
     fallbackModel: process.env.GUARDIAN_FALLBACK_MODEL || "gpt-5.4",
     pollIntervalMs: numberFromEnv("GUARDIAN_POLL_MS", 5000),

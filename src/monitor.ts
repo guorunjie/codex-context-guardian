@@ -12,6 +12,8 @@ export type MonitorInstallResult = {
   plistPath: string;
   stdoutPath: string;
   stderrPath: string;
+  pathEnv?: string;
+  codexBin?: string;
   changed: boolean;
   plist: string;
   platform?: NodeJS.Platform;
@@ -34,11 +36,18 @@ export function buildMonitorPlist(options: {
   home?: string;
   nodeBin: string;
   guardianBin: string;
+  codexBin?: string;
+  pathEnv?: string;
 }): MonitorInstallResult {
   const home = options.home || codexHome();
   const logsDir = monitorLogsDir(home);
   const stdoutPath = path.join(logsDir, "monitor.out.log");
   const stderrPath = path.join(logsDir, "monitor.err.log");
+  const pathEnv = buildLaunchPath({
+    nodeBin: options.nodeBin,
+    codexBin: options.codexBin,
+    basePath: options.pathEnv || process.env.PATH || ""
+  });
   const args = [
     options.nodeBin,
     options.guardianBin,
@@ -71,6 +80,10 @@ ${args.map((arg) => `    <string>${escapeXml(arg)}</string>`).join("\n")}
   <dict>
     <key>CODEX_HOME</key>
     <string>${escapeXml(home)}</string>
+    <key>PATH</key>
+    <string>${escapeXml(pathEnv)}</string>
+    <key>GUARDIAN_CODEX_BIN</key>
+    <string>${escapeXml(options.codexBin || "codex")}</string>
   </dict>
 </dict>
 </plist>
@@ -80,6 +93,8 @@ ${args.map((arg) => `    <string>${escapeXml(arg)}</string>`).join("\n")}
     plistPath: monitorPlistPath(),
     stdoutPath,
     stderrPath,
+    pathEnv,
+    codexBin: options.codexBin,
     changed: true,
     plist,
     platform: "darwin"
@@ -90,11 +105,18 @@ export function buildWindowsMonitorScript(options: {
   home?: string;
   nodeBin: string;
   guardianBin: string;
+  codexBin?: string;
+  pathEnv?: string;
 }): MonitorInstallResult {
   const home = options.home || codexHome();
   const logsDir = monitorLogsDir(home);
   const stdoutPath = path.join(logsDir, "monitor.out.log");
   const stderrPath = path.join(logsDir, "monitor.err.log");
+  const pathEnv = buildLaunchPath({
+    nodeBin: options.nodeBin,
+    codexBin: options.codexBin,
+    basePath: options.pathEnv || process.env.PATH || ""
+  });
   const argument = [
     quoteWindowsArg(options.guardianBin),
     "watch",
@@ -104,7 +126,7 @@ export function buildWindowsMonitorScript(options: {
     "--home",
     quoteWindowsArg(home)
   ].join(" ");
-  const taskRun = `cmd.exe /d /c ${quoteWindowsArg(`${quoteWindowsArg(options.nodeBin)} ${argument} >> ${quoteWindowsArg(stdoutPath)} 2>> ${quoteWindowsArg(stderrPath)}`)}`;
+  const taskRun = `cmd.exe /d /c ${quoteWindowsArg(`set "PATH=${pathEnv}" && set "GUARDIAN_CODEX_BIN=${options.codexBin || "codex"}" && ${quoteWindowsArg(options.nodeBin)} ${argument} >> ${quoteWindowsArg(stdoutPath)} 2>> ${quoteWindowsArg(stderrPath)}`)}`;
   const script = `$ErrorActionPreference = "Stop"
 schtasks.exe /Create /TN ${psString(WINDOWS_TASK_NAME)} /SC MINUTE /MO 1 /TR ${psString(taskRun)} /F | Out-Null
 `;
@@ -113,6 +135,8 @@ schtasks.exe /Create /TN ${psString(WINDOWS_TASK_NAME)} /SC MINUTE /MO 1 /TR ${p
     plistPath: windowsScriptPath(home),
     stdoutPath,
     stderrPath,
+    pathEnv,
+    codexBin: options.codexBin,
     changed: true,
     plist: script,
     platform: "win32"
@@ -123,6 +147,7 @@ export function installMonitor(options: {
   home?: string;
   nodeBin: string;
   guardianBin: string;
+  codexBin?: string;
   dryRun?: boolean;
 }): MonitorInstallResult {
   if (process.platform === "win32") return installWindowsMonitor(options);
@@ -202,6 +227,7 @@ function installWindowsMonitor(options: {
   home?: string;
   nodeBin: string;
   guardianBin: string;
+  codexBin?: string;
   dryRun?: boolean;
 }): MonitorInstallResult {
   const result = buildWindowsMonitorScript(options);
@@ -285,6 +311,33 @@ function escapeXml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll("\"", "&quot;")
     .replaceAll("'", "&apos;");
+}
+
+function buildLaunchPath(options: {
+  nodeBin: string;
+  codexBin?: string;
+  basePath: string;
+}): string {
+  const candidates = [
+    path.dirname(options.nodeBin),
+    options.codexBin && options.codexBin.includes(path.sep) ? path.dirname(options.codexBin) : "",
+    "/opt/homebrew/bin",
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/usr/sbin",
+    "/sbin",
+    ...options.basePath.split(path.delimiter)
+  ];
+  const seen = new Set<string>();
+  return candidates
+    .filter(Boolean)
+    .filter((entry) => {
+      if (seen.has(entry)) return false;
+      seen.add(entry);
+      return true;
+    })
+    .join(path.delimiter);
 }
 
 function firstLines(text: string, count: number): string {
