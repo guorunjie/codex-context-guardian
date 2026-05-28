@@ -3,7 +3,7 @@
 This audit is the source of truth for deciding whether Relay Baton is ready to call itself v1.0.
 
 Date: 2026-05-28
-Current package version: 0.8.7
+Current package version: 1.0.0
 Target package version: 1.0.0
 
 ## Launch Definition
@@ -14,8 +14,8 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 
 | Area | v1.0 requirement | Current evidence | Status | Evidence still required |
 | --- | --- | --- | --- | --- |
-| GitHub distribution | Public repository, release assets, checksums, install docs, CI badge. | Repository `guorunjie/codex-relay-baton-guardian`, v0.8.x GitHub Releases, tarball assets, README install commands, CI matrix, manual host-validation workflow. | Mostly ready | Cut final `v1.0.0` release after all other rows are complete. |
-| npm distribution | `npm install -g codex-relay-baton-guardian` works on a clean machine. | Publish workflow exists; CI runs `npm publish --dry-run --json`; package name and bin paths are npm-safe. | Not complete | Maintainer must configure `NPM_TOKEN` or run `npm adduser`, publish, then verify `npm view codex-relay-baton-guardian version`. |
+| GitHub distribution | Public repository, release assets, checksums, install docs, CI badge. | Repository `guorunjie/codex-relay-baton-guardian`, v0.8.x GitHub Releases, tarball assets, README install commands, CI matrix, manual host-validation workflow. | Ready for final release | Cut final `v1.0.0` release after CI passes on this commit. |
+| npm distribution | `npm install -g codex-relay-baton-guardian` works on a clean machine. | `0.8.7` is published to npm; publish workflow exists with `NPM_TOKEN`; CI runs `npm publish --dry-run --json`; package name and bin paths are npm-safe. | Ready for final release | Publish `1.0.0`, then verify `npm view codex-relay-baton-guardian@1.0.0 version`. |
 | Local install from GitHub | GitHub install path works without TypeScript source stripping issues. | Package uses built `dist/` output, `files` whitelist, and packed CLI smoke tests. | Ready | Re-run smoke test from the final GitHub release tarball. |
 | macOS monitor | LaunchAgent install/start/status works and monitor can see Codex. | This Mac reports `com.relay-baton.monitor` loaded and running; `docs/validation-reports/macos/VALIDATION_REPORT.json` is attached and redacted. | Ready | Re-run validation on the final v1.0 tag. |
 | Linux monitor | systemd user service can be installed, started, inspected, stopped, and repaired. | Linux CI covers CLI/build/package smoke; `docs/validation-reports/linux/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the systemd user service in the Host Validation workflow. | Ready | Re-run validation on the final v1.0 tag. |
@@ -31,8 +31,9 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 
 ## v1.0 Blockers
 
-1. npm package is not published.
-2. Final `relay-baton release check --v1 --online` has not passed.
+1. Publish `codex-relay-baton-guardian@1.0.0` to npm.
+2. Create the `v1.0.0` GitHub Release with tarball and checksum.
+3. Run final `relay-baton release check --v1 --online` and confirm it passes.
 
 ## v1.0 Release Gate
 

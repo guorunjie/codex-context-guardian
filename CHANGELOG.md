@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0 - 2026-05-29
+
+- Promoted Relay Baton to the stable v1.0 release line after the `0.8.7` npm publication validated the registry install path.
+- Kept the v1 surface focused on fork-first recovery, structured handoff memory, duplicate relay prevention, host validation, and auditable release gates.
+- Published with GitHub Release assets, npm distribution, cross-platform CI, and strict `release check --v1 --online` evidence.
+
 ## 0.8.7 - 2026-05-28
 
 - Increased online release-check GitHub command timeouts so slow `gh release view` and `gh run list --workflow CI` calls do not produce false missing-release or missing-CI failures.
