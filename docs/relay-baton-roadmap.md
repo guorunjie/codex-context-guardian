@@ -70,16 +70,18 @@ Relay Baton now uses hooks first and polling second:
 - Desktop users can run `relay-baton handoff --desktop --goal-mode` to create a visible continuation.
 - The Desktop prompt reads the bundle first, applies the recovered active goal, and starts the first turn when requested.
 
-## macOS And Windows Coverage
+## macOS, Linux, And Windows Coverage
 
 - macOS monitor uses LaunchAgent.
+- Linux monitor uses a systemd user service.
 - Windows monitor generates and installs a Task Scheduler script through PowerShell/schtasks.
-- The core recovery commands are Node.js and Codex CLI based, so they remain portable across both environments where Codex CLI is installed.
+- The core recovery commands are Node.js and Codex CLI based, so they remain portable where Codex CLI is installed.
+- CI runs tests, build, package dry-run, and packed CLI smoke on Linux, macOS, and Windows.
 
 ## Next Iterations
 
 - Add a first-class `PROJECT_MEMORY.md` layer for stable repo decisions that should survive many relays.
-- Add a `relay-baton audit <bundle>` command that scores an existing bundle without creating a handoff.
 - Add optional Desktop naming cleanup to mark blocked/incorrect relay samples as superseded automatically.
 - Add richer rollout event extraction for tests, long-running shell sessions, and final answer summaries.
 - Add upstream Codex integration notes for surfacing recovery choices directly in the CLI/TUI.
+- Add real-host monitor lifecycle validation on Linux and Windows.

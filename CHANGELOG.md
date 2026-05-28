@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 - 2026-05-28
+
+- Added a Linux, macOS, and Windows CI matrix for tests, build, package dry-run, and packed CLI smoke tests.
+- Made the test script shell-independent by relying on Node's test discovery.
+- Desktop remote-control startup now uses the resolved Codex binary, including `GUARDIAN_CODEX_BIN`, instead of assuming `codex` is on the service PATH.
+
 ## 0.4.0 - 2026-05-28
 
 - Added Linux systemd user service generation for the background monitor.

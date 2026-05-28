@@ -27,18 +27,21 @@
 - Added per-source Desktop handoff reuse by default, with `--force` reserved for deliberate replacement, to avoid parallel misleading handoff threads.
 - Changed watcher auto-recovery to try fallback-model recovery twice per source thread, then create one best relay. The default is now fork-first; Desktop and CLI new-session are configurable destinations.
 - Added fork handoff state so the monitor does not create duplicate branch continuations for the same source thread.
-- Added `relay-baton monitor install|uninstall|status|start|stop` for macOS LaunchAgent and Windows Task Scheduler background monitoring.
+- Added `relay-baton monitor install|uninstall|status|start|stop` for macOS LaunchAgent, Linux systemd user service, and Windows Task Scheduler background monitoring.
 - Shifted watcher behavior so repeated recovery attempts move toward fresh session instead of repeated compact retries.
 - Implemented watcher with cooldown and per-thread retry limits.
-- Added unit tests for classifier, recovery strategy, hooks, snapshots, and CLI parsing.
+- Added `relay-baton audit` and `relay-baton demo` for recovery-bundle scoring and public smoke testing.
+- Added unit tests for classifier, recovery strategy, hooks, snapshots, CLI parsing, audit quality, demo bundles, and monitor service generation.
+- Added GitHub Actions CI matrix for Linux, macOS, and Windows.
 
 ## Next
 
 - Add structured event ingestion if Codex exposes stable compaction failure events.
 - Add a small terminal dashboard showing watched thread, last failure, and recovery attempts.
 - Add optional desktop notification integration.
-- Add `relay-baton audit <bundle>` to evaluate an existing bundle before creating any visible handoff.
 - Add an upstream PR against `openai/codex` once the standalone behavior is validated locally.
+- Validate Linux and Windows monitor lifecycle on real hosts.
+- Publish `codex-relay-baton-guardian` to npm after maintainer authentication.
 
 ## Open Questions
 

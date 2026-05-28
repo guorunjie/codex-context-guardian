@@ -242,4 +242,4 @@ See [docs/relay-baton-roadmap.md](docs/relay-baton-roadmap.md) for the productiz
 
 See [docs/monitor-trigger-evaluation.md](docs/monitor-trigger-evaluation.md) for the monitoring trigger evaluation and chosen hybrid design.
 
-See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch plan, [docs/architecture.md](docs/architecture.md) for the recovery flow, [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md) for a concrete stuck-thread scenario, and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.
+See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch gates, [docs/architecture.md](docs/architecture.md) for the recovery flow, [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md) for a concrete stuck-thread scenario, and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.

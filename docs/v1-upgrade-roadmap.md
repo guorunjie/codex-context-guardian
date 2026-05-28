@@ -6,9 +6,10 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 
 - Public GitHub repository: `guorunjie/codex-relay-baton-guardian`.
 - GitHub install works through `npm install -g github:guorunjie/codex-relay-baton-guardian`.
-- CI, Release, MIT license, built `dist/` package, and structured recovery bundles exist.
-- macOS LaunchAgent, lifecycle hooks, compact-stall detection, fallback attempts, fork-first recovery, and Desktop handoff quality gates exist.
+- CI, Release, MIT license, built `dist/` package, structured recovery bundles, demo/audit commands, and open-source templates exist.
+- macOS LaunchAgent, Linux systemd service generation, Windows Task Scheduler script generation, lifecycle hooks, compact-stall detection, fallback attempts, fork-first recovery, and Desktop handoff quality gates exist.
 - npm registry publishing is prepared but not complete until an authenticated maintainer runs `npm publish`.
+- Local validation on this Mac reports the monitor running and `relay-baton status` ok.
 
 ## v1.0 Launch Gates
 
@@ -65,6 +66,9 @@ Status: partially complete in v0.3.0. `audit` now validates schema and exits non
 - Add docs/case-study-codex-compact-failure.md.
 - Add docs/architecture.md with Hooks -> Activity State -> Recovery Ladder -> Fork/Desktop.
 - Add comparison table in README linking to `docs/competitive-analysis.md`.
+- Add macOS/Linux/Windows CI matrix for tests, build, packed CLI smoke, and demo/audit smoke.
+
+Status: partially complete in v0.5.0. Architecture, case study, competitive analysis, demo/audit commands, and cross-platform CI matrix are present. Remaining work is visual demo media and a real-world case study recorded from an actual stuck recovery.
 
 ### v0.8 Cross-Platform Hardening
 
@@ -73,7 +77,16 @@ Status: partially complete in v0.3.0. `audit` now validates schema and exits non
 - Add CI matrix for macOS, Linux, and Windows where feasible.
 - Add uninstall and repair smoke tests for monitor service generation.
 
-Status: partially complete after v0.3. Linux systemd user service generation is implemented; real Linux/Windows host validation and CI matrix remain.
+Status: partially complete after v0.5. Linux systemd user service generation and CI matrix are implemented; real Linux/Windows host validation and service lifecycle tests remain.
+
+### v0.9 Distribution Hardening
+
+- Add release checklist automation for version, changelog, tag, tarball, checksum, and GitHub Release notes.
+- Add clean-machine install verification from GitHub tarball.
+- Add npm publish dry-run documentation and provenance notes.
+- Add support matrix covering macOS, Linux, Windows, Codex CLI versions, and Node versions.
+
+Status: pending. npm package name is available, but npm publication is blocked until the maintainer logs in.
 
 ### v1.0 Stable Launch
 
@@ -103,3 +116,14 @@ relay-baton doctor
 relay-baton follow install
 relay-baton status
 ```
+
+## Remaining v1.0 Gaps
+
+| Gate | Current Status | Required Before v1.0 |
+| --- | --- | --- |
+| Install | GitHub install path exists; npm package is not published. | Publish `codex-relay-baton-guardian` to npm and verify global install on a clean machine. |
+| Recovery correctness | Bundle schema, quality gate, duplicate prevention, and fork-first ladder exist. | Run one end-to-end recovery drill from a real compact-failed Codex thread and document the result. |
+| Cross-platform | macOS verified locally; Linux/Windows service files generated; CI matrix added. | Validate monitor install/start/status/stop on real Linux and Windows hosts. |
+| Public trust | README, license, changelog, issue templates, architecture, case study stub, and competitive analysis exist. | Add GIF/screenshots, troubleshooting examples, and a real case study with redacted evidence. |
+| Operability | `status`, `doctor`, `follow repair`, and monitor logs exist. | Add clearer recovery-state explanations for cooldown, blocked duplicate relay, and last failure source. |
+| API stability | Core CLI commands exist. | Freeze command names/options and document compatibility promises for v1.0. |

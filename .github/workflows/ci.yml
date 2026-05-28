@@ -8,24 +8,41 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 26
           cache: npm
+      - name: Install SQLite on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3
+      - name: Install SQLite on macOS
+        if: runner.os == 'macOS'
+        run: command -v sqlite3 || brew install sqlite
+      - name: Install SQLite on Windows
+        if: runner.os == 'Windows'
+        run: choco install sqlite -y --no-progress
       - run: npm ci
       - run: npm test
       - run: npm run build
       - run: npm pack --dry-run
       - name: Smoke test packed CLI
+        shell: bash
         run: |
           set -euo pipefail
           TARBALL="$(npm pack --silent)"
           TEST_DIR="$(mktemp -d)"
           npm install --prefix "$TEST_DIR" "$PWD/$TARBALL"
-          "$TEST_DIR/node_modules/.bin/relay-baton" --help
+          node "$TEST_DIR/node_modules/codex-relay-baton-guardian/bin/relay-baton.js" --help
           DEMO_DIR="$(mktemp -d)"
-          "$TEST_DIR/node_modules/.bin/relay-baton" demo --output "$DEMO_DIR" --json
-          "$TEST_DIR/node_modules/.bin/relay-baton" audit "$DEMO_DIR" --json
+          node "$TEST_DIR/node_modules/codex-relay-baton-guardian/bin/relay-baton.js" demo --output "$DEMO_DIR" --json
+          node "$TEST_DIR/node_modules/codex-relay-baton-guardian/bin/relay-baton.js" audit "$DEMO_DIR" --json

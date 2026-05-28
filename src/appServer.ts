@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import net from "node:net";
 import path from "node:path";
+import { defaultGuardianConfig } from "./config.ts";
 import { runCommand } from "./exec.ts";
+
+const APP_CLIENT_VERSION = "0.5.0";
 
 export type DesktopHandoffOptions = {
   home?: string;
@@ -44,7 +47,7 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
       clientInfo: {
         name: "relay-baton",
         title: "Relay Baton",
-        version: "0.4.0"
+        version: APP_CLIENT_VERSION
       },
       capabilities: {
         experimentalApi: true,
@@ -151,7 +154,7 @@ export async function setDesktopThreadTitle(options: {
       clientInfo: {
         name: "relay-baton",
         title: "Relay Baton",
-        version: "0.4.0"
+        version: APP_CLIENT_VERSION
       },
       capabilities: {
         experimentalApi: true,
@@ -198,7 +201,7 @@ export function defaultGoalObjective(input: {
 }
 
 function ensureRemoteControlSocket(home?: string): string {
-  const result = runCommand("codex", ["remote-control", "start", "--json"], {
+  const result = runCommand(defaultGuardianConfig(home).codexBin, ["remote-control", "start", "--json"], {
     timeoutMs: 30_000
   });
   if (result.status !== 0) {
