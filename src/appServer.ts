@@ -4,7 +4,7 @@ import path from "node:path";
 import { defaultGuardianConfig } from "./config.ts";
 import { runCommand } from "./exec.ts";
 
-const APP_CLIENT_VERSION = "0.8.0";
+const APP_CLIENT_VERSION = "0.8.1";
 
 export type DesktopHandoffOptions = {
   home?: string;

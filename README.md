@@ -216,6 +216,7 @@ Generate a host validation report:
 
 ```bash
 relay-baton validate host --output ./relay-baton-validation
+relay-baton validate host --strict-release --output ./relay-baton-validation
 ```
 
 ## Configuration

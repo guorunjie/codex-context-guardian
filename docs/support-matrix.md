@@ -37,6 +37,13 @@ relay-baton follow start
 relay-baton validate host --output ./relay-baton-validation
 ```
 
+By default, the report treats source-release checks as advisory so installed tarballs can validate host health without repository-only files. Use `--strict-release` or `--online` when validating a release checkout:
+
+```bash
+relay-baton validate host --strict-release --output ./relay-baton-validation
+relay-baton validate host --online --output ./relay-baton-validation
+```
+
 The report writes:
 
 - `VALIDATION_REPORT.json` for automated checks;

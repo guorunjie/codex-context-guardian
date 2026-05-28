@@ -475,7 +475,8 @@ async function validateCommand(parsed: ParsedArgs): Promise<void> {
   const report = buildHostValidationReport({
     home: stringFlag(parsed, "home"),
     root: stringFlag(parsed, "root") || process.cwd(),
-    online: Boolean(parsed.flags.online)
+    online: Boolean(parsed.flags.online),
+    strictRelease: Boolean(parsed.flags.strictRelease)
   });
   const outputDir = stringFlag(parsed, "output");
   if (outputDir) {
@@ -598,7 +599,7 @@ Usage:
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]
   relay-baton release check [--online] [--json] [--root <repo>]
-  relay-baton validate host [--online] [--json] [--output <dir>] [--root <repo>] [--home <CODEX_HOME>]
+  relay-baton validate host [--online] [--strict-release] [--json] [--output <dir>] [--root <repo>] [--home <CODEX_HOME>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
   relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]
   relay-baton demo [--output <dir>] [--json] [--home <CODEX_HOME>]

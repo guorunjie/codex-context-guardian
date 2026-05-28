@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1 - 2026-05-28
+
+- Changed `relay-baton validate host` so host health and source-release readiness are separated.
+- Release gate failures are advisory for host validation unless `--online` or `--strict-release` is used.
+- This keeps installed npm/GitHub tarballs from failing host validation merely because repository-only files such as `.github/` or `package-lock.json` are absent.
+
 ## 0.8.0 - 2026-05-28
 
 - Added `relay-baton validate host` to generate machine-readable and human-readable host validation reports.

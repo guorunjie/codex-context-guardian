@@ -24,6 +24,7 @@ export type HostValidationReport = {
     monitorInstalled: boolean;
     monitorLoaded: boolean;
     releaseOk: boolean;
+    releaseRequired: boolean;
     activityThreads: number;
     recoveryThreads: number;
   };
@@ -46,6 +47,7 @@ export function buildHostValidationReport(options: {
   home?: string;
   root?: string;
   online?: boolean;
+  strictRelease?: boolean;
   generatedAt?: string;
   doctor?: Check[];
   monitor?: MonitorStatus;
@@ -61,15 +63,17 @@ export function buildHostValidationReport(options: {
   const activity = options.activity || loadActivityState(home);
   const recovery = options.recovery || loadRecoveryState(home);
   const doctorOk = doctor.every((check) => check.ok);
+  const releaseRequired = options.online === true || options.strictRelease === true;
   const activeThreadCount = Object.values(activity.threads)
     .filter((thread) => thread.compactInFlight || thread.activeTurnStartedAt)
     .length;
   const summary = {
-    ok: doctorOk && monitor.installed && monitor.loaded && release.ok,
+    ok: doctorOk && monitor.installed && monitor.loaded && (!releaseRequired || release.ok),
     doctorOk,
     monitorInstalled: monitor.installed,
     monitorLoaded: monitor.loaded,
     releaseOk: release.ok,
+    releaseRequired,
     activityThreads: Object.keys(activity.threads).length,
     recoveryThreads: Object.keys(recovery.threads).length
   };
@@ -117,7 +121,7 @@ export function renderHostValidationReport(report: HostValidationReport): string
     `- doctor: ${report.summary.doctorOk ? "ok" : "failed"}`,
     `- monitor installed: ${report.summary.monitorInstalled ? "yes" : "no"}`,
     `- monitor loaded: ${report.summary.monitorLoaded ? "yes" : "no"}`,
-    `- release gate: ${report.summary.releaseOk ? "ok" : "failed"}`,
+    `- release gate: ${report.summary.releaseOk ? "ok" : "failed"}${report.summary.releaseRequired ? " (required)" : " (advisory)"}`,
     `- activity threads: ${report.summary.activityThreads}`,
     `- recovery threads: ${report.summary.recoveryThreads}`,
     "",
@@ -179,6 +183,6 @@ function nextActions(
   }
   if (!summary.monitorInstalled) actions.push("Run relay-baton follow install to install the monitor.");
   if (summary.monitorInstalled && !summary.monitorLoaded) actions.push("Run relay-baton follow start or relay-baton follow repair to start the monitor.");
-  if (!summary.releaseOk) actions.push(...release.nextActions);
+  if (summary.releaseRequired && !summary.releaseOk) actions.push(...release.nextActions);
   return [...new Set(actions)];
 }

@@ -58,6 +58,7 @@ test("builds host validation report from supplied evidence", () => {
   });
 
   assert.equal(report.summary.ok, true);
+  assert.equal(report.summary.releaseRequired, false);
   assert.equal(report.summary.activityThreads, 1);
   assert.equal(report.activity.activeThreadCount, 1);
   assert.equal(report.recovery.threadCount, 1);
@@ -93,4 +94,32 @@ test("writes host validation report files", () => {
   assert.equal(fs.existsSync(written.jsonFile), true);
   assert.equal(fs.existsSync(written.markdownFile), true);
   assert.match(fs.readFileSync(written.markdownFile, "utf8"), /Next Actions/);
+});
+
+test("host validation treats release gate as advisory unless required", () => {
+  const base = {
+    doctor: [{ name: "codex cli", ok: true, detail: "ok" }],
+    monitor: {
+      label: "monitor",
+      plistPath: "/tmp/monitor",
+      installed: true,
+      loaded: true,
+      detail: "running",
+      recoveryStatePath: "/tmp/recovery"
+    },
+    release: {
+      ok: false,
+      packageName: "codex-relay-baton-guardian",
+      version: "1.0.0",
+      tag: "v1.0.0",
+      online: false,
+      checks: [],
+      nextActions: ["Fix release gate."]
+    },
+    activity: { schemaVersion: 1 as const, updatedAt: 0, threads: {} },
+    recovery: { lastSeenLogId: 0, threads: {} }
+  };
+
+  assert.equal(buildHostValidationReport(base).summary.ok, true);
+  assert.equal(buildHostValidationReport({ ...base, strictRelease: true }).summary.ok, false);
 });
