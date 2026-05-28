@@ -2,6 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { runCommand, type CommandResult } from "./exec.ts";
 
+const ONLINE_GITHUB_TIMEOUT_MS = 60_000;
+const ONLINE_NPM_TIMEOUT_MS = 30_000;
+
 export type ReleaseCheckStatus = "pass" | "fail" | "warn";
 
 export type ReleaseCheck = {
@@ -150,11 +153,11 @@ function addOnlineChecks(
   const head = runner("git", ["rev-parse", "HEAD"], { cwd: root, timeoutMs: 5000 });
   const headSha = head.status === 0 ? head.stdout.trim() : "";
 
-  const ghRelease = runner("gh", ["release", "view", tag, "--json", "tagName,targetCommitish,url"], { cwd: root, timeoutMs: 15_000 });
-  add(checks, "GitHub release", ghRelease.status === 0, ghRelease.status === 0 ? `${tag} exists` : `missing ${tag}`);
+  const ghRelease = runner("gh", ["release", "view", tag, "--json", "tagName,targetCommitish,url"], { cwd: root, timeoutMs: ONLINE_GITHUB_TIMEOUT_MS });
+  add(checks, "GitHub release", ghRelease.status === 0, ghRelease.status === 0 ? `${tag} exists` : commandFailureDetail(ghRelease, `missing ${tag}`));
 
-  const ci = runner("gh", ["run", "list", "--workflow", "CI", "--limit", "1", "--json", "headSha,conclusion,status"], { cwd: root, timeoutMs: 15_000 });
-  let ciDetail = "unable to inspect latest CI";
+  const ci = runner("gh", ["run", "list", "--workflow", "CI", "--limit", "1", "--json", "headSha,conclusion,status"], { cwd: root, timeoutMs: ONLINE_GITHUB_TIMEOUT_MS });
+  let ciDetail = commandFailureDetail(ci, "unable to inspect latest CI");
   let ciOk = false;
   if (ci.status === 0) {
     try {
@@ -168,12 +171,12 @@ function addOnlineChecks(
   }
   add(checks, "latest GitHub CI", ciOk, ciDetail);
 
-  const npmAuth = runner("npm", ["whoami"], { cwd: root, timeoutMs: 15_000 });
+  const npmAuth = runner("npm", ["whoami"], { cwd: root, timeoutMs: ONLINE_NPM_TIMEOUT_MS });
   add(checks, "npm auth", npmAuth.status === 0, npmAuth.status === 0 ? `logged in as ${npmAuth.stdout.trim()}` : "not logged in; run npm adduser");
 
-  const npmPackage = runner("npm", ["view", `${packageName}@${version}`, "version"], { cwd: root, timeoutMs: 15_000 });
+  const npmPackage = runner("npm", ["view", `${packageName}@${version}`, "version"], { cwd: root, timeoutMs: ONLINE_NPM_TIMEOUT_MS });
   add(checks, "npm package version", npmPackage.status === 0 && npmPackage.stdout.trim() === version,
-    npmPackage.status === 0 ? `registry version ${npmPackage.stdout.trim()}` : `${packageName}@${version} not published`);
+    npmPackage.status === 0 ? `registry version ${npmPackage.stdout.trim()}` : commandFailureDetail(npmPackage, `${packageName}@${version} not published`));
 }
 
 function addV1Checks(checks: ReleaseCheck[], root: string, online: boolean): void {
@@ -231,6 +234,11 @@ function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
 
 function add(checks: ReleaseCheck[], name: string, ok: boolean, detail: string): void {
   checks.push({ name, status: ok ? "pass" : "fail", detail });
+}
+
+function commandFailureDetail(result: CommandResult, fallback: string): string {
+  const detail = (result.stderr || result.stdout).trim();
+  return detail || fallback;
 }
 
 function label(status: ReleaseCheckStatus): string {

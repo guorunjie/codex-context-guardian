@@ -3,7 +3,7 @@
 This audit is the source of truth for deciding whether Relay Baton is ready to call itself v1.0.
 
 Date: 2026-05-28
-Current package version: 0.8.6
+Current package version: 0.8.7
 Target package version: 1.0.0
 
 ## Launch Definition

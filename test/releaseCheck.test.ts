@@ -43,6 +43,7 @@ test("online release readiness surfaces npm publication blockers", () => {
 test("online release readiness inspects the CI workflow instead of the latest manual run", () => {
   const root = makeReleaseFixture("1.2.3");
   const calls: string[] = [];
+  const timeouts: number[] = [];
   const runner = fakeOnlineRunner({
     npmAuth: true,
     npmPublished: true
@@ -52,12 +53,35 @@ test("online release readiness inspects the CI workflow instead of the latest ma
     online: true,
     runner: (command, args = [], options) => {
       calls.push([command, ...args].join(" "));
+      if (options?.timeoutMs) timeouts.push(options.timeoutMs);
       return runner(command, args, options);
     }
   });
 
   assert.equal(readiness.checks.find((check) => check.name === "latest GitHub CI")?.status, "pass");
   assert.ok(calls.includes("gh run list --workflow CI --limit 1 --json headSha,conclusion,status"));
+  assert.ok(timeouts.some((timeout) => timeout >= 60_000));
+});
+
+test("online release readiness includes command failure details", () => {
+  const root = makeReleaseFixture("1.2.3");
+  const readiness = evaluateReleaseReadiness({
+    root,
+    online: true,
+    runner: (command, args = [], options) => {
+      const joined = [command, ...args].join(" ");
+      if (joined === "git status --short") return { status: 0, stdout: "", stderr: "" };
+      if (joined === "git rev-parse HEAD") return { status: 0, stdout: "abc123\n", stderr: "" };
+      if (joined.startsWith("gh release view")) return { status: 1, stdout: "", stderr: "network timeout" };
+      if (joined.startsWith("gh run list")) return { status: 1, stdout: "", stderr: "proxy denied" };
+      if (joined === "npm whoami") return { status: 0, stdout: "maintainer\n", stderr: "" };
+      if (joined.startsWith("npm view")) return { status: 1, stdout: "", stderr: "E404" };
+      return cleanGitRunner(command, args, options);
+    }
+  });
+
+  assert.match(readiness.checks.find((check) => check.name === "GitHub release")?.detail || "", /network timeout/);
+  assert.match(readiness.checks.find((check) => check.name === "latest GitHub CI")?.detail || "", /proxy denied/);
 });
 
 test("v1 release readiness surfaces evidence blockers", () => {
