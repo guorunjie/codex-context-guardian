@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildMonitorPlist, buildWindowsMonitorScript } from "../src/monitor.ts";
+import { buildLinuxMonitorService, buildMonitorPlist, buildWindowsMonitorScript } from "../src/monitor.ts";
 
 test("builds LaunchAgent plist for fork-first auto monitor", () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-monitor-home-"));
@@ -45,4 +45,25 @@ test("builds Windows scheduled task script for fork-first auto monitor", () => {
   assert.match(result.plist, /monitor\.out\.log/);
   assert.match(result.plist, /monitor\.err\.log/);
   assert.match(result.plist, /GUARDIAN_CODEX_BIN/);
+});
+
+test("builds Linux systemd user service for fork-first auto monitor", () => {
+  const home = "/home/me/.codex";
+  const result = buildLinuxMonitorService({
+    home,
+    nodeBin: "/usr/bin/node",
+    guardianBin: "/home/me/bin/relay-baton.js",
+    codexBin: "/home/linuxbrew/.linuxbrew/bin/codex",
+    pathEnv: "/usr/bin:/bin"
+  });
+
+  assert.equal(result.label, "relay-baton-monitor.service");
+  assert.match(result.plist, /\[Unit\]/);
+  assert.match(result.plist, /ExecStart=\/usr\/bin\/node/);
+  assert.match(result.plist, /--fork/);
+  assert.match(result.plist, /--goal-mode/);
+  assert.match(result.plist, /Environment="PATH=/);
+  assert.match(result.plist, /GUARDIAN_CODEX_BIN=\/home\/linuxbrew\/\.linuxbrew\/bin\/codex/);
+  assert.match(result.plist, /StandardOutput=append:/);
+  assert.match(result.plist, /StandardError=append:/);
 });

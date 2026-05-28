@@ -73,6 +73,8 @@ Status: partially complete in v0.3.0. `audit` now validates schema and exits non
 - Add CI matrix for macOS, Linux, and Windows where feasible.
 - Add uninstall and repair smoke tests for monitor service generation.
 
+Status: partially complete after v0.3. Linux systemd user service generation is implemented; real Linux/Windows host validation and CI matrix remain.
+
 ### v1.0 Stable Launch
 
 - Publish npm package.

@@ -6,6 +6,7 @@ import { runCommand } from "./exec.ts";
 
 export const MONITOR_LABEL = "com.relay-baton.monitor";
 export const WINDOWS_TASK_NAME = "RelayBatonMonitor";
+export const LINUX_SERVICE_NAME = "relay-baton-monitor.service";
 
 export type MonitorInstallResult = {
   label: string;
@@ -30,6 +31,10 @@ export type MonitorStatus = {
 
 export function monitorPlistPath(): string {
   return path.join(os.homedir(), "Library", "LaunchAgents", `${MONITOR_LABEL}.plist`);
+}
+
+export function linuxServicePath(): string {
+  return path.join(os.homedir(), ".config", "systemd", "user", LINUX_SERVICE_NAME);
 }
 
 export function buildMonitorPlist(options: {
@@ -143,6 +148,62 @@ schtasks.exe /Create /TN ${psString(WINDOWS_TASK_NAME)} /SC MINUTE /MO 1 /TR ${p
   };
 }
 
+export function buildLinuxMonitorService(options: {
+  home?: string;
+  nodeBin: string;
+  guardianBin: string;
+  codexBin?: string;
+  pathEnv?: string;
+}): MonitorInstallResult {
+  const home = options.home || codexHome();
+  const logsDir = monitorLogsDir(home);
+  const stdoutPath = path.join(logsDir, "monitor.out.log");
+  const stderrPath = path.join(logsDir, "monitor.err.log");
+  const pathEnv = buildLaunchPath({
+    nodeBin: options.nodeBin,
+    codexBin: options.codexBin,
+    basePath: options.pathEnv || process.env.PATH || ""
+  });
+  const args = [
+    options.guardianBin,
+    "watch",
+    "--auto",
+    "--fork",
+    "--goal-mode",
+    "--home",
+    home
+  ];
+  const service = `[Unit]
+Description=Relay Baton Codex recovery monitor
+After=default.target
+
+[Service]
+Type=simple
+Environment="CODEX_HOME=${systemdEscape(home)}"
+Environment="PATH=${systemdEscape(pathEnv)}"
+Environment="GUARDIAN_CODEX_BIN=${systemdEscape(options.codexBin || "codex")}"
+ExecStart=${systemdQuote(options.nodeBin)} ${args.map(systemdQuote).join(" ")}
+Restart=always
+RestartSec=5
+StandardOutput=append:${stdoutPath}
+StandardError=append:${stderrPath}
+
+[Install]
+WantedBy=default.target
+`;
+  return {
+    label: LINUX_SERVICE_NAME,
+    plistPath: linuxServicePath(),
+    stdoutPath,
+    stderrPath,
+    pathEnv,
+    codexBin: options.codexBin,
+    changed: true,
+    plist: service,
+    platform: "linux"
+  };
+}
+
 export function installMonitor(options: {
   home?: string;
   nodeBin: string;
@@ -151,6 +212,7 @@ export function installMonitor(options: {
   dryRun?: boolean;
 }): MonitorInstallResult {
   if (process.platform === "win32") return installWindowsMonitor(options);
+  if (process.platform === "linux") return installLinuxMonitor(options);
   const result = buildMonitorPlist(options);
   const existing = fs.existsSync(result.plistPath) ? fs.readFileSync(result.plistPath, "utf8") : "";
   result.changed = existing !== result.plist;
@@ -163,6 +225,7 @@ export function installMonitor(options: {
 
 export function uninstallMonitor(): { label: string; plistPath: string; removed: boolean; stopDetail: string } {
   if (process.platform === "win32") return uninstallWindowsMonitor();
+  if (process.platform === "linux") return uninstallLinuxMonitor();
   const stopResult = stopMonitor();
   const plistPath = monitorPlistPath();
   const removed = fs.existsSync(plistPath);
@@ -177,6 +240,7 @@ export function uninstallMonitor(): { label: string; plistPath: string; removed:
 
 export function startMonitor(): { label: string; plistPath: string; ok: boolean; detail: string } {
   if (process.platform === "win32") return startWindowsMonitor();
+  if (process.platform === "linux") return startLinuxMonitor();
   const plistPath = monitorPlistPath();
   const gui = guiTarget();
   const bootstrap = runCommand("launchctl", ["bootstrap", gui, plistPath], { timeoutMs: 5000 });
@@ -194,6 +258,7 @@ export function startMonitor(): { label: string; plistPath: string; ok: boolean;
 
 export function stopMonitor(): { label: string; plistPath: string; ok: boolean; detail: string } {
   if (process.platform === "win32") return stopWindowsMonitor();
+  if (process.platform === "linux") return stopLinuxMonitor();
   const plistPath = monitorPlistPath();
   const gui = guiTarget();
   const bootout = runCommand("launchctl", ["bootout", gui, plistPath], { timeoutMs: 5000 });
@@ -211,6 +276,7 @@ export function stopMonitor(): { label: string; plistPath: string; ok: boolean; 
 
 export function monitorStatus(home?: string): MonitorStatus {
   if (process.platform === "win32") return windowsMonitorStatus(home);
+  if (process.platform === "linux") return linuxMonitorStatus(home);
   const plistPath = monitorPlistPath();
   const print = runCommand("launchctl", ["print", `${guiTarget()}/${MONITOR_LABEL}`], { timeoutMs: 5000 });
   return {
@@ -238,6 +304,24 @@ function installWindowsMonitor(options: {
   fs.mkdirSync(path.dirname(result.stdoutPath), { recursive: true });
   if (result.changed) fs.writeFileSync(result.plistPath, result.plist);
   runCommand("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", result.plistPath], { timeoutMs: 15_000 });
+  return result;
+}
+
+function installLinuxMonitor(options: {
+  home?: string;
+  nodeBin: string;
+  guardianBin: string;
+  codexBin?: string;
+  dryRun?: boolean;
+}): MonitorInstallResult {
+  const result = buildLinuxMonitorService(options);
+  const existing = fs.existsSync(result.plistPath) ? fs.readFileSync(result.plistPath, "utf8") : "";
+  result.changed = existing !== result.plist;
+  if (options.dryRun) return result;
+  fs.mkdirSync(path.dirname(result.plistPath), { recursive: true });
+  fs.mkdirSync(path.dirname(result.stdoutPath), { recursive: true });
+  if (result.changed) fs.writeFileSync(result.plistPath, result.plist);
+  runCommand("systemctl", ["--user", "daemon-reload"], { timeoutMs: 10_000 });
   return result;
 }
 
@@ -292,12 +376,72 @@ function windowsScriptPath(home: string): string {
   return path.join(monitorLogsDir(home), "install-monitor.ps1");
 }
 
+function uninstallLinuxMonitor(): { label: string; plistPath: string; removed: boolean; stopDetail: string } {
+  const stopResult = stopLinuxMonitor();
+  const servicePath = linuxServicePath();
+  const removed = fs.existsSync(servicePath);
+  if (removed) fs.unlinkSync(servicePath);
+  runCommand("systemctl", ["--user", "daemon-reload"], { timeoutMs: 10_000 });
+  return {
+    label: LINUX_SERVICE_NAME,
+    plistPath: servicePath,
+    removed,
+    stopDetail: stopResult.detail
+  };
+}
+
+function startLinuxMonitor(): { label: string; plistPath: string; ok: boolean; detail: string } {
+  const servicePath = linuxServicePath();
+  const reload = runCommand("systemctl", ["--user", "daemon-reload"], { timeoutMs: 10_000 });
+  const result = runCommand("systemctl", ["--user", "enable", "--now", LINUX_SERVICE_NAME], { timeoutMs: 10_000 });
+  return {
+    label: LINUX_SERVICE_NAME,
+    plistPath: servicePath,
+    ok: result.status === 0,
+    detail: result.stderr || result.stdout || reload.stderr || reload.stdout || "started"
+  };
+}
+
+function stopLinuxMonitor(): { label: string; plistPath: string; ok: boolean; detail: string } {
+  const servicePath = linuxServicePath();
+  const result = runCommand("systemctl", ["--user", "disable", "--now", LINUX_SERVICE_NAME], { timeoutMs: 10_000 });
+  return {
+    label: LINUX_SERVICE_NAME,
+    plistPath: servicePath,
+    ok: result.status === 0,
+    detail: result.stderr || result.stdout || "stopped"
+  };
+}
+
+function linuxMonitorStatus(home?: string): MonitorStatus {
+  const servicePath = linuxServicePath();
+  const active = runCommand("systemctl", ["--user", "is-active", LINUX_SERVICE_NAME], { timeoutMs: 5000 });
+  const status = runCommand("systemctl", ["--user", "status", LINUX_SERVICE_NAME, "--no-pager"], { timeoutMs: 5000 });
+  return {
+    label: LINUX_SERVICE_NAME,
+    plistPath: servicePath,
+    installed: fs.existsSync(servicePath),
+    loaded: active.status === 0,
+    detail: firstLines(status.stdout || status.stderr || active.stdout || active.stderr, 20),
+    recoveryStatePath: recoveryStatePath(home)
+  };
+}
+
 function psString(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
 function quoteWindowsArg(value: string): string {
   return `"${value.replaceAll("\"", "\\\"")}"`;
+}
+
+function systemdQuote(value: string): string {
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(value)) return value;
+  return `"${systemdEscape(value)}"`;
+}
+
+function systemdEscape(value: string): string {
+  return value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
 function guiTarget(): string {

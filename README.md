@@ -35,6 +35,7 @@ Relay Baton avoids that by combining:
 - `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
 - `relay-baton monitor install` installs a background monitor:
   - macOS: LaunchAgent at `~/Library/LaunchAgents/com.relay-baton.monitor.plist`
+  - Linux: systemd user service at `~/.config/systemd/user/relay-baton-monitor.service`
   - Windows: Task Scheduler install script generated under the Relay Baton log directory
 - Legacy aliases remain available: `guardian` and `codex-context-guardian`.
 

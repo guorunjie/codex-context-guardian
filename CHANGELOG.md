@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 - 2026-05-28
+
+- Added Linux systemd user service generation for the background monitor.
+- `monitor install` now routes to macOS LaunchAgent, Linux systemd user service, or Windows Task Scheduler based on platform.
+- Documented Linux monitor location in README and v1 roadmap.
+
 ## 0.3.0 - 2026-05-28
 
 - Added schema validation to `relay-baton audit`.
