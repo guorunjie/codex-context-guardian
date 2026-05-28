@@ -3,7 +3,8 @@
 ## 0.8.2 - 2026-05-28
 
 - Added `docs/v1-launch-audit.md` as the requirement-by-requirement v1.0 release decision record.
-- Release readiness now checks that the launch audit exists and that bug reports request validation reports plus bundle audit output.
+- Release readiness now checks that the launch audit and validation report guide exist and that bug reports request validation reports plus bundle audit output.
+- Added `relay-baton release check --v1` as a strict v1.0 evidence gate for online publication, real case-study evidence, visual demo media, cross-platform host reports, and stable CLI documentation.
 - Expanded the bug report template so support issues collect host validation, recovery bundle audit output, and monitor logs.
 
 ## 0.8.1 - 2026-05-28

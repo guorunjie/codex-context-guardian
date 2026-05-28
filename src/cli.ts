@@ -459,7 +459,8 @@ async function releaseCommand(parsed: ParsedArgs): Promise<void> {
   if (action !== "check") throw new Error(`Unknown release action: ${action}`);
   const readiness = evaluateReleaseReadiness({
     root: stringFlag(parsed, "root") || process.cwd(),
-    online: Boolean(parsed.flags.online)
+    online: Boolean(parsed.flags.online),
+    v1: Boolean(parsed.flags.v1)
   });
   if (parsed.flags.json) {
     console.log(JSON.stringify(readiness, null, 2));
@@ -598,7 +599,7 @@ Usage:
   relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]
-  relay-baton release check [--online] [--json] [--root <repo>]
+  relay-baton release check [--online] [--v1] [--json] [--root <repo>]
   relay-baton validate host [--online] [--strict-release] [--json] [--output <dir>] [--root <repo>] [--home <CODEX_HOME>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
   relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]

@@ -28,6 +28,7 @@ test("builds host validation report from supplied evidence", () => {
       version: "1.0.0",
       tag: "v1.0.0",
       online: false,
+      v1: false,
       checks: [{ name: "package metadata", status: "pass", detail: "ok" }],
       nextActions: []
     },
@@ -83,6 +84,7 @@ test("writes host validation report files", () => {
       version: "1.0.0",
       tag: "v1.0.0",
       online: false,
+      v1: false,
       checks: [],
       nextActions: ["Run release check online."]
     },
@@ -113,6 +115,7 @@ test("host validation treats release gate as advisory unless required", () => {
       version: "1.0.0",
       tag: "v1.0.0",
       online: false,
+      v1: false,
       checks: [],
       nextActions: ["Fix release gate."]
     },

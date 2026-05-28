@@ -26,6 +26,7 @@ relay-baton validate host --output ./relay-baton-validation
 ```
 
 Attach `relay-baton-validation/VALIDATION_REPORT.json` when possible.
+See `docs/validation-report-guide.md` before sharing public logs.
 
 ## Recovery bundle
 

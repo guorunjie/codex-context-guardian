@@ -3,7 +3,7 @@
 This audit is the source of truth for deciding whether Relay Baton is ready to call itself v1.0.
 
 Date: 2026-05-28
-Current package version: 0.8.1
+Current package version: 0.8.2
 Target package version: 1.0.0
 
 ## Launch Definition
@@ -25,9 +25,9 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 | Fork-first strategy | `codex fork` is preferred when the source session is readable; Desktop is explicit or fallback. | README, recovery strategy, tests, and local `codex fork --help` confirm fork path availability. | Ready | Keep Desktop path documented as less-lossless and experimental. |
 | Duplicate prevention | One source thread must not create parallel fork/Desktop relays unless forced. | Recovery state tracks `forkHandoffCreated` and `desktopHandoffCreated`; tests cover duplicate source recovery. | Ready | Document operator response when a duplicate is blocked. |
 | Operability | `doctor`, `status`, `follow repair`, `release check`, and `validate host` provide actionable output. | Commands exist and are covered by tests; release gate passes offline. | Mostly ready | Improve public troubleshooting with real failure examples. |
-| Support intake | Bug reports collect host validation, bundle audit, commands, environment, and logs. | Issue templates exist. | In progress | Bug template must require `VALIDATION_REPORT.json`, bundle audit output, and monitor log paths. |
+| Support intake | Bug reports collect host validation, bundle audit, commands, environment, and logs. | Bug template requests `VALIDATION_REPORT.json`, `relay-baton audit`, command output, environment, and monitor logs. | Ready | Keep `docs/validation-report-guide.md` linked from support docs. |
 | Public trust assets | README shows the failure, relay, and audit workflow visually. | README has install/architecture text and comparison links. | Not complete | Add screenshots or GIF and a real case study from an actual compact failure. |
-| API stability | v1.0 command names and primary options are frozen. | CLI commands are implemented and tested. | In progress | Add compatibility policy and mark experimental Desktop/app-server behavior. |
+| API stability | v1.0 command names and primary options are frozen. | Stable CLI surface and experimental Desktop boundary are documented below. | Ready | Only add new flags after v1.0 unless a breaking change is documented with a deprecation window. |
 
 ## v1.0 Blockers
 
@@ -35,7 +35,7 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 2. Linux and Windows background monitor lifecycle are not real-host validated.
 3. No real compact-failure case study with redacted evidence is published.
 4. Public demo media is missing.
-5. Command compatibility policy is not explicit enough for v1.0.
+5. Final `relay-baton release check --v1 --online` has not passed.
 
 ## v1.0 Release Gate
 
@@ -49,9 +49,34 @@ npm pack --dry-run --json
 npm publish --dry-run --json
 relay-baton validate host --strict-release --output ./relay-baton-validation
 relay-baton release check --online
+relay-baton release check --v1 --online
 ```
 
 The final `--online` check must pass, including npm authentication and the npm registry package version.
+
+## Stable CLI Surface
+
+These commands are the v1.0 compatibility surface:
+
+- `relay-baton doctor [--json] [--home <CODEX_HOME>]`
+- `relay-baton status [--json] [--home <CODEX_HOME>]`
+- `relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]`
+- `relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]`
+- `relay-baton activity status [--json] [--home <CODEX_HOME>]`
+- `relay-baton recover --thread <id>|--last [--strategy auto|fallback-model|fork|new-session] [--dry-run]`
+- `relay-baton handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--no-start-turn] [--force] [--json]`
+- `relay-baton pack --thread <id>|--last`
+- `relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]`
+- `relay-baton demo [--output <dir>] [--json]`
+- `relay-baton release check [--online] [--v1] [--json] [--root <repo>]`
+- `relay-baton validate host [--online] [--strict-release] [--json] [--output <dir>] [--root <repo>] [--home <CODEX_HOME>]`
+
+Compatibility policy:
+
+- v1.x may add commands, flags, fields, and report sections.
+- v1.x should not remove or rename the stable commands above without at least one minor release of deprecation notice.
+- JSON outputs keep `schemaVersion` where a schema is already present; new fields are additive.
+- `--desktop`, Codex app-server, and remote-control behavior remain experimental because they depend on upstream Desktop internals.
 
 ## Evidence Pack For Release Notes
 

@@ -2,6 +2,10 @@
 
 This case study describes the failure mode Relay Baton is built for.
 
+Evidence status: pending
+
+For v1.0, this file must be upgraded from scenario documentation to a real redacted recovery record. The final record should include the source failure signal, generated bundle, audit output, chosen destination, duplicate-prevention state, and why the continuation matched the latest task rather than an old title.
+
 ## Situation
 
 A long Codex Desktop task has already changed direction several times. The old thread title still points at an early plan, but the latest user messages and assistant progress point at a newer implementation path.

@@ -49,6 +49,8 @@ The report writes:
 - `VALIDATION_REPORT.json` for automated checks;
 - `VALIDATION_REPORT.md` for issue reports, release notes, or support-matrix updates.
 
+See [docs/validation-report-guide.md](validation-report-guide.md) for redaction rules and the full support-evidence checklist.
+
 For v1.0, attach validation reports from:
 
 - macOS with LaunchAgent running;

@@ -17,6 +17,7 @@ test("evaluates offline release readiness", () => {
   assert.equal(readiness.version, "1.2.3");
   assert.equal(readiness.tag, "v1.2.3");
   assert.equal(readiness.online, false);
+  assert.equal(readiness.v1, false);
   assert.equal(readiness.checks.every((check) => check.status !== "fail"), true);
   assert.match(formatReleaseReadiness(readiness), /Run relay-baton release check --online/);
 });
@@ -37,6 +38,22 @@ test("online release readiness surfaces npm publication blockers", () => {
   assert.equal(readiness.checks.find((check) => check.name === "npm package version")?.status, "fail");
   assert.match(readiness.nextActions.join("\n"), /npm adduser/);
   assert.match(readiness.nextActions.join("\n"), /npm publish/);
+});
+
+test("v1 release readiness surfaces evidence blockers", () => {
+  const root = makeReleaseFixture("1.2.3");
+  const readiness = evaluateReleaseReadiness({
+    root,
+    v1: true,
+    runner: cleanGitRunner
+  });
+
+  assert.equal(readiness.ok, false);
+  assert.equal(readiness.v1, true);
+  assert.equal(readiness.checks.find((check) => check.name === "v1 online release gate")?.status, "fail");
+  assert.equal(readiness.checks.find((check) => check.name === "real recovery case study")?.status, "fail");
+  assert.equal(readiness.checks.find((check) => check.name === "public visual demo")?.status, "fail");
+  assert.match(readiness.nextActions.join("\n"), /real compact-failure recovery/);
 });
 
 function makeReleaseFixture(version: string): string {
@@ -71,10 +88,13 @@ function makeReleaseFixture(version: string): string {
   fs.writeFileSync(path.join(root, "docs", "v1-launch-audit.md"), [
     "# v1 Launch Audit",
     "## Requirement Matrix",
+    "## Stable CLI Surface",
+    "doctor recover validate host",
     "## v1.0 Blockers",
     "## Evidence Pack For Release Notes"
   ].join("\n"));
   fs.writeFileSync(path.join(root, "docs", "competitive-analysis.md"), "# Competitive\n");
+  fs.writeFileSync(path.join(root, "docs", "validation-report-guide.md"), "# Validation Report Guide\n");
   fs.mkdirSync(path.join(root, ".github", "ISSUE_TEMPLATE"), { recursive: true });
   fs.writeFileSync(path.join(root, ".github", "ISSUE_TEMPLATE", "bug_report.md"), [
     "relay-baton validate host",

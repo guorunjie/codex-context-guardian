@@ -33,7 +33,7 @@ Relay Baton avoids that by combining:
 - `relay-baton audit <bundle>` scores a recovery bundle without creating a fork or Desktop conversation.
 - `relay-baton demo` creates an auditable sample recovery bundle for trying the workflow without waiting for a real stuck thread.
 - `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
-- `relay-baton release check` verifies v1.0 release readiness locally, with optional online GitHub/npm checks.
+- `relay-baton release check` verifies release readiness locally, with optional online GitHub/npm checks and a strict `--v1` evidence gate.
 - `relay-baton validate host` writes a shareable host validation report for platform support evidence.
 - `relay-baton monitor install` installs a background monitor:
   - macOS: LaunchAgent at `~/Library/LaunchAgents/com.relay-baton.monitor.plist`
@@ -210,6 +210,7 @@ Check release readiness:
 ```bash
 relay-baton release check
 relay-baton release check --online
+relay-baton release check --v1 --online
 ```
 
 Generate a host validation report:
@@ -259,5 +260,7 @@ See [docs/relay-baton-roadmap.md](docs/relay-baton-roadmap.md) for the productiz
 See [docs/monitor-trigger-evaluation.md](docs/monitor-trigger-evaluation.md) for the monitoring trigger evaluation and chosen hybrid design.
 
 See [docs/v1-launch-audit.md](docs/v1-launch-audit.md) for the evidence required before Relay Baton is declared v1.0.
+
+See [docs/validation-report-guide.md](docs/validation-report-guide.md) for collecting support and release-validation reports.
 
 See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch gates, [docs/release-checklist.md](docs/release-checklist.md) for release verification, [docs/support-matrix.md](docs/support-matrix.md) for platform status, [docs/architecture.md](docs/architecture.md) for the recovery flow, [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md) for a concrete stuck-thread scenario, and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.

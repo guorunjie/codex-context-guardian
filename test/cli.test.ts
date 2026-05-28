@@ -73,10 +73,11 @@ test("parses demo command", () => {
 });
 
 test("parses release check command", () => {
-  const parsed = parseArgs(["release", "check", "--online", "--root", "/tmp/repo", "--json"]);
+  const parsed = parseArgs(["release", "check", "--online", "--v1", "--root", "/tmp/repo", "--json"]);
   assert.equal(parsed.command, "release");
   assert.deepEqual(parsed.positional, ["check"]);
   assert.equal(parsed.flags.online, true);
+  assert.equal(parsed.flags.v1, true);
   assert.equal(parsed.flags.root, "/tmp/repo");
   assert.equal(parsed.flags.json, true);
 });

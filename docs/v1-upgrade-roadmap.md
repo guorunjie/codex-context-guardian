@@ -8,7 +8,7 @@ The requirement-by-requirement launch audit lives in [docs/v1-launch-audit.md](v
 
 - Public GitHub repository: `guorunjie/codex-relay-baton-guardian`.
 - GitHub install works through `npm install -g github:guorunjie/codex-relay-baton-guardian`.
-- CI, Release, MIT license, built `dist/` package, structured recovery bundles, demo/audit commands, release-readiness gate, and open-source templates exist.
+- CI, Release, MIT license, built `dist/` package, structured recovery bundles, demo/audit commands, release-readiness gate, v1 strict evidence gate, and open-source templates exist.
 - macOS LaunchAgent, Linux systemd service generation, Windows Task Scheduler script generation, lifecycle hooks, compact-stall detection, fallback attempts, fork-first recovery, and Desktop handoff quality gates exist.
 - npm registry publishing is prepared but not complete until an authenticated maintainer runs `npm publish`.
 - Local validation on this Mac reports the monitor running and `relay-baton status` ok.
@@ -88,7 +88,7 @@ Status: partially complete after v0.8. Linux systemd user service generation, CI
 - Add npm publish dry-run documentation and provenance notes.
 - Add support matrix covering macOS, Linux, Windows, Codex CLI versions, and Node versions.
 
-Status: mostly complete in v0.7.0. `relay-baton release check` verifies local release readiness, npm-safe bin paths, publish dry-run coverage, and npm publish workflow presence; `--online` checks GitHub Release, latest CI, npm auth, and npm package publication. Support matrix and release checklist docs exist. npm package publication is still blocked until the maintainer adds `NPM_TOKEN` or logs in locally.
+Status: mostly complete after v0.8.2. `relay-baton release check` verifies local release readiness, npm-safe bin paths, publish dry-run coverage, npm publish workflow presence, v1 launch audit, and support intake evidence. `--online` checks GitHub Release, latest CI, npm auth, and npm package publication. `--v1` adds final evidence checks for real recovery evidence, demo media, platform validation reports, and stable CLI documentation. npm package publication is still blocked until the maintainer adds `NPM_TOKEN` or logs in locally.
 
 ### v1.0 Stable Launch
 
@@ -105,6 +105,7 @@ npm run build
 npm pack --dry-run --json
 npm publish --dry-run --json
 npm run release:check
+relay-baton release check --v1 --online
 relay-baton doctor
 relay-baton follow repair
 relay-baton status
@@ -130,4 +131,4 @@ relay-baton status
 | Cross-platform | macOS verified locally; Linux/Windows service files generated; CI matrix added. | Validate monitor install/start/status/stop on real Linux and Windows hosts. |
 | Public trust | README, license, changelog, issue templates, architecture, case study stub, and competitive analysis exist. | Add GIF/screenshots, troubleshooting examples, and a real case study with redacted evidence. |
 | Operability | `status`, `doctor`, `follow repair`, and monitor logs exist. | Add clearer recovery-state explanations for cooldown, blocked duplicate relay, and last failure source. |
-| API stability | Core CLI commands exist. | Freeze command names/options and document compatibility promises for v1.0. |
+| API stability | Stable CLI surface and experimental Desktop boundary are documented in `docs/v1-launch-audit.md`. | Keep compatibility policy intact and use additive changes for v1.x. |

@@ -20,13 +20,20 @@ After pushing the release commit and waiting for CI:
 
 ```bash
 relay-baton release check --online
+relay-baton release check --v1 --online
 ```
 
 Online checks add matching GitHub Release tag, latest GitHub CI success for the current commit, npm authentication, and npm registry publication for the current package version.
 
-For v1.0, `--online` must pass. Before npm publication, it is expected to fail on `npm auth` or `npm package version`; that failure is the distribution blocker.
+For v1.0, `--v1 --online` must pass. Before npm publication, it is expected to fail on `npm auth` or `npm package version`; that failure is the distribution blocker.
 
 Before tagging `v1.0.0`, reconcile every row in [docs/v1-launch-audit.md](v1-launch-audit.md) and attach the required validation evidence to the release notes.
+
+Run the strict v1 gate before creating the final tag:
+
+```bash
+relay-baton release check --v1 --online
+```
 
 ## Cut A GitHub Release
 
