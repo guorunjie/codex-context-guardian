@@ -166,19 +166,46 @@ async function handoffCommand(parsed: ParsedArgs): Promise<void> {
     goalBudget: numberFlag(parsed, "goalBudget"),
     startTurn: !Boolean(parsed.flags.noStartTurn),
     title: stringFlag(parsed, "title"),
-    primaryModel: stringFlag(parsed, "primary")
+    primaryModel: stringFlag(parsed, "primary"),
+    force: Boolean(parsed.flags.force)
   });
   if (parsed.flags.desktop) {
     if (parsed.flags.json) {
-      console.log(JSON.stringify({ bundleDir: result.bundleDir, desktop: result.desktop, plan: result.plan }, null, 2));
+      console.log(JSON.stringify({
+        bundleDir: result.bundleDir,
+        desktop: result.desktop,
+        reusedDesktop: result.reusedDesktop,
+        blocked: result.blocked,
+        quality: result.quality,
+        plan: result.plan
+      }, null, 2));
       return;
     }
     console.log(`Recovery bundle: ${result.bundleDir}`);
+    if (result.blocked) {
+      console.log(`Desktop handoff blocked: ${result.blocked.reason}`);
+      if (result.blocked.blockers.length > 0) {
+        console.log("Blockers:");
+        for (const blocker of result.blocked.blockers) console.log(`- ${blocker}`);
+      }
+      if (result.quality) {
+        console.log(`Quality: ${result.quality.grade} (${result.quality.score}/100)`);
+      }
+      return;
+    }
+    if (result.reusedDesktop) {
+      console.log(`Existing Desktop conversation: ${result.reusedDesktop.threadId}`);
+      if (result.reusedDesktop.bundleDir) console.log(`Existing bundle: ${result.reusedDesktop.bundleDir}`);
+      console.log(result.reusedDesktop.reason);
+      if (result.quality) console.log(`Candidate quality: ${result.quality.grade} (${result.quality.score}/100)`);
+      return;
+    }
     console.log(`Desktop conversation: ${result.desktop?.title}`);
     console.log(`Thread id: ${result.desktop?.threadId}`);
     console.log(`Turn started: ${result.desktop?.turnStarted ? "yes" : "no"}`);
     console.log(`Plan mode: ${result.desktop?.planModeApplied ? "yes" : "no"}`);
     console.log(`Goal mode: ${result.desktop?.goalApplied ? "yes" : "no"}`);
+    if (result.quality) console.log(`Quality: ${result.quality.grade} (${result.quality.score}/100)`);
     return;
   }
   if (parsed.flags.json) {
@@ -287,7 +314,7 @@ Usage:
   guardian watch [--auto] [--desktop] [--goal-mode] [--once] [--dry-run] [--home <CODEX_HOME>]
   guardian monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   guardian pack --thread <id>|--last [--home <CODEX_HOME>]
-  guardian handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--json] [--home <CODEX_HOME>]
+  guardian handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
   guardian recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
   guardian recover --last [--dry-run]
 `;

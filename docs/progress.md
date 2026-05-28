@@ -22,6 +22,8 @@
 - Added structured `HANDOFF_MEMORY.json` v2 with current task, latest user intent, latest assistant progress after that intent, bounded recent tail, superseded directions, handoff directive, next action, warnings, and telemetry.
 - Upgraded `RECENT_THREAD_CONTEXT.md` so evidence is clearly labeled as source evidence, not new instructions, and interrupted turns force a worktree check before editing.
 - Added continuation-point extraction so handoff sessions resume from late-stage assistant progress after the latest user request instead of restarting a broad implementation plan.
+- Added a Desktop handoff quality gate so interruption-only memories are blocked before a visible conversation is created.
+- Added per-source Desktop handoff reuse by default, with `--force` reserved for deliberate replacement, to avoid parallel misleading handoff threads.
 - Changed watcher auto-recovery to try fallback-model recovery twice per source thread, then create a Desktop-visible handoff instead of repeatedly compacting the old thread.
 - Added `guardian monitor install|uninstall|status|start|stop` for macOS LaunchAgent background monitoring.
 - Shifted watcher behavior so repeated recovery attempts move toward fresh session instead of repeated compact retries.

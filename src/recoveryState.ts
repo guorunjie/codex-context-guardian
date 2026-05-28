@@ -11,6 +11,9 @@ export type ThreadRecoveryState = {
   lastFailureLogId?: number;
   desktopHandoffCreated?: boolean;
   lastDesktopHandoffThreadId?: string;
+  lastDesktopHandoffBundleDir?: string;
+  lastDesktopHandoffQualityScore?: number;
+  lastDesktopHandoffQualityOk?: boolean;
 };
 
 export type GuardianRecoveryState = {
@@ -62,7 +65,10 @@ export function recordRecoveryAttempt(state: GuardianRecoveryState, threadId: st
     lastFallbackAt: current.lastFallbackAt,
     lastFailureLogId: logId || current.lastFailureLogId,
     desktopHandoffCreated: current.desktopHandoffCreated,
-    lastDesktopHandoffThreadId: current.lastDesktopHandoffThreadId
+    lastDesktopHandoffThreadId: current.lastDesktopHandoffThreadId,
+    lastDesktopHandoffBundleDir: current.lastDesktopHandoffBundleDir,
+    lastDesktopHandoffQualityScore: current.lastDesktopHandoffQualityScore,
+    lastDesktopHandoffQualityOk: current.lastDesktopHandoffQualityOk
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -81,7 +87,18 @@ export function recordFallbackAttempt(state: GuardianRecoveryState, threadId: st
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
 
-export function recordDesktopHandoff(state: GuardianRecoveryState, threadId: string, logId: number, now: number, desktopThreadId?: string): void {
+export function recordDesktopHandoff(
+  state: GuardianRecoveryState,
+  threadId: string,
+  logId: number,
+  now: number,
+  desktopThreadId?: string,
+  details: {
+    bundleDir?: string;
+    qualityScore?: number;
+    qualityOk?: boolean;
+  } = {}
+): void {
   const current = normalizeThreadState(state.threads[threadId]);
   state.threads[threadId] = {
     ...current,
@@ -90,7 +107,10 @@ export function recordDesktopHandoff(state: GuardianRecoveryState, threadId: str
     lastFailureLogId: logId || current.lastFailureLogId,
     lastLogId: Math.max(current.lastLogId || 0, logId || 0),
     desktopHandoffCreated: true,
-    lastDesktopHandoffThreadId: desktopThreadId || current.lastDesktopHandoffThreadId
+    lastDesktopHandoffThreadId: desktopThreadId || current.lastDesktopHandoffThreadId,
+    lastDesktopHandoffBundleDir: details.bundleDir || current.lastDesktopHandoffBundleDir,
+    lastDesktopHandoffQualityScore: details.qualityScore ?? current.lastDesktopHandoffQualityScore,
+    lastDesktopHandoffQualityOk: details.qualityOk ?? current.lastDesktopHandoffQualityOk
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -104,6 +124,13 @@ export function normalizeThreadState(current?: Partial<ThreadRecoveryState>): Th
     lastFallbackAt: current?.lastFallbackAt,
     lastFailureLogId: current?.lastFailureLogId,
     desktopHandoffCreated: Boolean(current?.desktopHandoffCreated),
-    lastDesktopHandoffThreadId: current?.lastDesktopHandoffThreadId
+    lastDesktopHandoffThreadId: current?.lastDesktopHandoffThreadId,
+    lastDesktopHandoffBundleDir: current?.lastDesktopHandoffBundleDir,
+    lastDesktopHandoffQualityScore: typeof current?.lastDesktopHandoffQualityScore === "number"
+      ? current.lastDesktopHandoffQualityScore
+      : undefined,
+    lastDesktopHandoffQualityOk: typeof current?.lastDesktopHandoffQualityOk === "boolean"
+      ? current.lastDesktopHandoffQualityOk
+      : undefined
   };
 }

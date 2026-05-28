@@ -41,6 +41,7 @@ Guardian automates both. It does not click the UI or mutate global model setting
 - `guardian handoff --thread <id>` creates a recovery bundle and prints the exact new-session command.
 - `guardian handoff --thread <id> --desktop` creates a Desktop-visible continuation conversation and injects the recovery prompt automatically.
 - `guardian handoff --desktop --plan-mode --goal-mode` can preconfigure the new Desktop thread with plan collaboration mode and an active goal.
+- Desktop handoff creation is guarded by a quality gate. Guardian blocks handoffs that only recover interruption markers, and it reuses an existing Desktop handoff for the same source thread unless `--force` is provided.
 - Recovery bundles include `HANDOFF_MEMORY.json` and `RECENT_THREAD_CONTEXT.md`, which promote the source thread's latest goal, latest user intent, assistant progress after that intent, recent tail, superseded directions, and interruption state over older titles or abandoned early plans.
 - `guardian recover --thread <id> --strategy auto` builds and executes the recovery plan.
 - Model-incompatibility recovery is two-stage:
@@ -103,6 +104,14 @@ Create a Desktop-visible handoff thread and immediately continue in plan/goal mo
 guardian handoff --thread <stuck-thread-id> --desktop --plan-mode --goal-mode
 ```
 
+Guardian will not create a second Desktop continuation for the same source thread by default. It first generates a candidate bundle, checks `HANDOFF_MEMORY.json`, and only creates a visible conversation when the handoff has a real task anchor. If a good Desktop handoff already exists, the command prints that thread id instead of creating another confusing sidebar entry.
+
+Force a new Desktop handoff only after reviewing the existing one:
+
+```bash
+guardian handoff --thread <stuck-thread-id> --desktop --goal-mode --force
+```
+
 Set a custom goal objective and budget:
 
 ```bash
@@ -161,6 +170,8 @@ Recovery bundles are read in this priority order:
 5. the old thread title
 
 Inside `HANDOFF_MEMORY.json`, `handoffDirective` and `latestAssistantProgress` are the highest-signal continuation hints. They are generated from the assistant messages after the latest user request, so a new session resumes from the actual late-stage task process instead of restarting an older plan.
+
+Before a Desktop thread is created, Guardian scores the handoff memory. A candidate is blocked when the latest user intent is only a `turn_aborted` marker, when there is no reliable current objective, or when an interrupted turn does not require checking the worktree first. This keeps bad recovery bundles out of the Desktop sidebar instead of creating a misleading continuation and hoping the user notices.
 
 ## Safety Model
 

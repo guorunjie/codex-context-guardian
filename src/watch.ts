@@ -106,9 +106,24 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
         threadId,
         desktop: true,
         planMode: options.planMode,
-        goalMode: options.goalMode ?? true
+        goalMode: options.goalMode ?? true,
+        recordState: false,
+        stateLogId: logId
       });
-      recordDesktopHandoff(state, threadId, logId, now, handoff.desktop?.threadId);
+      if (handoff.blocked) {
+        recordRecoveryAttempt(state, threadId, logId, now);
+        saveRecoveryState(state, options.home);
+        return `desktop handoff blocked: ${handoff.blocked.reason}`;
+      }
+      if (handoff.reusedDesktop) {
+        saveRecoveryState(state, options.home);
+        return `desktop handoff reused: ${handoff.reusedDesktop.threadId} for ${thread?.id || threadId}`;
+      }
+      recordDesktopHandoff(state, threadId, logId, now, handoff.desktop?.threadId, {
+        bundleDir: handoff.bundleDir,
+        qualityScore: handoff.quality?.score,
+        qualityOk: handoff.quality?.ok
+      });
       saveRecoveryState(state, options.home);
       return `desktop handoff launched: ${handoff.desktop?.threadId || "unknown"} for ${thread?.id || threadId}`;
     }
