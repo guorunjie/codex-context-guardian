@@ -40,6 +40,26 @@ test("online release readiness surfaces npm publication blockers", () => {
   assert.match(readiness.nextActions.join("\n"), /npm publish/);
 });
 
+test("online release readiness inspects the CI workflow instead of the latest manual run", () => {
+  const root = makeReleaseFixture("1.2.3");
+  const calls: string[] = [];
+  const runner = fakeOnlineRunner({
+    npmAuth: true,
+    npmPublished: true
+  });
+  const readiness = evaluateReleaseReadiness({
+    root,
+    online: true,
+    runner: (command, args = [], options) => {
+      calls.push([command, ...args].join(" "));
+      return runner(command, args, options);
+    }
+  });
+
+  assert.equal(readiness.checks.find((check) => check.name === "latest GitHub CI")?.status, "pass");
+  assert.ok(calls.includes("gh run list --workflow CI --limit 1 --json headSha,conclusion,status"));
+});
+
 test("v1 release readiness surfaces evidence blockers", () => {
   const root = makeReleaseFixture("1.2.3");
   const readiness = evaluateReleaseReadiness({

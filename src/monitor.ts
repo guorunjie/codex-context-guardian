@@ -11,12 +11,15 @@ export const LINUX_SERVICE_NAME = "relay-baton-monitor.service";
 export type MonitorInstallResult = {
   label: string;
   plistPath: string;
+  launcherPath?: string;
   stdoutPath: string;
   stderrPath: string;
   pathEnv?: string;
   codexBin?: string;
   changed: boolean;
   plist: string;
+  launcher?: string;
+  detail?: string;
   platform?: NodeJS.Platform;
 };
 
@@ -117,6 +120,7 @@ export function buildWindowsMonitorScript(options: {
   const logsDir = monitorLogsDir(home);
   const stdoutPath = path.join(logsDir, "monitor.out.log");
   const stderrPath = path.join(logsDir, "monitor.err.log");
+  const launcherPath = windowsLauncherPath(home);
   const pathEnv = buildLaunchPath({
     nodeBin: options.nodeBin,
     codexBin: options.codexBin,
@@ -131,19 +135,33 @@ export function buildWindowsMonitorScript(options: {
     "--home",
     quoteWindowsArg(home)
   ].join(" ");
-  const taskRun = `cmd.exe /d /c ${quoteWindowsArg(`set "PATH=${pathEnv}" && set "GUARDIAN_CODEX_BIN=${options.codexBin || "codex"}" && ${quoteWindowsArg(options.nodeBin)} ${argument} >> ${quoteWindowsArg(stdoutPath)} 2>> ${quoteWindowsArg(stderrPath)}`)}`;
+  const launcher = [
+    "@echo off",
+    `set "PATH=${pathEnv}"`,
+    `set "GUARDIAN_CODEX_BIN=${options.codexBin || "codex"}"`,
+    `${quoteWindowsArg(options.nodeBin)} ${argument} >> ${quoteWindowsArg(stdoutPath)} 2>> ${quoteWindowsArg(stderrPath)}`
+  ].join("\r\n");
+  const taskRun = `cmd.exe /d /c ${quoteWindowsArg(launcherPath)}`;
   const script = `$ErrorActionPreference = "Stop"
+$launcherPath = ${psString(launcherPath)}
+$launcher = @'
+${launcher}
+'@
+Set-Content -LiteralPath $launcherPath -Value $launcher -Encoding ASCII
 schtasks.exe /Create /TN ${psString(WINDOWS_TASK_NAME)} /SC MINUTE /MO 1 /TR ${psString(taskRun)} /F | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "schtasks.exe /Create failed with exit code $LASTEXITCODE" }
 `;
   return {
     label: WINDOWS_TASK_NAME,
     plistPath: windowsScriptPath(home),
+    launcherPath,
     stdoutPath,
     stderrPath,
     pathEnv,
     codexBin: options.codexBin,
     changed: true,
     plist: script,
+    launcher,
     platform: "win32"
   };
 }
@@ -303,7 +321,8 @@ function installWindowsMonitor(options: {
   fs.mkdirSync(path.dirname(result.plistPath), { recursive: true });
   fs.mkdirSync(path.dirname(result.stdoutPath), { recursive: true });
   if (result.changed) fs.writeFileSync(result.plistPath, result.plist);
-  runCommand("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", result.plistPath], { timeoutMs: 15_000 });
+  const install = runCommand("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", result.plistPath], { timeoutMs: 15_000 });
+  result.detail = install.stderr || install.stdout;
   return result;
 }
 
@@ -374,6 +393,10 @@ function windowsMonitorStatus(home?: string): MonitorStatus {
 
 function windowsScriptPath(home: string): string {
   return path.join(monitorLogsDir(home), "install-monitor.ps1");
+}
+
+function windowsLauncherPath(home: string): string {
+  return path.join(monitorLogsDir(home), "run-monitor.cmd");
 }
 
 function uninstallLinuxMonitor(): { label: string; plistPath: string; removed: boolean; stopDetail: string } {

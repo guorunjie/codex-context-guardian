@@ -153,7 +153,7 @@ function addOnlineChecks(
   const ghRelease = runner("gh", ["release", "view", tag, "--json", "tagName,targetCommitish,url"], { cwd: root, timeoutMs: 15_000 });
   add(checks, "GitHub release", ghRelease.status === 0, ghRelease.status === 0 ? `${tag} exists` : `missing ${tag}`);
 
-  const ci = runner("gh", ["run", "list", "--limit", "1", "--json", "headSha,conclusion,status"], { cwd: root, timeoutMs: 15_000 });
+  const ci = runner("gh", ["run", "list", "--workflow", "CI", "--limit", "1", "--json", "headSha,conclusion,status"], { cwd: root, timeoutMs: 15_000 });
   let ciDetail = "unable to inspect latest CI";
   let ciOk = false;
   if (ci.status === 0) {

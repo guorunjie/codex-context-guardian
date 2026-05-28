@@ -40,11 +40,15 @@ test("builds Windows scheduled task script for fork-first auto monitor", () => {
 
   assert.match(result.plist, /schtasks\.exe \/Create/);
   assert.match(result.plist, /RelayBatonMonitor/);
+  assert.match(result.plist, /Set-Content/);
+  assert.match(result.plist, /run-monitor\.cmd/);
   assert.match(result.plist, /--fork/);
   assert.match(result.plist, /--goal-mode/);
   assert.match(result.plist, /monitor\.out\.log/);
   assert.match(result.plist, /monitor\.err\.log/);
   assert.match(result.plist, /GUARDIAN_CODEX_BIN/);
+  assert.match(result.launcher || "", /relay-baton\.js/);
+  assert.match(result.launcherPath || "", /run-monitor\.cmd$/);
 });
 
 test("builds Linux systemd user service for fork-first auto monitor", () => {

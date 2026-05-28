@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.5 - 2026-05-28
+
+- Fixed Windows command discovery so Codex CLI shims installed by npm resolve to native Windows paths instead of Git Bash `/c/...` paths.
+- Changed the Windows scheduled task installer to create a short `run-monitor.cmd` launcher, avoiding oversized Task Scheduler `/TR` commands.
+- Kept host validation strict so Windows reports fail loudly until the scheduled task is actually installed and running.
+
 ## 0.8.4 - 2026-05-28
 
 - Added a manual `Host Validation` GitHub Actions workflow that installs the packed package globally and collects Linux, macOS, and Windows validation artifacts.
