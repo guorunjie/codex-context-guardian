@@ -1,6 +1,6 @@
 {
   "name": "codex-relay-baton-guardian",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sleep-safe Codex recovery: keep long tasks running through compact failures and context-window overflow with last-healthy fork relays.",
   "type": "module",
   "repository": {

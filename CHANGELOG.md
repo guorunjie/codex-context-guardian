@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1 - 2026-05-29
+
+- Added hard context-window overflow detection for `Codex ran out of room in the model's context window`.
+- Added last-healthy-checkpoint fork recovery so overflowed threads resume from the newest successful `Stop` or `PostCompact` hook instead of retrying the saturated source thread.
+- Updated README and package metadata around sleep-safe long-task recovery.
+
 ## 1.0.0 - 2026-05-29
 
 - Promoted Relay Baton to the stable v1.0 release line after the `0.8.7` npm publication validated the registry install path.
