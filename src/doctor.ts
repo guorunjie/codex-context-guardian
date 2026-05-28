@@ -50,7 +50,7 @@ export function runDoctor(home?: string): Check[] {
   const hooksFile = hooksPath(home);
   const hooksText = fs.existsSync(hooksFile) ? fs.readFileSync(hooksFile, "utf8") : "";
   checks.push({
-    name: "guardian compact hooks",
+    name: "relay-baton compact hooks",
     ok: hooksText.includes("hook --phase precompact") && hooksText.includes("hook --phase postcompact"),
     detail: fs.existsSync(hooksFile) ? hooksFile : "hooks.json missing"
   });

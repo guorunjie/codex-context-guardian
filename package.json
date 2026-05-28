@@ -1,24 +1,36 @@
 {
-  "name": "codex-context-guardian",
+  "name": "relay-baton",
   "version": "0.1.0",
-  "description": "Recover Codex long-running tasks when context compaction fails.",
+  "description": "Reliable task relay for Codex: fork-first recovery, structured handoff memory, and visible automation for stuck long-running agent sessions.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/guorunjie/codex-context-guardian.git"
+  },
+  "homepage": "https://github.com/guorunjie/codex-context-guardian#readme",
+  "bugs": {
+    "url": "https://github.com/guorunjie/codex-context-guardian/issues"
+  },
   "bin": {
+    "relay-baton": "./bin/relay-baton.js",
     "guardian": "./bin/guardian.js",
     "codex-context-guardian": "./bin/guardian.js"
   },
   "scripts": {
     "test": "node --test test/*.test.ts",
-    "doctor": "node ./bin/guardian.js doctor",
-    "watch": "node ./bin/guardian.js watch",
-    "recover:dry": "node ./bin/guardian.js recover --last --dry-run"
+    "doctor": "node ./bin/relay-baton.js doctor",
+    "watch": "node ./bin/relay-baton.js watch",
+    "recover:dry": "node ./bin/relay-baton.js recover --last --dry-run"
   },
   "keywords": [
     "codex",
+    "relay",
+    "handoff",
     "context-compaction",
     "ai-agents",
     "recovery",
-    "developer-tools"
+    "developer-tools",
+    "desktop-automation"
   ],
   "license": "MIT",
   "engines": {

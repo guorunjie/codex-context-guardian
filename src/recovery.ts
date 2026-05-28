@@ -50,7 +50,7 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
   const strategy = chooseStrategy(options.strategy || "auto", signal, thread);
   const cwd = options.cwd || thread?.cwd || process.cwd();
   const summaryFile = recoverySummaryFile(options.home, thread?.id || signal.threadId || "unknown");
-  const bundleDir = strategy === "new-session"
+  const bundleDir = strategy !== "fallback-model"
     ? options.bundleDir || plannedBundleDir(options.home, thread?.id || signal.threadId || "unknown")
     : null;
   const prompt = strategy === "fallback-model"
@@ -90,7 +90,8 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
       cwd,
       prompt,
       thread,
-      signal
+      signal,
+      bundleDir: bundleDir || undefined
     };
   }
 
@@ -110,7 +111,8 @@ export function buildRecoveryPlan(options: RecoveryOptions = {}): RecoveryPlan {
       cwd,
       prompt,
       thread,
-      signal
+      signal,
+      bundleDir: bundleDir || undefined
     };
   }
 

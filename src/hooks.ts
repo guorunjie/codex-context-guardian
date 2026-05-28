@@ -41,7 +41,7 @@ export function installHooks(options: {
   }
 
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const backupFile = fs.existsSync(file) ? `${file}.guardian-bak-${Date.now()}` : null;
+  const backupFile = fs.existsSync(file) ? `${file}.relay-baton-bak-${Date.now()}` : null;
   if (backupFile) fs.copyFileSync(file, backupFile);
   fs.writeFileSync(file, `${JSON.stringify(current, null, 2)}\n`);
   return { hooksFile: file, backupFile, changed, commands };

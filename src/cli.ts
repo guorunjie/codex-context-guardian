@@ -49,7 +49,8 @@ export async function main(argv: string[]): Promise<void> {
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
-  const [command = "", ...rest] = argv;
+  const command = argv[0] && !argv[0].startsWith("--") ? argv[0] : "";
+  const rest = command ? argv.slice(1) : argv;
   const flags: Record<string, string | boolean> = {};
   const positional: string[] = [];
 
@@ -224,6 +225,7 @@ async function watchCommand(parsed: ParsedArgs): Promise<void> {
       auto: Boolean(parsed.flags.auto),
       dryRun: Boolean(parsed.flags.dryRun),
       desktop: Boolean(parsed.flags.desktop),
+      fork: Boolean(parsed.flags.fork),
       planMode: Boolean(parsed.flags.planMode),
       goalMode: Boolean(parsed.flags.goalMode)
     });
@@ -235,6 +237,7 @@ async function watchCommand(parsed: ParsedArgs): Promise<void> {
     auto: Boolean(parsed.flags.auto),
     dryRun: Boolean(parsed.flags.dryRun),
     desktop: Boolean(parsed.flags.desktop),
+    fork: Boolean(parsed.flags.fork),
     planMode: Boolean(parsed.flags.planMode),
     goalMode: Boolean(parsed.flags.goalMode)
   });
@@ -301,21 +304,23 @@ function numberFlag(parsed: ParsedArgs, name: string): number | undefined {
 
 function guardianBinPath(): string {
   const srcDir = path.dirname(fileURLToPath(import.meta.url));
-  return path.resolve(srcDir, "../bin/guardian.js");
+  return path.resolve(srcDir, "../bin/relay-baton.js");
 }
 
 function helpText(): string {
-  return `Codex Context Guardian
+  return `Relay Baton
 
 Usage:
-  guardian doctor [--json] [--home <CODEX_HOME>]
-  guardian install-hooks [--dry-run] [--home <CODEX_HOME>]
-  guardian hook --phase <precompact|postcompact> [--thread <id>]
-  guardian watch [--auto] [--desktop] [--goal-mode] [--once] [--dry-run] [--home <CODEX_HOME>]
-  guardian monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
-  guardian pack --thread <id>|--last [--home <CODEX_HOME>]
-  guardian handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
-  guardian recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
-  guardian recover --last [--dry-run]
+  relay-baton doctor [--json] [--home <CODEX_HOME>]
+  relay-baton install-hooks [--dry-run] [--home <CODEX_HOME>]
+  relay-baton hook --phase <precompact|postcompact> [--thread <id>]
+  relay-baton watch [--auto] [--fork|--desktop] [--goal-mode] [--once] [--dry-run] [--home <CODEX_HOME>]
+  relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
+  relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
+  relay-baton handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
+  relay-baton recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]
+  relay-baton recover --last [--dry-run]
+
+Legacy aliases remain available: guardian, codex-context-guardian.
 `;
 }

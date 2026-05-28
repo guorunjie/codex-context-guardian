@@ -6,7 +6,7 @@ export function codexHome(): string {
 }
 
 export function guardianHome(home = codexHome()): string {
-  return path.join(home, "context-guardian");
+  return path.join(home, "relay-baton");
 }
 
 export function stateDbPath(home = codexHome()): string {

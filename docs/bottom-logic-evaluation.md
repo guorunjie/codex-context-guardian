@@ -47,7 +47,7 @@ The new session can read the bundle and continue from a clean context window wit
 
 ## Project Implication
 
-Codex Context Guardian treats model switching as a tactical step and recovery bundles as the strategic path:
+Relay Baton treats model switching as a tactical step and recovery bundles as the strategic path:
 
 - first failure with model compatibility signal: fallback-model handoff;
 - ordinary compaction failure: fork once if the old thread is still readable;

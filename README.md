@@ -1,190 +1,162 @@
-# Codex Context Guardian
+# Relay Baton
 
-**Automatic recovery for long-running Codex tasks when context compaction fails.**
+**Fork-first task relay for stuck Codex sessions.**
 
-Codex Context Guardian watches local Codex session state, detects context-compaction failures, and automatically resumes the task through the safest available recovery path. It turns two manual workarounds into a repeatable tool:
+Relay Baton keeps long-running Codex work moving when remote context compaction fails, a model cannot compact its own history, or a Desktop conversation gets stuck in repeated interruption loops. It reads local Codex session state, creates structured handoff memory from rollout JSONL, and chooses the least lossy recovery path.
 
-1. Temporarily resume with a fallback model when the current model cannot compact.
-2. Fork or start a fresh session with a durable recovery prompt when the original thread is stuck.
+The core rule is simple: preserve the real latest task state before creating a new visible conversation.
 
-The project is designed as a standalone CLI first, with a clear path toward an upstream `openai/codex` patch later.
+## Why It Exists
 
-## Core Design Decision
+Long agent sessions often fail after the project has already changed direction. A naive handoff based on the old thread title or an early summary can revive abandoned work and mislead the next conversation.
 
-Model switching helps only when the failure is tied to model/compact-endpoint compatibility. It is not the primary solution for repeated compaction failures.
+Relay Baton avoids that by combining:
 
-The durable strategy is:
-
-1. Try the configured fallback model for the first two eligible compaction failures on the same source thread.
-2. If the thread keeps failing, stop fighting the old context.
-3. Package the project state into a recovery bundle with structured handoff memory.
-4. Start a fresh Desktop-visible Codex conversation with a concise recovery prompt and the bundle path.
-
-This matches the lower-level failure mode: once history, tool traces, repeated summaries, or context state are already unhealthy, another compact attempt often reuses the same bad input. A fresh conversation plus a project bundle avoids that state.
-
-## Why This Exists
-
-Long Codex tasks can fail at the worst possible moment: when the conversation needs compaction before the work can continue. Today the practical workarounds are manual:
-
-- switch from a newer model such as `gpt-5.5` to a fallback such as `gpt-5.4`, nudge the thread until compaction succeeds, then switch back;
-- create a new conversation and ask it to recover the previous project and task state.
-
-Guardian automates both. It does not click the UI or mutate global model settings. It uses Codex CLI capabilities such as `resume`, `fork`, `exec resume`, `--model`, and local `~/.codex` state.
+- Codex `fork` when the original session is still readable, because fork keeps the original conversation history and workspace state closest to intact.
+- Fallback-model recovery for model-specific compact failures, tried twice per source thread.
+- Structured memory files that prioritize the latest goal, latest real user intent, concrete tool progress, current worktree state, and superseded directions.
+- Desktop handoff only when the user asks for a visible new Desktop conversation or when fork/CLI recovery is unavailable.
 
 ## Features
 
-- `guardian doctor` checks Codex CLI, SQLite state, logs, configured models, and hook status.
-- `guardian install-hooks` installs `PreCompact` and `PostCompact` snapshot hooks.
-- `guardian watch --auto --desktop --goal-mode` monitors Codex logs for compaction failure signals and starts the recovery ladder.
-- `guardian monitor install` installs a macOS LaunchAgent that keeps the watcher running in the background.
-- `guardian pack --thread <id>` creates a recovery bundle for a fresh conversation.
-- `guardian handoff --thread <id>` creates a recovery bundle and prints the exact new-session command.
-- `guardian handoff --thread <id> --desktop` creates a Desktop-visible continuation conversation and injects the recovery prompt automatically.
-- `guardian handoff --desktop --plan-mode --goal-mode` can preconfigure the new Desktop thread with plan collaboration mode and an active goal.
-- Desktop handoff creation is guarded by a quality gate. Guardian blocks handoffs that only recover interruption markers, and it reuses an existing Desktop handoff for the same source thread unless `--force` is provided.
-- Recovery bundles include `HANDOFF_MEMORY.json` and `RECENT_THREAD_CONTEXT.md`, which promote the source thread's latest goal, latest user intent, assistant progress after that intent, recent tail, superseded directions, and interruption state over older titles or abandoned early plans.
-- `guardian recover --thread <id> --strategy auto` builds and executes the recovery plan.
-- Model-incompatibility recovery is two-stage:
-  - `codex exec resume --model <fallback>` produces a durable handoff summary.
-  - `codex resume --model <primary>` continues the same task with the primary model.
-- Automatic recovery tries the fallback model twice before giving up on the unhealthy old thread and creating a Desktop-visible handoff.
-- Final fallback starts a new Codex session in the original working directory when Desktop handoff is unavailable.
-- Per-thread cooldown and recovery limits prevent runaway loops.
+- `relay-baton doctor` checks Codex CLI, local SQLite state, logs, configured models, and compact hooks.
+- `relay-baton install-hooks` installs `PreCompact` and `PostCompact` snapshot hooks.
+- `relay-baton watch --auto --fork` monitors Codex logs and runs the recovery ladder automatically.
+- `relay-baton recover --thread <id> --strategy auto` executes fallback-model, fork, or new-session recovery.
+- `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
+- `relay-baton monitor install` installs a background monitor:
+  - macOS: LaunchAgent at `~/Library/LaunchAgents/com.relay-baton.monitor.plist`
+  - Windows: Task Scheduler install script generated under the Relay Baton log directory
+- Legacy aliases remain available: `guardian` and `codex-context-guardian`.
+
+## Recovery Bundle
+
+Every fork/new-session/Desktop relay can carry the same bundle:
+
+- `HANDOFF_MEMORY.json`: machine-readable checkpoint with latest goal, latest user intent, latest assistant/tool progress, superseded directions, pending/completed/blockers, next action, telemetry, warnings, confidence, and evidence.
+- `RECENT_THREAD_CONTEXT.md`: human-readable recent context. Evidence blocks are clearly marked as source evidence, not fresh instructions.
+- `RECOVERY.md`: fixed recovery order and prompt.
+- `git-status.txt`, `git-diff-stat.txt`, `git-diff.patch`: current workspace facts.
+- `selected-files.md`: capped project files for recovery.
+
+Recovery priority is fixed:
+
+1. `HANDOFF_MEMORY.json`
+2. `RECENT_THREAD_CONTEXT.md`
+3. Git status/diff and current files
+4. Selected project files
+5. Old thread title
+
+If those disagree, Relay Baton tells the next session to trust the bundle and current worktree over the old title.
+
+## Automatic Strategy
+
+For each source thread:
+
+1. First eligible compaction failure: run `codex exec resume --model <fallback>` to produce a summary, then resume with the primary model.
+2. Second eligible failure: repeat the fallback-model attempt.
+3. Third eligible failure: stop compacting the unhealthy thread and create one best relay:
+   - default: `codex fork` with the structured bundle prompt;
+   - `--desktop` or `GUARDIAN_AUTO_DESTINATION=desktop`: one Desktop-visible continuation, guarded against duplicates;
+   - `GUARDIAN_AUTO_DESTINATION=cli`: fresh CLI session in the original working directory.
+
+The default fallback model is `gpt-5.4`; override it with `GUARDIAN_FALLBACK_MODEL`.
 
 ## Install
 
 ```bash
-cd codex-context-guardian
+git clone git@github.com:guorunjie/codex-context-guardian.git relay-baton
+cd relay-baton
 npm test
-node ./bin/guardian.js doctor
-```
-
-For local CLI usage:
-
-```bash
 npm link
-guardian doctor
+relay-baton doctor
 ```
 
-## Usage
-
-Run diagnostics:
+Use without linking:
 
 ```bash
-guardian doctor
+node ./bin/relay-baton.js doctor
 ```
 
-Install compact snapshot hooks:
-
-```bash
-guardian install-hooks
-```
+## Commands
 
 Preview recovery for the latest thread:
 
 ```bash
-guardian recover --last --dry-run
+relay-baton recover --last --dry-run
 ```
 
-Recover a known thread:
+Fork a stuck thread with bundle-backed instructions:
 
 ```bash
-guardian recover --thread 019e6a4a-22e6-7962-862b-cfb5ad04ac41 --strategy auto
+relay-baton recover --thread <stuck-thread-id> --strategy fork
 ```
 
-Create a recovery bundle and use it in a new conversation:
+Create a recovery bundle for manual use:
 
 ```bash
-guardian handoff --last
+relay-baton handoff --last
 ```
 
-Create a Desktop-visible handoff thread and immediately continue in plan/goal mode:
+Create one Desktop-visible continuation:
 
 ```bash
-guardian handoff --thread <stuck-thread-id> --desktop --plan-mode --goal-mode
+relay-baton handoff --thread <stuck-thread-id> --desktop --goal-mode
 ```
 
-Guardian will not create a second Desktop continuation for the same source thread by default. It first generates a candidate bundle, checks `HANDOFF_MEMORY.json`, and only creates a visible conversation when the handoff has a real task anchor. If a good Desktop handoff already exists, the command prints that thread id instead of creating another confusing sidebar entry.
+Relay Baton will not create a second Desktop continuation for the same source thread by default. It first evaluates `HANDOFF_MEMORY.json`; if a good Desktop relay already exists, it prints the existing thread id instead of creating another sidebar entry. Use `--force` only after reviewing the existing relay.
 
-Force a new Desktop handoff only after reviewing the existing one:
+Start automatic fork-first recovery:
 
 ```bash
-guardian handoff --thread <stuck-thread-id> --desktop --goal-mode --force
+relay-baton watch --auto --fork
 ```
 
-Set a custom goal objective and budget:
+Start automatic Desktop handoff recovery:
 
 ```bash
-guardian handoff --thread <stuck-thread-id> --desktop --plan-mode --goal "继续完成影刀RPA任务交付" --goal-budget 120000
+relay-baton watch --auto --desktop --goal-mode
 ```
 
-Start the watcher without auto-recovery:
+Install the monitor:
 
 ```bash
-guardian watch
+relay-baton monitor install
+relay-baton monitor start
+relay-baton monitor status
 ```
 
-Start fully automatic recovery:
+## Configuration
 
 ```bash
-guardian watch --auto --desktop --goal-mode
+GUARDIAN_FALLBACK_MODEL=gpt-5.4
+GUARDIAN_FALLBACK_ATTEMPTS=2
+GUARDIAN_AUTO_DESTINATION=fork   # fork | desktop | cli
+GUARDIAN_COOLDOWN_MS=600000
 ```
 
-Install the background monitor on macOS:
-
-```bash
-guardian monitor install
-guardian monitor start
-guardian monitor status
-```
-
-Use a different fallback model:
-
-```bash
-GUARDIAN_FALLBACK_MODEL=gpt-5.4 guardian watch --auto --desktop --goal-mode
-```
-
-## Recovery Strategy
-
-Guardian classifies recent Codex logs into:
-
-- `model_compact_unsupported`
-- `compact_failed`
-- `context_overflow`
-- `transport_or_rate_limit`
-- `unknown`
-
-The automatic strategy is:
-
-1. On the first eligible compaction failure for a thread, run a fallback-model summary stage and then resume with the primary model.
-2. On the second eligible failure for the same source thread, try the fallback-model recovery once more.
-3. On the third eligible failure, stop fighting the unhealthy old thread and create a recovery bundle plus Desktop-visible handoff.
-4. If Desktop handoff is unavailable, print or run the CLI new-session recovery command in the original working directory.
-
-Recovery bundles are read in this priority order:
-
-1. `HANDOFF_MEMORY.json`
-2. `RECENT_THREAD_CONTEXT.md`
-3. `git-status.txt`, `git-diff-stat.txt`, and `git-diff.patch`
-4. `selected-files.md` and older project documents
-5. the old thread title
-
-Inside `HANDOFF_MEMORY.json`, `handoffDirective` and `latestAssistantProgress` are the highest-signal continuation hints. They are generated from the assistant messages after the latest user request, so a new session resumes from the actual late-stage task process instead of restarting an older plan.
-
-Before a Desktop thread is created, Guardian scores the handoff memory. A candidate is blocked when the latest user intent is only a `turn_aborted` marker, when there is no reliable current objective, or when an interrupted turn does not require checking the worktree first. This keeps bad recovery bundles out of the Desktop sidebar instead of creating a misleading continuation and hoping the user notices.
+The environment variable names keep the old `GUARDIAN_` prefix for compatibility.
 
 ## Safety Model
 
-Guardian is intentionally conservative about state:
+- Does not edit `~/.codex/config.toml`.
+- Uses per-command `--model` overrides.
+- Stores Relay Baton state under `~/.codex/relay-baton/`.
+- Redacts obvious secrets from hook snapshots.
+- Records fallback, fork, and Desktop handoff state per source thread.
+- Blocks duplicate Desktop/fork relays for the same source thread unless explicitly forced.
+- Requires worktree inspection when the source turn ended with `turn_aborted`.
 
-- It does not edit `~/.codex/config.toml`.
-- It uses per-command `--model` overrides instead of changing global defaults.
-- It stores snapshots under `~/.codex/context-guardian/`.
-- It redacts obvious secrets from hook payload snapshots.
-- It limits each thread to one recovery per cooldown window and stops after repeated failures.
+## Desktop Accuracy Notes
 
-## Current Status
+Desktop handoff is useful, but less lossless than `codex fork` because it starts a fresh conversation and injects memory as a prompt. Relay Baton therefore:
 
-This is v0.1. It is useful as a local recovery harness and project prototype. The next milestone is deeper integration with Codex events so the recovery action can be surfaced directly in the CLI/TUI instead of inferred from logs.
+- treats Desktop as explicit/visible recovery, not the default automatic route;
+- scores the memory before creating a Desktop thread;
+- blocks handoffs anchored only on interruption markers;
+- includes concrete tool progress such as `apply_patch` and `task_complete`, so the new session sees code already written after the last user request;
+- reuses the existing Desktop relay instead of creating parallel continuations.
 
-See [docs/progress.md](docs/progress.md) and [docs/upstream-patch-plan.md](docs/upstream-patch-plan.md).
+## Roadmap
+
+See [docs/relay-baton-roadmap.md](docs/relay-baton-roadmap.md) for the productization and memory-system roadmap, including Claude-style project memory, Codex fork-first recovery, and cross-platform monitor work.

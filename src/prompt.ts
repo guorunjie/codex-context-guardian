@@ -69,7 +69,7 @@ Fallback model stage:
 - Do not edit project files.
 - Reconstruct the current objective, decisions, completed work, pending work, known blockers, and exact next action.
 - Keep the final answer as a durable handoff summary for the primary model.
-- The guardian will save your final answer to: ${input.summaryFile}
+- Relay Baton will save your final answer to: ${input.summaryFile}
 `;
 }
 

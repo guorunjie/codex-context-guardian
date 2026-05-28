@@ -42,8 +42,8 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
   try {
     await client.request("initialize", {
       clientInfo: {
-        name: "guardian",
-        title: "Codex Context Guardian",
+        name: "relay-baton",
+        title: "Relay Baton",
         version: "0.1.0"
       },
       capabilities: {
@@ -149,8 +149,8 @@ export async function setDesktopThreadTitle(options: {
   try {
     await client.request("initialize", {
       clientInfo: {
-        name: "guardian",
-        title: "Codex Context Guardian",
+        name: "relay-baton",
+        title: "Relay Baton",
         version: "0.1.0"
       },
       capabilities: {
@@ -171,7 +171,7 @@ export function buildDesktopHandoffPrompt(input: {
   cwd: string;
   prompt: string;
 }): string {
-  return `This is a Desktop-visible continuation created by codex-context-guardian.
+  return `This is a Desktop-visible continuation created by relay-baton.
 
 Source thread: ${input.sourceThreadId || "unknown"}
 Source title: ${input.sourceTitle || "unknown"}

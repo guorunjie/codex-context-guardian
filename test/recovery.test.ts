@@ -25,6 +25,26 @@ test("chooses fork for readable thread on generic compact failure", () => {
   assert.equal(chooseStrategy("auto", signal, fakeThread()), "fork");
 });
 
+test("fork recovery carries a structured handoff bundle", () => {
+  const home = makeHome();
+  createThreadDb(home);
+  const plan = buildRecoveryPlan({
+    home,
+    threadId: "019e6a4a-22e6-7962-862b-cfb5ad04ac41",
+    signal: {
+      kind: "compact_failed",
+      confidence: "high",
+      reason: "stream disconnected"
+    }
+  });
+
+  assert.equal(plan.strategy, "fork");
+  assert.ok(plan.bundleDir);
+  assert.deepEqual(plan.steps[0].args.slice(0, 2), ["fork", "--model"]);
+  assert.match(plan.prompt, /Recovery bundle:/);
+  assert.match(plan.prompt, /HANDOFF_MEMORY\.json/);
+});
+
 test("fallback model recovery is a two-stage plan", () => {
   const home = makeHome();
   createThreadDb(home);

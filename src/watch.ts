@@ -8,6 +8,7 @@ import {
   loadRecoveryState,
   normalizeThreadState,
   recordDesktopHandoff,
+  recordForkHandoff,
   recordFallbackAttempt,
   recordRecoveryAttempt,
   saveRecoveryState,
@@ -21,6 +22,7 @@ export type WatchOptions = {
   dryRun?: boolean;
   pollIntervalMs?: number;
   desktop?: boolean;
+  fork?: boolean;
   planMode?: boolean;
   goalMode?: boolean;
 };
@@ -69,7 +71,13 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
   }
 
   const thread = getThread(threadId, options.home);
-  const strategy = thread ? chooseAutoRecoveryStrategy(state, threadId, config) : "new-session";
+  const destination = recoveryDestination(options, config);
+  const strategy = thread
+    ? chooseAutoRecoveryStrategy(state, threadId, {
+      fallbackAttempts: config.fallbackAttempts,
+      autoDestination: destination
+    })
+    : "new-session";
   const plan = buildRecoveryPlan({
     home: options.home,
     threadId,
@@ -94,8 +102,7 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
       return `recovery launched: fallback-model for ${thread?.id || threadId}`;
     }
 
-    const shouldUseDesktop = options.desktop || config.autoDestination === "desktop";
-    if (shouldUseDesktop) {
+    if (destination === "desktop") {
       if (options.dryRun) {
         recordRecoveryAttempt(state, threadId, logId, now);
         saveRecoveryState(state, options.home);
@@ -128,7 +135,11 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
       return `desktop handoff launched: ${handoff.desktop?.threadId || "unknown"} for ${thread?.id || threadId}`;
     }
 
-    recordRecoveryAttempt(state, threadId, logId, now);
+    if (strategy === "fork" && !options.dryRun) {
+      recordForkHandoff(state, threadId, logId, now, { bundleDir: plan.bundleDir });
+    } else {
+      recordRecoveryAttempt(state, threadId, logId, now);
+    }
     saveRecoveryState(state, options.home);
     await recover({
       home: options.home,
@@ -147,10 +158,17 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
 export function chooseAutoRecoveryStrategy(
   state: GuardianRecoveryState,
   threadId: string,
-  config: Pick<GuardianConfig, "fallbackAttempts">
-): "fallback-model" | "new-session" {
+  config: Pick<GuardianConfig, "fallbackAttempts" | "autoDestination">
+): "fallback-model" | "fork" | "new-session" {
   const current = normalizeThreadState(state.threads[threadId]);
-  return current.fallbackAttempts < config.fallbackAttempts ? "fallback-model" : "new-session";
+  if (current.fallbackAttempts < config.fallbackAttempts) return "fallback-model";
+  return config.autoDestination === "fork" ? "fork" : "new-session";
+}
+
+function recoveryDestination(options: WatchOptions, config: GuardianConfig): GuardianConfig["autoDestination"] {
+  if (options.desktop) return "desktop";
+  if (options.fork) return "fork";
+  return config.autoDestination;
 }
 
 function sleep(ms: number): Promise<void> {

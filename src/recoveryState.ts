@@ -14,6 +14,8 @@ export type ThreadRecoveryState = {
   lastDesktopHandoffBundleDir?: string;
   lastDesktopHandoffQualityScore?: number;
   lastDesktopHandoffQualityOk?: boolean;
+  forkHandoffCreated?: boolean;
+  lastForkHandoffBundleDir?: string;
 };
 
 export type GuardianRecoveryState = {
@@ -46,6 +48,9 @@ export function canRecoverThread(state: GuardianRecoveryState, threadId: string,
   if (current.desktopHandoffCreated) {
     return { ok: false, reason: "desktop handoff already created" };
   }
+  if (current.forkHandoffCreated) {
+    return { ok: false, reason: "fork handoff already created" };
+  }
   if (current.consecutiveRecoveries >= options.maxConsecutiveRecoveries) {
     return { ok: false, reason: `recovery limit reached (${current.consecutiveRecoveries})` };
   }
@@ -68,7 +73,9 @@ export function recordRecoveryAttempt(state: GuardianRecoveryState, threadId: st
     lastDesktopHandoffThreadId: current.lastDesktopHandoffThreadId,
     lastDesktopHandoffBundleDir: current.lastDesktopHandoffBundleDir,
     lastDesktopHandoffQualityScore: current.lastDesktopHandoffQualityScore,
-    lastDesktopHandoffQualityOk: current.lastDesktopHandoffQualityOk
+    lastDesktopHandoffQualityOk: current.lastDesktopHandoffQualityOk,
+    forkHandoffCreated: current.forkHandoffCreated,
+    lastForkHandoffBundleDir: current.lastForkHandoffBundleDir
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -115,6 +122,28 @@ export function recordDesktopHandoff(
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
 
+export function recordForkHandoff(
+  state: GuardianRecoveryState,
+  threadId: string,
+  logId: number,
+  now: number,
+  details: {
+    bundleDir?: string;
+  } = {}
+): void {
+  const current = normalizeThreadState(state.threads[threadId]);
+  state.threads[threadId] = {
+    ...current,
+    lastRecoveryAt: now,
+    consecutiveRecoveries: current.consecutiveRecoveries + 1,
+    lastFailureLogId: logId || current.lastFailureLogId,
+    lastLogId: Math.max(current.lastLogId || 0, logId || 0),
+    forkHandoffCreated: true,
+    lastForkHandoffBundleDir: details.bundleDir || current.lastForkHandoffBundleDir
+  };
+  state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
+}
+
 export function normalizeThreadState(current?: Partial<ThreadRecoveryState>): ThreadRecoveryState {
   return {
     lastRecoveryAt: Number(current?.lastRecoveryAt || 0),
@@ -131,6 +160,8 @@ export function normalizeThreadState(current?: Partial<ThreadRecoveryState>): Th
       : undefined,
     lastDesktopHandoffQualityOk: typeof current?.lastDesktopHandoffQualityOk === "boolean"
       ? current.lastDesktopHandoffQualityOk
-      : undefined
+      : undefined,
+    forkHandoffCreated: Boolean(current?.forkHandoffCreated),
+    lastForkHandoffBundleDir: current?.lastForkHandoffBundleDir
   };
 }

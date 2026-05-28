@@ -7,18 +7,18 @@
 
 ## Current Project Status
 
-Codex Context Guardian is functional as a local recovery prototype.
+Relay Baton is functional as a local recovery prototype.
 
 Implemented:
 
 - CLI installation through `npm link`.
-- `guardian doctor` for Codex CLI, SQLite state/log database, model, and hook checks.
-- `guardian install-hooks` for `PreCompact` and `PostCompact` snapshots.
-- `guardian recover` for fallback-model, fork, and new-session plans.
-- `guardian pack` for recovery bundle generation.
-- `guardian handoff` for bundle generation plus exact fresh-session command output.
+- `relay-baton doctor` for Codex CLI, SQLite state/log database, model, and hook checks.
+- `relay-baton install-hooks` for `PreCompact` and `PostCompact` snapshots.
+- `relay-baton recover` for fallback-model, fork, and new-session plans.
+- `relay-baton pack` for recovery bundle generation.
+- `relay-baton handoff` for bundle generation plus exact fresh-session command output.
 - Desktop-visible handoff through Codex app-server remote control.
-- `guardian monitor install|start|status|stop|uninstall` for macOS LaunchAgent background watching.
+- `relay-baton monitor install|start|status|stop|uninstall` for macOS LaunchAgent background watching.
 - Log classification and prompt-echo filtering.
 - Per-thread cooldown/retry state.
 - Recovery bundles with selected files, git status, diff, `HANDOFF_MEMORY.json`, `RECENT_THREAD_CONTEXT.md`, and `RECOVERY.md`.
@@ -37,16 +37,16 @@ Commands verified:
 
 ```bash
 npm link
-guardian doctor
-guardian install-hooks
-guardian handoff --thread 019e6792-dcbb-7ef3-a511-0adf14bac709 --json
-guardian monitor install --dry-run --home /tmp/guardian-codex-home
-guardian watch --once --dry-run --home /tmp/guardian-empty-codex-home
+relay-baton doctor
+relay-baton install-hooks
+relay-baton handoff --thread 019e6792-dcbb-7ef3-a511-0adf14bac709 --json
+relay-baton monitor install --dry-run --home /tmp/relay-baton-codex-home
+relay-baton watch --once --dry-run --home /tmp/relay-baton-empty-codex-home
 npm test
 git diff --check
 ```
 
-`guardian doctor` reports:
+`relay-baton doctor` reports:
 
 - Codex CLI available.
 - `sqlite3` available.
@@ -71,7 +71,7 @@ tokensUsed: 86093506
 Recovery bundle generated:
 
 ```text
-/Users/quanquanlv/.codex/context-guardian/bundles/019e6792-dcbb-7ef3-a511-0adf14bac709-1779902143516
+/Users/quanquanlv/.codex/relay-baton/bundles/019e6792-dcbb-7ef3-a511-0adf14bac709-1779902143516
 ```
 
 Bundle contents:
@@ -122,7 +122,7 @@ What did not fully work yet:
 2. Better failure detection
    - Add state-table heuristics: very high `tokens_used`, stale updated_at, repeated same title, and UI stuck signal.
    - Separate `compact_endpoint_failure`, `high_context_risk`, and `ui_stuck_without_error`.
-   - Add a `guardian inspect --thread <id>` command.
+   - Add a `relay-baton inspect --thread <id>` command.
 
 3. Recovery bundle quality
    - Prefer project-specific roots over the broad thread cwd.
@@ -131,8 +131,8 @@ What did not fully work yet:
    - Add a machine-readable `bundle.json`.
 
 4. Safer automation
-   - Add `guardian recover --strategy handoff-only`.
-   - Add `guardian recover --strategy exec-new-session` for non-interactive validation.
+   - Add `relay-baton recover --strategy handoff-only`.
+   - Add `relay-baton recover --strategy exec-new-session` for non-interactive validation.
    - Keep interactive fresh sessions opt-in.
 
 5. Upstream Codex proposal

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { chooseAutoRecoveryStrategy } from "../src/watch.ts";
 import type { GuardianRecoveryState } from "../src/recoveryState.ts";
 
-test("auto recovery uses fallback model before desktop handoff", () => {
+test("auto recovery uses fallback model before fork handoff", () => {
   const state: GuardianRecoveryState = {
     lastSeenLogId: 0,
     threads: {
@@ -16,9 +16,25 @@ test("auto recovery uses fallback model before desktop handoff", () => {
     }
   };
 
-  assert.equal(chooseAutoRecoveryStrategy(state, "thread-1", { fallbackAttempts: 2 }), "fallback-model");
+  assert.equal(chooseAutoRecoveryStrategy(state, "thread-1", { fallbackAttempts: 2, autoDestination: "fork" }), "fallback-model");
   state.threads["thread-1"].fallbackAttempts = 1;
-  assert.equal(chooseAutoRecoveryStrategy(state, "thread-1", { fallbackAttempts: 2 }), "fallback-model");
+  assert.equal(chooseAutoRecoveryStrategy(state, "thread-1", { fallbackAttempts: 2, autoDestination: "fork" }), "fallback-model");
   state.threads["thread-1"].fallbackAttempts = 2;
-  assert.equal(chooseAutoRecoveryStrategy(state, "thread-1", { fallbackAttempts: 2 }), "new-session");
+  assert.equal(chooseAutoRecoveryStrategy(state, "thread-1", { fallbackAttempts: 2, autoDestination: "fork" }), "fork");
+});
+
+test("auto recovery can still route final handoff to cli new session", () => {
+  const state: GuardianRecoveryState = {
+    lastSeenLogId: 0,
+    threads: {
+      "thread-1": {
+        lastRecoveryAt: 0,
+        consecutiveRecoveries: 0,
+        lastLogId: 0,
+        fallbackAttempts: 2
+      }
+    }
+  };
+
+  assert.equal(chooseAutoRecoveryStrategy(state, "thread-1", { fallbackAttempts: 2, autoDestination: "cli" }), "new-session");
 });

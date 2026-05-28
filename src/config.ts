@@ -9,7 +9,7 @@ export type GuardianConfig = {
   maxConsecutiveRecoveries: number;
   freshSessionAfterAttempts: number;
   fallbackAttempts: number;
-  autoDestination: "cli" | "desktop";
+  autoDestination: "fork" | "desktop" | "cli";
 };
 
 export function readCodexPrimaryModel(home?: string): string {
@@ -52,5 +52,6 @@ function numberFromEnv(name: string, fallback: number): number {
 
 function autoDestinationFromEnv(): GuardianConfig["autoDestination"] {
   const value = process.env.GUARDIAN_AUTO_DESTINATION;
-  return value === "cli" ? "cli" : "desktop";
+  if (value === "desktop" || value === "cli" || value === "fork") return value;
+  return "fork";
 }

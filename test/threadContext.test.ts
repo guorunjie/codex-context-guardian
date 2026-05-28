@@ -175,6 +175,74 @@ test("uses assistant progress after the latest user request as the continuation 
   assert.match(rendered, /Progress Since Latest User Request/);
 });
 
+test("captures concrete tool progress after the latest user request", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-rollout-tool-progress-"));
+  const rollout = path.join(dir, "thread.jsonl");
+  fs.writeFileSync(rollout, [
+    JSON.stringify({
+      timestamp: "2026-05-28T03:00:00Z",
+      type: "response_item",
+      payload: {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text: "继续把活动报名迁到内置浏览器。" }]
+      }
+    }),
+    JSON.stringify({
+      timestamp: "2026-05-28T03:05:00Z",
+      type: "event_msg",
+      payload: {
+        type: "agent_message",
+        phase: "commentary",
+        message: "我选定活动报名迁移，接下来改 desktop/main.cjs。"
+      }
+    }),
+    JSON.stringify({
+      timestamp: "2026-05-28T03:06:00Z",
+      type: "event_msg",
+      payload: {
+        type: "patch_apply_end",
+        success: true,
+        stdout: "Success. Updated the following files:\nM /repo/desktop/main.cjs\n",
+        stderr: "",
+        changes: {
+          "/repo/desktop/main.cjs": {
+            type: "update"
+          }
+        }
+      }
+    }),
+    JSON.stringify({
+      timestamp: "2026-05-28T03:07:00Z",
+      type: "event_msg",
+      payload: {
+        type: "task_complete",
+        last_agent_message: null
+      }
+    })
+  ].join("\n"));
+
+  const thread = {
+    id: "thread-tool-progress",
+    rolloutPath: rollout,
+    title: "Tool progress",
+    cwd: dir,
+    model: "gpt-5.5",
+    modelProvider: "openai",
+    tokensUsed: 0,
+    updatedAt: 0
+  };
+  const context = readRecentThreadContext(thread);
+  const memory = buildHandoffMemory(thread, context);
+  const rendered = renderRecentThreadContext(context, memory);
+
+  assert.equal(memory.progressSinceLatestUser.length, 3);
+  assert.equal(memory.progressSinceLatestUser.some((evidence) => evidence.kind === "tool:apply_patch"), true);
+  assert.match(memory.progressSinceLatestUser.map((evidence) => evidence.text).join("\n"), /desktop\/main\.cjs/);
+  assert.match(memory.latestAssistantProgress?.summary || "", /Source turn completed/);
+  assert.match(rendered, /tool:apply_patch/);
+});
+
 test("resolves the newest rollout file when thread metadata lacks rolloutPath", () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-rollout-home-"));
   const oldDir = path.join(home, "sessions", "2026", "05", "27");

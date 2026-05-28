@@ -11,6 +11,12 @@ test("parses flags and positional args", () => {
   assert.deepEqual(parsed.positional, ["extra"]);
 });
 
+test("parses global help without treating it as a command", () => {
+  const parsed = parseArgs(["--help"]);
+  assert.equal(parsed.command, "");
+  assert.equal(parsed.flags.help, true);
+});
+
 test("parses desktop handoff mode flags", () => {
   const parsed = parseArgs([
     "handoff",

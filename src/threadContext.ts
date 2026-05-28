@@ -135,12 +135,26 @@ export function readRecentThreadContext(
         };
         continue;
       }
-      if (payload.type === "task_complete" && payload.last_agent_message) {
+      if (payload.type === "task_complete") {
         pushMessage(messages, {
           timestamp,
           role: "assistant",
           kind: "task_complete",
-          text: clipText(String(payload.last_agent_message), maxMessageChars)
+          text: clipText(
+            payload.last_agent_message
+              ? String(payload.last_agent_message)
+              : "Source turn completed after the latest recorded work. Verify git status, diff, and tests before continuing.",
+            maxMessageChars
+          )
+        });
+        continue;
+      }
+      if (payload.type === "patch_apply_end") {
+        pushMessage(messages, {
+          timestamp,
+          role: "assistant",
+          kind: "tool:apply_patch",
+          text: clipText(formatPatchApplyEvidence(payload), maxMessageChars)
         });
         continue;
       }
@@ -557,8 +571,25 @@ function goalToEvidence(goal: ThreadGoalContext): HandoffEvidence {
 
 function isAssistantProgressMessage(message: ThreadContextMessage): boolean {
   if (message.role !== "assistant") return false;
+  if (message.kind.startsWith("tool:")) return true;
   if (message.kind === "task_complete" || message.kind.includes("final")) return true;
   return /\b(next|now|done|completed|finished|implemented|passed|failed|remaining|continue|will)\b|下一步|接下来|现在|已经|已|完成|通过|失败|继续|检查|确认|实现|补充|更新|测试|验证/i.test(message.text);
+}
+
+function formatPatchApplyEvidence(payload: any): string {
+  const changes = payload?.changes && typeof payload.changes === "object"
+    ? Object.keys(payload.changes)
+    : [];
+  const changedFiles = changes.length > 0
+    ? ` Changed files: ${changes.slice(0, 8).join(", ")}${changes.length > 8 ? ", ..." : ""}.`
+    : "";
+  const stdout = typeof payload?.stdout === "string" && payload.stdout.trim()
+    ? ` Output: ${payload.stdout.trim().split("\n").slice(0, 4).join(" ")}`
+    : "";
+  const stderr = typeof payload?.stderr === "string" && payload.stderr.trim()
+    ? ` Error output: ${payload.stderr.trim().split("\n").slice(0, 2).join(" ")}`
+    : "";
+  return `apply_patch ${payload?.success === false ? "failed" : "succeeded"}.${changedFiles}${stdout}${stderr}`.trim();
 }
 
 function buildCurrentTaskSummary(input: {
