@@ -259,3 +259,64 @@ test("recent tail keeps the latest real user message as an anchor", () => {
   assert.match(memory.recentTail[0].text, /最新任务/);
   assert.match(memory.recentTail.at(-1)?.text || "", /progress 23/);
 });
+
+test("turn_aborted response markers do not replace the latest real user intent", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-rollout-aborted-marker-"));
+  const rollout = path.join(dir, "thread.jsonl");
+  fs.writeFileSync(rollout, [
+    JSON.stringify({
+      timestamp: "2026-05-28T04:00:00Z",
+      type: "response_item",
+      payload: {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text: "继续完成方案 B 的内置浏览器后台。" }]
+      }
+    }),
+    JSON.stringify({
+      timestamp: "2026-05-28T04:01:00Z",
+      type: "event_msg",
+      payload: {
+        type: "agent_message",
+        phase: "commentary",
+        message: "已经开始检查 git 状态，下一步核对当前文件。"
+      }
+    }),
+    JSON.stringify({
+      timestamp: "2026-05-28T04:02:00Z",
+      type: "response_item",
+      payload: {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text: "<turn_aborted></turn_aborted>" }]
+      }
+    }),
+    JSON.stringify({
+      timestamp: "2026-05-28T04:02:01Z",
+      type: "event_msg",
+      payload: {
+        type: "turn_aborted",
+        reason: "interrupted"
+      }
+    })
+  ].join("\n"));
+
+  const thread = {
+    id: "thread-4",
+    rolloutPath: rollout,
+    title: "Interrupted marker",
+    cwd: dir,
+    model: "gpt-5.5",
+    modelProvider: "openai",
+    tokensUsed: 0,
+    updatedAt: 0
+  };
+  const context = readRecentThreadContext(thread);
+  const memory = buildHandoffMemory(thread, context);
+
+  assert.match(memory.latestUserIntent?.summary || "", /方案 B/);
+  assert.equal(memory.currentTaskState.interrupted, true);
+  assert.equal(memory.recentTail[0].role, "user");
+  assert.match(memory.recentTail[0].text, /方案 B/);
+  assert.equal(memory.recentTail.at(-1)?.role, "system");
+});

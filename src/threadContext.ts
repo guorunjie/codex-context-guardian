@@ -167,7 +167,17 @@ export function readRecentThreadContext(
     if (entry.type === "response_item" && payload.type === "message") {
       const role = payload.role === "user" ? "user" : payload.role === "assistant" ? "assistant" : null;
       if (!role) continue;
-      const text = normalizeMessageText(extractMessageText(payload.content), maxMessageChars);
+      const rawText = extractMessageText(payload.content);
+      if (rawText.includes("<turn_aborted>")) {
+        pushMessage(messages, {
+          timestamp,
+          role: "system",
+          kind: "turn_aborted",
+          text: "The previous turn was interrupted by the user. Reason: interrupted."
+        });
+        continue;
+      }
+      const text = normalizeMessageText(rawText, maxMessageChars);
       if (!text) continue;
       pushMessage(messages, {
         timestamp,
@@ -486,7 +496,7 @@ function normalizeMessageText(text: string, maxChars: number): string {
     return clipText(`Active goal objective:\n${objective[1].trim()}`, maxChars);
   }
   if (trimmed.includes("<turn_aborted>")) {
-    return "The user interrupted the previous turn on purpose. Treat the interrupted work as incomplete and inspect current state before continuing.";
+    return "";
   }
   if (trimmed.startsWith("<environment_context>")) return "";
   return clipText(trimmed, maxChars);
