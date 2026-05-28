@@ -55,6 +55,15 @@ Relay Baton intentionally borrows the structure of durable project memory withou
 
 The ladder is per source thread and cooldown-protected.
 
+## Monitoring Trigger Model
+
+Relay Baton now uses hooks first and polling second:
+
+- hooks track Codex lifecycle events almost immediately;
+- log polling catches compaction errors emitted outside hooks;
+- activity-state detection catches compact stalls where `PreCompact` arrives but `PostCompact` never follows;
+- turn-stall detection catches long-running active turns without a `Stop` hook.
+
 ## Desktop And CLI Coverage
 
 - CLI users can run `relay-baton recover --strategy fork` or `relay-baton watch --auto --fork`.

@@ -3,6 +3,7 @@ import { getLatestThread, getMaxLogId, getThread, readRecentLogs } from "./codex
 import { defaultGuardianConfig, type GuardianConfig } from "./config.ts";
 import { createHandoffRecovery } from "./handoff.ts";
 import { buildRecoveryPlan, recover } from "./recovery.ts";
+import { detectActivityFailure, loadActivityState } from "./activity.ts";
 import {
   canRecoverThread,
   loadRecoveryState,
@@ -47,7 +48,10 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
   const state = loadRecoveryState(options.home);
   const rows = readRecentLogs({ home: options.home, afterId: state.lastSeenLogId, limit: 200 });
   const maxSeen = rows.reduce((max, row) => Math.max(max, row.id), state.lastSeenLogId || 0);
-  const signal = classifyLogs(rows);
+  const signal = classifyLogs(rows) || detectActivityFailure(loadActivityState(options.home), {
+    compactTimeoutMs: config.compactTimeoutMs,
+    turnStallMs: config.turnStallMs
+  });
   state.lastSeenLogId = maxSeen;
 
   if (!signal) {

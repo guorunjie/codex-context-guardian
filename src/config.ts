@@ -6,6 +6,8 @@ export type GuardianConfig = {
   fallbackModel: string;
   pollIntervalMs: number;
   recoveryCooldownMs: number;
+  compactTimeoutMs: number;
+  turnStallMs: number;
   maxConsecutiveRecoveries: number;
   freshSessionAfterAttempts: number;
   fallbackAttempts: number;
@@ -26,6 +28,8 @@ export function defaultGuardianConfig(home?: string): GuardianConfig {
     fallbackModel: process.env.GUARDIAN_FALLBACK_MODEL || "gpt-5.4",
     pollIntervalMs: numberFromEnv("GUARDIAN_POLL_MS", 5000),
     recoveryCooldownMs: numberFromEnv("GUARDIAN_COOLDOWN_MS", 10 * 60 * 1000),
+    compactTimeoutMs: numberFromEnv("GUARDIAN_COMPACT_TIMEOUT_MS", 2 * 60 * 1000),
+    turnStallMs: numberFromEnv("GUARDIAN_TURN_STALL_MS", 30 * 60 * 1000),
     maxConsecutiveRecoveries: numberFromEnv("GUARDIAN_MAX_RECOVERIES", 3),
     freshSessionAfterAttempts: numberFromEnv("GUARDIAN_FRESH_SESSION_AFTER", 2),
     fallbackAttempts: numberFromEnv("GUARDIAN_FALLBACK_ATTEMPTS", 2),

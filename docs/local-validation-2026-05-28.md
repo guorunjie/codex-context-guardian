@@ -13,7 +13,7 @@ Implemented:
 
 - CLI installation through `npm link`.
 - `relay-baton doctor` for Codex CLI, SQLite state/log database, model, and hook checks.
-- `relay-baton install-hooks` for `PreCompact` and `PostCompact` snapshots.
+- `relay-baton install-hooks` for lifecycle activity tracking plus `PreCompact` and `PostCompact` snapshots.
 - `relay-baton recover` for fallback-model, fork, and new-session plans.
 - `relay-baton pack` for recovery bundle generation.
 - `relay-baton handoff` for bundle generation plus exact fresh-session command output.

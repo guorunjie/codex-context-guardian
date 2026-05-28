@@ -4,7 +4,7 @@
 
 - Created standalone Node.js/TypeScript CLI with no runtime npm dependencies.
 - Implemented diagnostics for Codex CLI, `~/.codex` state, logs, hooks, and model configuration.
-- Implemented compact hook installation for `PreCompact` and `PostCompact`.
+- Implemented lifecycle hook installation for activity tracking plus `PreCompact` and `PostCompact` snapshots.
 - Implemented snapshot capture with git state and secret redaction.
 - Implemented SQLite-backed thread and log inspection.
 - Implemented compaction failure classification.

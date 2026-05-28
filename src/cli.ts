@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { runDoctor, formatDoctor } from "./doctor.ts";
 import { installHooks } from "./hooks.ts";
 import { readStdinJson, writeSnapshot } from "./snapshot.ts";
+import { loadActivityState, recordActivityEvent, type ActivityState } from "./activity.ts";
 import { recover } from "./recovery.ts";
 import { watch, tick } from "./watch.ts";
 import { buildRecoveryPlan } from "./recovery.ts";
@@ -39,6 +40,10 @@ export async function main(argv: string[]): Promise<void> {
       return watchCommand(parsed);
     case "monitor":
       return monitorCommand(parsed);
+    case "follow":
+      return followCommand(parsed);
+    case "activity":
+      return activityCommand(parsed);
     case "help":
     case "":
       console.log(helpText());
@@ -98,13 +103,24 @@ async function installHooksCommand(parsed: ParsedArgs): Promise<void> {
 
 async function hookCommand(parsed: ParsedArgs): Promise<void> {
   const payload = await readStdinJson();
-  const file = writeSnapshot({
+  const phase = stringFlag(parsed, "phase") || "manual";
+  const event = recordActivityEvent({
     home: stringFlag(parsed, "home"),
-    phase: stringFlag(parsed, "phase") || "manual",
-    threadId: stringFlag(parsed, "thread"),
+    phase,
     payload
   });
-  console.log(file);
+  const shouldSnapshot = phase === "precompact" || phase === "postcompact" || Boolean(parsed.flags.snapshot);
+  if (shouldSnapshot) {
+    const file = writeSnapshot({
+      home: stringFlag(parsed, "home"),
+      phase,
+      threadId: stringFlag(parsed, "thread"),
+      payload
+    });
+    console.log(file);
+    return;
+  }
+  console.log(JSON.stringify(event));
 }
 
 async function recoverCommand(parsed: ParsedArgs): Promise<void> {
@@ -280,6 +296,52 @@ async function monitorCommand(parsed: ParsedArgs): Promise<void> {
   throw new Error(`Unknown monitor action: ${action}`);
 }
 
+async function followCommand(parsed: ParsedArgs): Promise<void> {
+  const action = parsed.positional[0] || "status";
+  if (action === "install") {
+    const hooks = installHooks({
+      home: stringFlag(parsed, "home"),
+      guardianBin: guardianBinPath(),
+      dryRun: Boolean(parsed.flags.dryRun)
+    });
+    const monitor = installMonitor({
+      home: stringFlag(parsed, "home"),
+      nodeBin: process.execPath,
+      guardianBin: guardianBinPath(),
+      dryRun: Boolean(parsed.flags.dryRun)
+    });
+    console.log(JSON.stringify({ hooks, monitor }, null, 2));
+    return;
+  }
+  if (action === "start") {
+    console.log(JSON.stringify(startMonitor(), null, 2));
+    return;
+  }
+  if (action === "stop") {
+    console.log(JSON.stringify(stopMonitor(), null, 2));
+    return;
+  }
+  if (action === "status") {
+    console.log(JSON.stringify({
+      monitor: monitorStatus(stringFlag(parsed, "home")),
+      activity: loadActivityState(stringFlag(parsed, "home"))
+    }, null, 2));
+    return;
+  }
+  throw new Error(`Unknown follow action: ${action}`);
+}
+
+async function activityCommand(parsed: ParsedArgs): Promise<void> {
+  const action = parsed.positional[0] || "status";
+  if (action !== "status") throw new Error(`Unknown activity action: ${action}`);
+  const state = loadActivityState(stringFlag(parsed, "home"));
+  if (parsed.flags.json) {
+    console.log(JSON.stringify(state, null, 2));
+    return;
+  }
+  console.log(formatActivityState(state));
+}
+
 function stringFlag(parsed: ParsedArgs, name: string): string | undefined {
   const value = parsed.flags[name];
   return typeof value === "string" ? value : undefined;
@@ -302,6 +364,35 @@ function numberFlag(parsed: ParsedArgs, name: string): number | undefined {
   return Math.floor(parsedNumber);
 }
 
+function formatActivityState(state: ActivityState): string {
+  const threads = Object.values(state.threads)
+    .sort((a, b) => b.lastEventAt - a.lastEventAt)
+    .slice(0, 8);
+  const lines = [
+    "Relay Baton activity",
+    `updated: ${state.updatedAt ? new Date(state.updatedAt).toISOString() : "never"}`,
+    `threads: ${Object.keys(state.threads).length}`
+  ];
+  if (threads.length === 0) {
+    lines.push("No Codex hook activity has been recorded yet.");
+    return lines.join("\n");
+  }
+  for (const thread of threads) {
+    const flags = [
+      thread.compactInFlight ? "compact:in-flight" : "",
+      thread.activeTurnStartedAt ? "turn:active" : ""
+    ].filter(Boolean);
+    lines.push(
+      "",
+      `${thread.threadId} ${flags.length > 0 ? `[${flags.join(", ")}]` : ""}`.trim(),
+      `  title: ${thread.title || "unknown"}`,
+      `  lastEvent: ${thread.lastEventName || "unknown"} @ ${thread.lastEventAt ? new Date(thread.lastEventAt).toISOString() : "unknown"}`,
+      `  cwd: ${thread.cwd || "unknown"}`
+    );
+  }
+  return lines.join("\n");
+}
+
 function guardianBinPath(): string {
   const srcDir = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(srcDir, "../bin/relay-baton.js");
@@ -313,9 +404,11 @@ function helpText(): string {
 Usage:
   relay-baton doctor [--json] [--home <CODEX_HOME>]
   relay-baton install-hooks [--dry-run] [--home <CODEX_HOME>]
-  relay-baton hook --phase <precompact|postcompact> [--thread <id>]
+  relay-baton hook --phase <event-name> [--thread <id>] [--snapshot]
   relay-baton watch [--auto] [--fork|--desktop] [--goal-mode] [--once] [--dry-run] [--home <CODEX_HOME>]
+  relay-baton follow install|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
+  relay-baton activity status [--json] [--home <CODEX_HOME>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
   relay-baton handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
   relay-baton recover --thread <id> [--strategy auto|fallback-model|fork|new-session] [--dry-run]

@@ -20,7 +20,8 @@ Relay Baton avoids that by combining:
 ## Features
 
 - `relay-baton doctor` checks Codex CLI, local SQLite state, logs, configured models, and compact hooks.
-- `relay-baton install-hooks` installs `PreCompact` and `PostCompact` snapshot hooks.
+- `relay-baton install-hooks` installs Codex lifecycle hooks for activity tracking and compact snapshots.
+- `relay-baton follow install` installs Codex lifecycle hooks and the background monitor together.
 - `relay-baton watch --auto --fork` monitors Codex logs and runs the recovery ladder automatically.
 - `relay-baton recover --thread <id> --strategy auto` executes fallback-model, fork, or new-session recovery.
 - `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
@@ -48,6 +49,30 @@ Recovery priority is fixed:
 5. Old thread title
 
 If those disagree, Relay Baton tells the next session to trust the bundle and current worktree over the old title.
+
+## Codex Following
+
+Relay Baton follows Codex with a hybrid trigger model:
+
+- Lifecycle hooks record near-real-time activity for `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`, `PreCompact`, and `PostCompact`.
+- The background monitor polls Codex's local log database as a safety net.
+- `activity-state.json` keeps the latest event, active turn, compact state, and recent hook events for each thread.
+
+This is more reliable than pure polling and less brittle than depending only on private Desktop UI state.
+
+Install the full local follower:
+
+```bash
+relay-baton follow install
+relay-baton follow start
+relay-baton follow status
+```
+
+Inspect recorded activity:
+
+```bash
+relay-baton activity status
+```
 
 ## Automatic Strategy
 
@@ -133,6 +158,8 @@ GUARDIAN_FALLBACK_MODEL=gpt-5.4
 GUARDIAN_FALLBACK_ATTEMPTS=2
 GUARDIAN_AUTO_DESTINATION=fork   # fork | desktop | cli
 GUARDIAN_COOLDOWN_MS=600000
+GUARDIAN_COMPACT_TIMEOUT_MS=120000
+GUARDIAN_TURN_STALL_MS=1800000
 ```
 
 The environment variable names keep the old `GUARDIAN_` prefix for compatibility.
@@ -160,3 +187,5 @@ Desktop handoff is useful, but less lossless than `codex fork` because it starts
 ## Roadmap
 
 See [docs/relay-baton-roadmap.md](docs/relay-baton-roadmap.md) for the productization and memory-system roadmap, including Claude-style project memory, Codex fork-first recovery, and cross-platform monitor work.
+
+See [docs/monitor-trigger-evaluation.md](docs/monitor-trigger-evaluation.md) for the monitoring trigger evaluation and chosen hybrid design.

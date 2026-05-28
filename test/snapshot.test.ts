@@ -25,3 +25,16 @@ test("writes snapshot and redacts obvious secrets", () => {
   assert.equal(snapshot.payload.nested.apiKey, "[redacted]");
   assert.equal(snapshot.payload.safe, "visible");
 });
+
+test("uses session_id from hook payload as the source thread id", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "relay-baton-snapshot-session-"));
+  const file = writeSnapshot({
+    home,
+    phase: "precompact",
+    payload: {
+      session_id: "thread-from-hook"
+    }
+  });
+
+  assert.match(path.basename(file), /^thread-from-hook-/);
+});

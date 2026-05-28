@@ -37,6 +37,14 @@ export function recoveryStatePath(home = codexHome()): string {
   return path.join(guardianHome(home), "recovery-state.json");
 }
 
+export function activityStatePath(home = codexHome()): string {
+  return path.join(guardianHome(home), "activity-state.json");
+}
+
+export function activityEventsPath(home = codexHome()): string {
+  return path.join(guardianHome(home), "activity-events.jsonl");
+}
+
 export function recoveriesDir(home = codexHome()): string {
   return path.join(guardianHome(home), "recoveries");
 }

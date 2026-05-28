@@ -3,6 +3,7 @@ import path from "node:path";
 import { getLatestThread, getThread, type ThreadInfo } from "./codexState.ts";
 import { runCommand } from "./exec.ts";
 import { snapshotsDir } from "./paths.ts";
+import { readThreadIdFromPayload } from "./activity.ts";
 
 export type SnapshotInput = {
   phase: string;
@@ -38,7 +39,7 @@ export function writeSnapshot(input: SnapshotInput): string {
   };
   const dir = snapshotsDir(input.home);
   fs.mkdirSync(dir, { recursive: true });
-  const name = `${thread?.id || "unknown"}-${Date.now()}-${input.phase}.json`;
+  const name = `${thread?.id || threadId || "unknown"}-${Date.now()}-${input.phase}.json`;
   const file = path.join(dir, name);
   fs.writeFileSync(file, JSON.stringify(snapshot, null, 2));
   return file;
@@ -77,11 +78,6 @@ function readGitState(cwd: string): Snapshot["git"] {
     sha: sha.status === 0 ? sha.stdout.trim() : "",
     status: status.status === 0 ? status.stdout.trim() : ""
   };
-}
-
-function readThreadIdFromPayload(payload?: Record<string, unknown>): string | undefined {
-  const direct = payload?.thread_id || payload?.threadId;
-  return typeof direct === "string" ? direct : undefined;
 }
 
 function sanitizePayload(payload: Record<string, unknown>): Record<string, unknown> {

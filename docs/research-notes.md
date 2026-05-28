@@ -6,7 +6,7 @@ Key findings used for the v0.1 design:
 - OpenAI's API documentation documents context compaction through `/responses/compact`.
 - OpenAI's compaction API returns an opaque compacted context window and says the returned window should be treated as the canonical next context window, not pruned manually. Relay Baton therefore avoids editing compact output and instead creates a separate explicit recovery bundle when compaction is unhealthy.
 - Codex memories are a separate local recall layer for stable preferences, workflows, project conventions, and pitfalls. They are not a replacement for required project guidance, so Relay Baton uses explicit bundle files for task state instead of relying on ambient memory.
-- Codex hooks expose `PreCompact` and `PostCompact`, which Relay Baton uses for snapshots around compaction attempts.
+- Codex hooks expose lifecycle events such as prompt submit, tool use, stop, `PreCompact`, and `PostCompact`; Relay Baton uses them for activity tracking and snapshots around compaction attempts.
 - Codex CLI currently exposes `resume`, `fork`, `exec resume`, `--model`, and per-command `-c` config overrides, which are enough for a standalone recovery orchestrator.
 - GitHub issues in `openai/codex` show real user demand around compaction reliability and continuing work in fresh sessions.
 - GitHub issue #21288 specifically asks for a new-session recovery option after repeated compact failures, initialized from previous session context: latest user instruction, cwd, branch, changed files, completed work, pending tasks, blockers, and constraints.

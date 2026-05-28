@@ -3,8 +3,10 @@ import type { LogRow } from "./codexState.ts";
 export type FailureKind =
   | "model_compact_unsupported"
   | "compact_failed"
+  | "compact_stalled"
   | "context_overflow"
   | "transport_or_rate_limit"
+  | "turn_stalled"
   | "unknown";
 
 export type FailureSignal = {
