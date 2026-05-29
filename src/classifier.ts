@@ -18,7 +18,6 @@ export type FailureSignal = {
 };
 
 const MODEL_UNSUPPORTED = [
-  /responses\/compact/i,
   /compact(?:ion)?.{0,80}(not supported|unsupported|unavailable)/i,
   /(model|gpt-[\w.-]+).{0,80}(not supported|unsupported).{0,80}compact/i,
   /not supported on this model/i
@@ -29,7 +28,11 @@ const COMPACT_FAILED = [
   /compact task failed/i,
   /failed to compact/i,
   /run_compact_task/i,
-  /context compaction/i
+  /context compaction/i,
+  /compact_remote/i,
+  /responses\/compact.{0,160}(error|failed|disconnected)/i,
+  /stream disconnected before completion/i,
+  /error sending request for url.{0,160}responses\/compact/i
 ];
 
 const CONTEXT_OVERFLOW = [
@@ -71,7 +74,7 @@ export function classifyText(text: string): FailureSignal | null {
   if (COMPACT_FAILED.some((pattern) => pattern.test(body))) {
     return {
       kind: "compact_failed",
-      confidence: "medium",
+      confidence: /responses\/compact|compact_remote|stream disconnected before completion/i.test(body) ? "high" : "medium",
       reason: "Codex reported compaction failure"
     };
   }
@@ -114,13 +117,24 @@ function isOperationalFailureRow(row: LogRow): boolean {
   const body = row.body;
   const target = row.target;
 
-  if (level === "TRACE" || level === "DEBUG") return false;
-
   if (/function_call|function_call_arguments|response\.created|response\.in_progress|instructions/i.test(body)) {
     return false;
   }
 
+  if (isCompactTransportFailure(row)) return true;
+
+  if (level === "TRACE" || level === "DEBUG") return false;
+
   if (level === "ERROR" || level === "WARN") return true;
   if (/compact/i.test(target) && /failed|error|unsupported|not supported/i.test(body)) return true;
   return /response\.failed|status["']?:["']?failed|CodexErr|"error"\s*:\s*(\{|"(?!null)[^"]+")/i.test(body);
+}
+
+function isCompactTransportFailure(row: LogRow): boolean {
+  const target = row.target;
+  const body = row.body;
+  const compactTarget = /compact|compact_remote|responses/i.test(target);
+  const compactBody = /responses\/compact|compact_remote|remote compact|run_compact_task/i.test(body);
+  if (!compactTarget && !compactBody) return false;
+  return /stream disconnected before completion|error sending request for url|transport|connection|timeout|failed|CodexErr/i.test(body);
 }

@@ -29,7 +29,7 @@ test("records desktop handoff quality and bundle metadata", () => {
   assert.equal(state.lastSeenLogId, 42);
 });
 
-test("records fork handoff and blocks duplicate source recovery", () => {
+test("records fork handoff and skips only already-covered failures", () => {
   const state: GuardianRecoveryState = {
     lastSeenLogId: 0,
     threads: {}
@@ -45,6 +45,34 @@ test("records fork handoff and blocks duplicate source recovery", () => {
   assert.equal(state.lastSeenLogId, 99);
   assert.deepEqual(canRecoverThread(state, "source-1", 1_000_000, {
     cooldownMs: 1,
-    maxConsecutiveRecoveries: 10
-  }), { ok: false, reason: "fork handoff already created" });
+    maxConsecutiveRecoveries: 10,
+    failureLogId: 99
+  }), { ok: false, reason: "existing handoff already covers this failure" });
+  assert.deepEqual(canRecoverThread(state, "source-1", 1_000_000, {
+    cooldownMs: 1,
+    maxConsecutiveRecoveries: 10,
+    failureLogId: 100
+  }), { ok: true });
+});
+
+test("allows newer handoff upgrade even when prior recovery count reached limit", () => {
+  const state: GuardianRecoveryState = {
+    lastSeenLogId: 0,
+    threads: {
+      "source-1": {
+        lastRecoveryAt: 2000,
+        consecutiveRecoveries: 3,
+        lastLogId: 99,
+        lastFailureLogId: 99,
+        fallbackAttempts: 2,
+        forkHandoffCreated: true
+      }
+    }
+  };
+
+  assert.deepEqual(canRecoverThread(state, "source-1", 2500, {
+    cooldownMs: 10_000,
+    maxConsecutiveRecoveries: 3,
+    failureLogId: 100
+  }), { ok: true });
 });

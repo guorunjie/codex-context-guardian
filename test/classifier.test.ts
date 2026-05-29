@@ -78,3 +78,36 @@ test("ignores trace response metadata with null error", () => {
 
   assert.equal(signal, null);
 });
+
+test("classifies compact transport failures even from debug level logs", () => {
+  const signal = classifyLogs([
+    {
+      id: 7,
+      ts: 7,
+      level: "DEBUG",
+      target: "codex_core::compact_remote",
+      body: "Error running remote compact task: stream disconnected before completion: error sending request for url (https://chatgpt.com/backend-api/codex/responses/compact)",
+      threadId: "thread-transport"
+    }
+  ]);
+
+  assert.equal(signal?.kind, "compact_failed");
+  assert.equal(signal?.confidence, "high");
+  assert.equal(signal?.sourceLogId, 7);
+  assert.equal(signal?.threadId, "thread-transport");
+});
+
+test("does not classify ordinary trace prompt text that mentions compact", () => {
+  const signal = classifyLogs([
+    {
+      id: 8,
+      ts: 8,
+      level: "TRACE",
+      target: "codex_core::session",
+      body: "user asked to analyze why compact failure recovery should be improved",
+      threadId: "thread-prompt"
+    }
+  ]);
+
+  assert.equal(signal, null);
+});

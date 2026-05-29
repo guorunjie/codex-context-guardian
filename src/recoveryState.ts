@@ -42,19 +42,20 @@ export function saveRecoveryState(state: GuardianRecoveryState, home?: string): 
 export function canRecoverThread(state: GuardianRecoveryState, threadId: string, now: number, options: {
   cooldownMs: number;
   maxConsecutiveRecoveries: number;
+  failureLogId?: number;
 }): { ok: true } | { ok: false; reason: string } {
   const current = state.threads[threadId];
   if (!current) return { ok: true };
-  if (current.desktopHandoffCreated) {
-    return { ok: false, reason: "desktop handoff already created" };
+  const failureLogId = Number(options.failureLogId || 0);
+  const hasHandoff = Boolean(current.desktopHandoffCreated || current.forkHandoffCreated);
+  const isNewerFailure = failureLogId > 0 && (!current.lastFailureLogId || failureLogId > current.lastFailureLogId);
+  if (hasHandoff && failureLogId > 0 && current.lastFailureLogId && failureLogId <= current.lastFailureLogId) {
+    return { ok: false, reason: "existing handoff already covers this failure" };
   }
-  if (current.forkHandoffCreated) {
-    return { ok: false, reason: "fork handoff already created" };
-  }
-  if (current.consecutiveRecoveries >= options.maxConsecutiveRecoveries) {
+  if (current.consecutiveRecoveries >= options.maxConsecutiveRecoveries && !(hasHandoff && isNewerFailure)) {
     return { ok: false, reason: `recovery limit reached (${current.consecutiveRecoveries})` };
   }
-  if (now - current.lastRecoveryAt < options.cooldownMs) {
+  if (!hasHandoff && now - current.lastRecoveryAt < options.cooldownMs) {
     return { ok: false, reason: "cooldown active" };
   }
   return { ok: true };

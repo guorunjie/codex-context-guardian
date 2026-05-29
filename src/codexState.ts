@@ -70,12 +70,19 @@ export function readRecentLogs(options: {
       ${afterClause}
       ${threadClause}
       and (
-        feedback_log_body like '%compact%'
-        or feedback_log_body like '%Compaction%'
-        or feedback_log_body like '%context_length%'
-        or feedback_log_body like '%ran out of room%'
-        or feedback_log_body like '%clear earlier history%'
-        or feedback_log_body like '%model%not%supported%'
+        target like '%compact%'
+        or target like '%responses%'
+        or feedback_log_body like '%responses/compact%'
+        or feedback_log_body like '%run_compact_task%'
+        or feedback_log_body like '%compact_remote%'
+        or feedback_log_body like '%remote compact%'
+        or feedback_log_body like '%compaction failed%'
+        or feedback_log_body like '%compact task failed%'
+        or feedback_log_body like '%failed to compact%'
+        or feedback_log_body like '%context_length_exceeded%'
+        or feedback_log_body like '%ran out of room in the model%'
+        or feedback_log_body like '%clear earlier history before retrying%'
+        or feedback_log_body like '%model%not%supported%compact%'
       )
     order by id asc
     limit ${Number(options.limit || 200)};
