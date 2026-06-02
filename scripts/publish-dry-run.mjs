@@ -10,8 +10,13 @@ const packageName = packageJson.name;
 const version = packageJson.version;
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
-const view = spawnSync(npmCommand, ["view", `${packageName}@${version}`, "version"], {
+const spawnOptions = {
   cwd: root,
+  shell: process.platform === "win32"
+};
+
+const view = spawnSync(npmCommand, ["view", `${packageName}@${version}`, "version"], {
+  ...spawnOptions,
   encoding: "utf8"
 });
 
@@ -33,7 +38,7 @@ if (view.status === 0 && view.stdout.trim() === version) {
 }
 
 const publish = spawnSync(npmCommand, ["publish", "--dry-run", "--json"], {
-  cwd: root,
+  ...spawnOptions,
   stdio: "inherit"
 });
 
