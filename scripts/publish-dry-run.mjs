@@ -8,11 +8,17 @@ const packageJsonPath = path.join(root, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const packageName = packageJson.name;
 const version = packageJson.version;
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
-const view = spawnSync("npm", ["view", `${packageName}@${version}`, "version"], {
+const view = spawnSync(npmCommand, ["view", `${packageName}@${version}`, "version"], {
   cwd: root,
   encoding: "utf8"
 });
+
+if (view.error) {
+  console.error(`Failed to run ${npmCommand} view: ${view.error.message}`);
+  process.exit(1);
+}
 
 if (view.status === 0 && view.stdout.trim() === version) {
   console.log(JSON.stringify({
@@ -26,9 +32,14 @@ if (view.status === 0 && view.stdout.trim() === version) {
   process.exit(0);
 }
 
-const publish = spawnSync("npm", ["publish", "--dry-run", "--json"], {
+const publish = spawnSync(npmCommand, ["publish", "--dry-run", "--json"], {
   cwd: root,
   stdio: "inherit"
 });
+
+if (publish.error) {
+  console.error(`Failed to run ${npmCommand} publish --dry-run: ${publish.error.message}`);
+  process.exit(1);
+}
 
 process.exit(publish.status ?? 1);
