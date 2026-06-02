@@ -2,15 +2,31 @@
 
 [![CI](https://github.com/guorunjie/codex-relay-baton-guardian/actions/workflows/ci.yml/badge.svg)](https://github.com/guorunjie/codex-relay-baton-guardian/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/guorunjie/codex-relay-baton-guardian)](https://github.com/guorunjie/codex-relay-baton-guardian/releases)
+[![npm](https://img.shields.io/npm/v/codex-relay-baton-guardian)](https://www.npmjs.com/package/codex-relay-baton-guardian)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Sleep-safe Codex recovery for long-running tasks.**
+**Sleep-safe Codex recovery for long-running tasks. Let Codex keep working while you sleep.**
 
 ![Relay Baton recovery flow](docs/assets/relay-baton-demo.png)
 
-Relay Baton keeps long-running Codex work moving while you sleep. When Codex hits remote compaction failures, unsupported compact models, or the hard context-window error `Codex ran out of room in the model's context window`, it detects the stuck source thread, preserves the latest real task state, and starts one safe relay so the work can continue instead of dying overnight.
+Relay Baton is a local monitor for Codex Desktop/CLI. When a long task hits remote compaction failures, unsupported compact models, or the hard context-window error `Codex ran out of room in the model's context window`, Relay Baton detects the stuck source thread, preserves the latest real task state, and queues one audited recovery bundle so the work can continue instead of dying overnight. Visible fork/Desktop relays are explicit, not a background side effect.
 
-The core rule is simple: preserve the real latest task state before creating a new visible conversation.
+The core rule is simple: keep one best relay anchored on the latest real task state, not an old title, stale summary, or abandoned direction.
+
+```bash
+npm install -g codex-relay-baton-guardian
+relay-baton doctor
+relay-baton follow install
+relay-baton follow start
+relay-baton diagnose --last
+```
+
+Public evidence:
+
+- Real compact-failure case study: [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md)
+- 30-60 second demo outline: [docs/demo-30s-rescue.md](docs/demo-30s-rescue.md)
+- Host validation guide: [docs/validation-report-guide.md](docs/validation-report-guide.md)
+- High-star readiness audit: [docs/high-star-readiness-audit.md](docs/high-star-readiness-audit.md)
 
 ## Why It Exists
 
@@ -18,21 +34,24 @@ Long agent sessions often fail after the project has already changed direction. 
 
 Relay Baton avoids that by combining:
 
-- Codex `fork` when the original session is still readable, because fork keeps the original conversation history and workspace state closest to intact.
-- Codex app-server `thread/fork` with `excludeTurns` when available, because it branches through the official thread control plane without forcing a full history rebuild.
+- Queue-only unattended monitoring by default, because LaunchAgent/systemd/Task Scheduler monitors do not have an interactive TTY and should not create empty visible sidebar threads if a remote-control turn cannot start.
+- Codex app-server `thread/fork` with `excludeTurns` for explicit visible recovery when the user asks Relay Baton to create a fork.
+- Codex CLI `fork` for manual recovery when the user is in a terminal and wants the closest possible branch from the original readable session.
 - Last-healthy-checkpoint fork for hard context overflow, using the newest successful `Stop` or `PostCompact` hook instead of retrying the saturated source thread.
-- Fallback-model recovery for model-specific compact failures, tried twice per source thread.
+- Startup backfill over recent compact failures, so restarting the monitor does not silently skip a failure that happened minutes earlier.
+- `relay-baton diagnose`, which explains why a thread was not rescued: skipped log id, missing hooks, cooldown, old handoff state, lineage mismatch, non-TTY CLI failure, or app-server unavailability.
 - Structured memory files that prioritize the latest goal, latest real user intent, concrete tool progress, current worktree state, and superseded directions.
 - Desktop handoff only when the user asks for a visible new Desktop conversation or when fork/CLI recovery is unavailable.
 
 ## Features
 
 - `relay-baton doctor` checks Codex CLI, local SQLite state, logs, configured models, and compact hooks.
+- `relay-baton diagnose --thread <id>|--last` explains why a stuck task was or was not rescued.
 - `relay-baton status` summarizes doctor, monitor, activity, and recovery state in one view.
 - `relay-baton install-hooks` installs Codex lifecycle hooks for activity tracking and compact snapshots.
 - `relay-baton follow install` installs Codex lifecycle hooks and the background monitor together.
 - `relay-baton follow repair` repairs hooks, LaunchAgent PATH, and monitor startup after shell or Homebrew path changes.
-- `relay-baton watch --auto --fork` monitors Codex logs and runs the recovery ladder automatically.
+- `relay-baton watch --auto --fork --queue-only` monitors Codex logs and queues audited recovery bundles automatically.
 - `relay-baton recover --thread <id> --strategy auto` executes fallback-model, last-healthy-fork, fork, or new-session recovery.
 - `relay-baton recover --thread <id> --strategy fork --app-server` uses Codex app-server `thread/fork` for official-control-plane recovery.
 - `relay-baton app-server status|fork|rollback|compact` probes and exercises Codex app-server thread operations directly.
@@ -109,11 +128,14 @@ relay-baton status
 
 For each source thread:
 
-1. Hard context overflow: immediately create a last-healthy fork from the newest successful `Stop` or `PostCompact` checkpoint. This handles `Codex ran out of room in the model's context window. Start a new thread or clear earlier history before retrying.`
-2. First eligible compaction failure: run `codex exec resume --model <fallback>` to produce a summary, then resume with the primary model.
-3. Second eligible failure: repeat the fallback-model attempt.
-4. Third eligible failure: stop compacting the unhealthy thread and create one best relay:
-   - default: `codex fork` with the structured bundle prompt;
+1. Hard context overflow: queue a last-healthy fork bundle from the newest successful `Stop` or `PostCompact` checkpoint. This handles `Codex ran out of room in the model's context window. Start a new thread or clear earlier history before retrying.`
+2. Generic remote compaction failure: queue one structured recovery bundle for the best matching task chain. This avoids empty app-server forks from a background LaunchAgent.
+3. Model-specific compact unsupported failure in an interactive CLI: fallback-model recovery can still be used manually.
+4. If visible app-server recovery is explicitly enabled but unavailable: write the recovery bundle, record `manualHandoffRequired`, and surface the reason through `relay-baton diagnose` instead of silently pretending a fork succeeded.
+5. One best relay is kept per source task chain:
+   - default unattended route: queue-only bundle with `HANDOFF_MEMORY.json`, `RECENT_THREAD_CONTEXT.md`, and workspace facts;
+   - explicit visible route: app-server `thread/fork` with the structured bundle prompt and visible-relay rate limiting;
+   - manual route: `codex fork` when a TTY exists;
    - `--desktop` or `GUARDIAN_AUTO_DESTINATION=desktop`: one Desktop-visible continuation, guarded against duplicates;
    - `GUARDIAN_AUTO_DESTINATION=cli`: fresh CLI session in the original working directory.
 
@@ -208,16 +230,22 @@ relay-baton handoff --thread <stuck-thread-id> --desktop --goal-mode
 
 Relay Baton will not create a second Desktop continuation for the same source thread by default. It first evaluates `HANDOFF_MEMORY.json`; if a good Desktop relay already exists, it prints the existing thread id instead of creating another sidebar entry. Use `--force` only after reviewing the existing relay.
 
-Start automatic fork-first recovery:
+Start safe unattended monitoring:
 
 ```bash
-relay-baton watch --auto --fork
+relay-baton watch --auto --fork --queue-only
 ```
 
-Start automatic Desktop handoff recovery:
+Create a visible app-server relay explicitly:
 
 ```bash
-relay-baton watch --auto --desktop --goal-mode
+relay-baton watch --once --auto --fork --app-server --create-visible-relay
+```
+
+Create a visible Desktop handoff explicitly:
+
+```bash
+relay-baton watch --once --auto --desktop --goal-mode --create-visible-relay
 ```
 
 Install the monitor:
@@ -249,6 +277,11 @@ relay-baton validate host --strict-release --output ./relay-baton-validation
 GUARDIAN_FALLBACK_MODEL=gpt-5.4
 GUARDIAN_FALLBACK_ATTEMPTS=2
 GUARDIAN_AUTO_DESTINATION=fork   # fork | desktop | cli
+GUARDIAN_RECOVERY_TRANSPORT=app-server   # app-server | cli
+GUARDIAN_BACKFILL_MS=3600000
+GUARDIAN_CREATE_VISIBLE_RELAY=false
+GUARDIAN_MAX_VISIBLE_RELAYS_PER_WINDOW=1
+GUARDIAN_VISIBLE_RELAY_WINDOW_MS=3600000
 GUARDIAN_COOLDOWN_MS=600000
 GUARDIAN_COMPACT_TIMEOUT_MS=120000
 GUARDIAN_TURN_STALL_MS=1800000
@@ -262,8 +295,10 @@ The environment variable names keep the old `GUARDIAN_` prefix for compatibility
 - Uses per-command `--model` overrides.
 - Stores Relay Baton state under `~/.codex/relay-baton/`.
 - Redacts obvious secrets from hook snapshots.
-- Records fallback, fork, and Desktop handoff state per source thread.
+- Records queued bundles, fallback attempts, fork attempts, and Desktop handoff state per source thread.
 - Blocks duplicate Desktop/fork relays for the same source thread unless explicitly forced.
+- Defaults background monitors to `--queue-only`; visible relays require `--create-visible-relay` or `GUARDIAN_CREATE_VISIBLE_RELAY=true`.
+- Rate-limits visible relay creation to avoid sidebar spam during startup backfill.
 - Requires worktree inspection when the source turn ended with `turn_aborted`.
 
 ## Desktop Accuracy Notes

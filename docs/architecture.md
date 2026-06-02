@@ -13,7 +13,8 @@ flowchart TD
   E --> G["Recovery ladder"]
   F --> G
   G --> H["Fallback model attempt"]
-  G --> I["codex fork"]
+  G --> Q["Queued recovery bundle"]
+  Q --> I["codex/app-server fork"]
   G --> J["Desktop handoff"]
   G --> K["CLI new session"]
   L["Rollout JSONL"] --> M["HANDOFF_MEMORY.json"]
@@ -21,7 +22,7 @@ flowchart TD
   O["git status/diff/files"] --> P["Recovery bundle"]
   M --> P
   N --> P
-  P --> I
+  P --> Q
   P --> J
   P --> K
 ```
@@ -38,13 +39,13 @@ This order is intentional. Stuck sessions often have stale titles or early plans
 
 ## Recovery Ladder
 
-1. Try fallback-model recovery for model-specific compaction failures.
-2. Try fallback-model recovery one more time for the same source thread.
-3. Prefer `codex fork` because it keeps the original conversation history closest to intact.
+1. In unattended monitor mode, queue a recovery bundle and record the best current handoff state without creating a visible thread.
+2. In interactive/manual mode, try fallback-model recovery for model-specific compaction failures.
+3. Prefer `codex fork` or app-server `thread/fork` for explicit visible recovery because it keeps the original conversation history closest to intact.
 4. Use Desktop handoff only when visible recovery is requested or configured.
 5. Use a new CLI session when fork/Desktop are unavailable.
 
-Every automatic action is bounded by per-thread cooldown, recovery count, and duplicate fork/Desktop handoff guards.
+Every automatic action is bounded by per-thread cooldown, recovery count, duplicate queued/fork/Desktop handoff guards, and visible-relay rate limiting.
 
 ## Local State
 

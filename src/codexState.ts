@@ -55,19 +55,23 @@ export function getLatestThread(home?: string): ThreadInfo | null {
 export function readRecentLogs(options: {
   home?: string;
   afterId?: number;
+  sinceTs?: number;
   limit?: number;
   threadId?: string;
 } = {}): LogRow[] {
   const db = logsDbPath(options.home);
   if (!fs.existsSync(db)) return [];
   const afterClause = options.afterId ? `and id > ${Number(options.afterId)}` : "";
+  const sinceTs = Number(options.sinceTs || 0);
+  const sinceClause = sinceTs ? `and (ts >= ${sinceTs} or ts >= ${Math.floor(sinceTs / 1000)})` : "";
   const threadClause = options.threadId ? `and thread_id = '${options.threadId.replaceAll("'", "''")}'` : "";
   const rows = queryJson(db, `
-    select id, ts, level, target, coalesce(feedback_log_body, '') as body,
+    select id, ts, level, target, substr(coalesce(feedback_log_body, ''), 1, 8000) as body,
            coalesce(thread_id, '') as threadId
     from logs
     where 1 = 1
       ${afterClause}
+      ${sinceClause}
       ${threadClause}
       and (
         target like '%compact%'

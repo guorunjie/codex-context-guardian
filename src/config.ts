@@ -14,6 +14,11 @@ export type GuardianConfig = {
   freshSessionAfterAttempts: number;
   fallbackAttempts: number;
   autoDestination: "fork" | "desktop" | "cli";
+  recoveryTransport: "app-server" | "cli";
+  backfillMs: number;
+  createVisibleRelay: boolean;
+  maxVisibleRelaysPerWindow: number;
+  visibleRelayWindowMs: number;
 };
 
 export function readCodexPrimaryModel(home?: string): string {
@@ -36,7 +41,12 @@ export function defaultGuardianConfig(home?: string): GuardianConfig {
     maxConsecutiveRecoveries: numberFromEnv("GUARDIAN_MAX_RECOVERIES", 3),
     freshSessionAfterAttempts: numberFromEnv("GUARDIAN_FRESH_SESSION_AFTER", 2),
     fallbackAttempts: numberFromEnv("GUARDIAN_FALLBACK_ATTEMPTS", 2),
-    autoDestination: autoDestinationFromEnv()
+    autoDestination: autoDestinationFromEnv(),
+    recoveryTransport: recoveryTransportFromEnv(),
+    backfillMs: numberFromEnv("GUARDIAN_BACKFILL_MS", 60 * 60 * 1000),
+    createVisibleRelay: boolFromEnv("GUARDIAN_CREATE_VISIBLE_RELAY", false),
+    maxVisibleRelaysPerWindow: numberFromEnv("GUARDIAN_MAX_VISIBLE_RELAYS_PER_WINDOW", 1),
+    visibleRelayWindowMs: numberFromEnv("GUARDIAN_VISIBLE_RELAY_WINDOW_MS", 60 * 60 * 1000)
   };
 }
 
@@ -57,8 +67,20 @@ function numberFromEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function boolFromEnv(name: string, fallback: boolean): boolean {
+  const value = process.env[name];
+  if (value === undefined) return fallback;
+  return value === "1" || value === "true" || value === "yes" || value === "on";
+}
+
 function autoDestinationFromEnv(): GuardianConfig["autoDestination"] {
   const value = process.env.GUARDIAN_AUTO_DESTINATION;
   if (value === "desktop" || value === "cli" || value === "fork") return value;
   return "fork";
+}
+
+function recoveryTransportFromEnv(): GuardianConfig["recoveryTransport"] {
+  const value = process.env.GUARDIAN_RECOVERY_TRANSPORT;
+  if (value === "cli" || value === "app-server") return value;
+  return "app-server";
 }

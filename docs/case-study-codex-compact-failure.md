@@ -90,10 +90,71 @@ This case proves the core fidelity behavior:
 
 It does not prove Linux or Windows monitor lifecycle. Those hosts still need separate `relay-baton validate host` reports before v1.0.
 
+## Follow-Up Leak Rescue: Background Monitor Missed A Real Stuck Thread
+
+Evidence was collected on 2026-06-02 from a second local Codex Desktop compact failure. Private title text and paths are redacted.
+
+The visible Desktop symptom was again:
+
+```text
+Error running remote compact task: stream disconnected before completion:
+error sending request for url (.../backend-api/codex/responses/compact)
+```
+
+This case was more valuable because Relay Baton did **not** rescue the task automatically.
+
+### What The Audit Found
+
+| Finding | Impact |
+| --- | --- |
+| Monitor was running as `watch --auto --fork --goal-mode` | The monitor existed, so this was not an install/start failure |
+| Compact failure existed in `logs_2.sqlite` | The source signal was real |
+| `lastSeenLogId` had advanced beyond the failure log | A restart or later polling pass could classify the failure as historical and skip it |
+| Local log timestamps were seconds while some code compared millisecond lookback values | Recent-log filtering could miss valid rows |
+| Activity hooks were missing or later pruned for the source thread | `compact_stalled` could not always save the attribution |
+| Lineage matching treated same `cwd` as enough evidence | A stuck source thread could be attributed to a newer unrelated thread in the same project folder |
+| LaunchAgent stderr contained `stdin is not a terminal` | Interactive `codex fork` is not a safe unattended recovery transport |
+| App-server fork could create a visible thread before the recovery turn started | Background visible app-server fork recovery can leave empty sidebar relays when remote-control turn startup is unhealthy |
+| Recovery state recorded fork attempts before fork success | The state could say a fork handoff existed even when the background CLI fork failed |
+
+### Fixes Added After This Case
+
+- Startup backfill now scans recent compact failures instead of blindly jumping to the newest log id.
+- Recent-log lookback accepts both second-level and millisecond-level Codex timestamps.
+- `relay-baton diagnose --thread <id>` explains skipped log ids, missing activity, recovery gate blocks, lineage mismatch, non-TTY failures, trusted-directory failures, and app-server availability.
+- Background monitor installs now include `--queue-only`; they write an audited bundle and recovery-state entry without creating a visible Desktop/sidebar thread.
+- Visible app-server recovery now requires an explicit `--create-visible-relay` or `GUARDIAN_CREATE_VISIBLE_RELAY=true`, and visible relays are rate-limited.
+- Interactive CLI recovery now refuses to run without a TTY and records a visible recovery failure instead of silently polluting successful handoff state.
+- Fork handoff state is recorded after recovery succeeds; app-server or CLI failure records `lastRecoveryError` and `manualHandoffRequired`.
+- Queued bundle state is recorded separately from successful visible fork/Desktop state, so "saved bundle" cannot masquerade as "visible relay created".
+- Thread lineage no longer merges tasks merely because they share the same working directory.
+
+### Diagnostic Output Shape
+
+The new diagnostic command is designed to make a miss explainable:
+
+```bash
+relay-baton diagnose --thread <stuck-thread-id>
+```
+
+Expected useful findings include:
+
+```text
+Signal: compact_failed (high)
+Why not rescued:
+- signal log <id> is at or below lastSeenLogId <id>
+- no lifecycle hook activity exists for this thread
+- monitor stderr contains non-TTY interactive Codex failures
+- queued recovery bundle exists: ~/.codex/relay-baton/bundles/...
+```
+
+This turns a vague "Relay Baton did not save it" report into concrete product work.
+
 ## Local Verification Commands
 
 ```bash
 relay-baton status
+relay-baton diagnose --thread <stuck-thread-id>
 relay-baton demo
 relay-baton audit ~/.codex/relay-baton/bundles/<demo-bundle>
 relay-baton recover --last --dry-run

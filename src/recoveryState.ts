@@ -16,10 +16,19 @@ export type ThreadRecoveryState = {
   lastDesktopHandoffQualityOk?: boolean;
   forkHandoffCreated?: boolean;
   lastForkHandoffBundleDir?: string;
+  queuedHandoffCreated?: boolean;
+  lastQueuedHandoffBundleDir?: string;
+  lastQueuedHandoffStrategy?: "fallback-model" | "last-healthy-fork" | "fork" | "new-session";
+  lastRecoveryTransport?: "app-server" | "cli" | "desktop" | "bundle";
+  lastRecoveryError?: string;
+  manualHandoffRequired?: boolean;
+  lastManualHandoffBundleDir?: string;
 };
 
 export type GuardianRecoveryState = {
   lastSeenLogId: number;
+  visibleRelayWindowStartedAt?: number;
+  visibleRelaysCreatedInWindow?: number;
   threads: Record<string, ThreadRecoveryState>;
 };
 
@@ -47,7 +56,7 @@ export function canRecoverThread(state: GuardianRecoveryState, threadId: string,
   const current = state.threads[threadId];
   if (!current) return { ok: true };
   const failureLogId = Number(options.failureLogId || 0);
-  const hasHandoff = Boolean(current.desktopHandoffCreated || current.forkHandoffCreated);
+  const hasHandoff = Boolean(current.desktopHandoffCreated || current.forkHandoffCreated || current.queuedHandoffCreated);
   const isNewerFailure = failureLogId > 0 && (!current.lastFailureLogId || failureLogId > current.lastFailureLogId);
   if (hasHandoff && failureLogId > 0 && current.lastFailureLogId && failureLogId <= current.lastFailureLogId) {
     return { ok: false, reason: "existing handoff already covers this failure" };
@@ -76,7 +85,14 @@ export function recordRecoveryAttempt(state: GuardianRecoveryState, threadId: st
     lastDesktopHandoffQualityScore: current.lastDesktopHandoffQualityScore,
     lastDesktopHandoffQualityOk: current.lastDesktopHandoffQualityOk,
     forkHandoffCreated: current.forkHandoffCreated,
-    lastForkHandoffBundleDir: current.lastForkHandoffBundleDir
+    lastForkHandoffBundleDir: current.lastForkHandoffBundleDir,
+    queuedHandoffCreated: current.queuedHandoffCreated,
+    lastQueuedHandoffBundleDir: current.lastQueuedHandoffBundleDir,
+    lastQueuedHandoffStrategy: current.lastQueuedHandoffStrategy,
+    lastRecoveryTransport: current.lastRecoveryTransport,
+    lastRecoveryError: current.lastRecoveryError,
+    manualHandoffRequired: current.manualHandoffRequired,
+    lastManualHandoffBundleDir: current.lastManualHandoffBundleDir
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -118,7 +134,10 @@ export function recordDesktopHandoff(
     lastDesktopHandoffThreadId: desktopThreadId || current.lastDesktopHandoffThreadId,
     lastDesktopHandoffBundleDir: details.bundleDir || current.lastDesktopHandoffBundleDir,
     lastDesktopHandoffQualityScore: details.qualityScore ?? current.lastDesktopHandoffQualityScore,
-    lastDesktopHandoffQualityOk: details.qualityOk ?? current.lastDesktopHandoffQualityOk
+    lastDesktopHandoffQualityOk: details.qualityOk ?? current.lastDesktopHandoffQualityOk,
+    lastRecoveryTransport: "desktop",
+    lastRecoveryError: undefined,
+    manualHandoffRequired: false
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -130,6 +149,7 @@ export function recordForkHandoff(
   now: number,
   details: {
     bundleDir?: string;
+    transport?: "app-server" | "cli";
   } = {}
 ): void {
   const current = normalizeThreadState(state.threads[threadId]);
@@ -140,7 +160,65 @@ export function recordForkHandoff(
     lastFailureLogId: logId || current.lastFailureLogId,
     lastLogId: Math.max(current.lastLogId || 0, logId || 0),
     forkHandoffCreated: true,
-    lastForkHandoffBundleDir: details.bundleDir || current.lastForkHandoffBundleDir
+    lastForkHandoffBundleDir: details.bundleDir || current.lastForkHandoffBundleDir,
+    lastRecoveryTransport: details.transport || current.lastRecoveryTransport,
+    lastRecoveryError: undefined,
+    manualHandoffRequired: false
+  };
+  state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
+}
+
+export function recordQueuedHandoff(
+  state: GuardianRecoveryState,
+  threadId: string,
+  logId: number,
+  now: number,
+  details: {
+    bundleDir?: string;
+    strategy?: ThreadRecoveryState["lastQueuedHandoffStrategy"];
+  } = {}
+): void {
+  const current = normalizeThreadState(state.threads[threadId]);
+  state.threads[threadId] = {
+    ...current,
+    lastRecoveryAt: now,
+    consecutiveRecoveries: current.consecutiveRecoveries + 1,
+    lastFailureLogId: logId || current.lastFailureLogId,
+    lastLogId: Math.max(current.lastLogId || 0, logId || 0),
+    queuedHandoffCreated: true,
+    lastQueuedHandoffBundleDir: details.bundleDir || current.lastQueuedHandoffBundleDir,
+    lastQueuedHandoffStrategy: details.strategy || current.lastQueuedHandoffStrategy,
+    lastRecoveryTransport: "bundle",
+    lastRecoveryError: undefined,
+    manualHandoffRequired: true,
+    lastManualHandoffBundleDir: details.bundleDir || current.lastManualHandoffBundleDir
+  };
+  state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
+}
+
+export function recordRecoveryFailure(
+  state: GuardianRecoveryState,
+  threadId: string,
+  logId: number,
+  now: number,
+  details: {
+    error: string;
+    transport?: "app-server" | "cli" | "desktop" | "bundle";
+    bundleDir?: string;
+    manualHandoffRequired?: boolean;
+  }
+): void {
+  const current = normalizeThreadState(state.threads[threadId]);
+  state.threads[threadId] = {
+    ...current,
+    lastRecoveryAt: now,
+    consecutiveRecoveries: current.consecutiveRecoveries + 1,
+    lastFailureLogId: logId || current.lastFailureLogId,
+    lastLogId: Math.max(current.lastLogId || 0, logId || 0),
+    lastRecoveryTransport: details.transport || current.lastRecoveryTransport,
+    lastRecoveryError: details.error,
+    manualHandoffRequired: details.manualHandoffRequired ?? current.manualHandoffRequired,
+    lastManualHandoffBundleDir: details.bundleDir || current.lastManualHandoffBundleDir
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -163,6 +241,35 @@ export function normalizeThreadState(current?: Partial<ThreadRecoveryState>): Th
       ? current.lastDesktopHandoffQualityOk
       : undefined,
     forkHandoffCreated: Boolean(current?.forkHandoffCreated),
-    lastForkHandoffBundleDir: current?.lastForkHandoffBundleDir
+    lastForkHandoffBundleDir: current?.lastForkHandoffBundleDir,
+    queuedHandoffCreated: Boolean(current?.queuedHandoffCreated),
+    lastQueuedHandoffBundleDir: current?.lastQueuedHandoffBundleDir,
+    lastQueuedHandoffStrategy: current?.lastQueuedHandoffStrategy,
+    lastRecoveryTransport: current?.lastRecoveryTransport,
+    lastRecoveryError: current?.lastRecoveryError,
+    manualHandoffRequired: Boolean(current?.manualHandoffRequired),
+    lastManualHandoffBundleDir: current?.lastManualHandoffBundleDir
   };
+}
+
+export function canCreateVisibleRelay(state: GuardianRecoveryState, now: number, options: {
+  maxVisibleRelaysPerWindow: number;
+  visibleRelayWindowMs: number;
+}): { ok: true } | { ok: false; reason: string } {
+  const windowStartedAt = Number(state.visibleRelayWindowStartedAt || 0);
+  const windowExpired = !windowStartedAt || now - windowStartedAt >= options.visibleRelayWindowMs;
+  const currentCount = windowExpired ? 0 : Number(state.visibleRelaysCreatedInWindow || 0);
+  if (currentCount >= options.maxVisibleRelaysPerWindow) {
+    return { ok: false, reason: `visible relay limit reached (${currentCount}/${options.maxVisibleRelaysPerWindow})` };
+  }
+  return { ok: true };
+}
+
+export function recordVisibleRelay(state: GuardianRecoveryState, now: number, options: {
+  visibleRelayWindowMs: number;
+}): void {
+  const windowStartedAt = Number(state.visibleRelayWindowStartedAt || 0);
+  const windowExpired = !windowStartedAt || now - windowStartedAt >= options.visibleRelayWindowMs;
+  state.visibleRelayWindowStartedAt = windowExpired ? now : windowStartedAt;
+  state.visibleRelaysCreatedInWindow = (windowExpired ? 0 : Number(state.visibleRelaysCreatedInWindow || 0)) + 1;
 }

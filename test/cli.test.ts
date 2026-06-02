@@ -47,6 +47,20 @@ test("parses monitor command flags", () => {
   assert.equal(parsed.flags.home, "/tmp/codex-home");
 });
 
+test("parses diagnose and app-server watch flags", () => {
+  const diagnose = parseArgs(["diagnose", "--thread", "thread-1", "--minutes", "45", "--json"]);
+  assert.equal(diagnose.command, "diagnose");
+  assert.equal(diagnose.flags.thread, "thread-1");
+  assert.equal(diagnose.flags.minutes, "45");
+  assert.equal(diagnose.flags.json, true);
+
+  const watch = parseArgs(["watch", "--auto", "--fork", "--app-server", "--queue-only", "--create-visible-relay"]);
+  assert.equal(watch.command, "watch");
+  assert.equal(watch.flags.appServer, true);
+  assert.equal(watch.flags.queueOnly, true);
+  assert.equal(watch.flags.createVisibleRelay, true);
+});
+
 test("parses status command and follow repair", () => {
   const status = parseArgs(["status", "--json"]);
   assert.equal(status.command, "status");

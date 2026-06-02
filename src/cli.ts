@@ -17,6 +17,7 @@ import { auditHandoffMemory } from "./handoffQuality.ts";
 import { writeDemoBundle } from "./demo.ts";
 import { evaluateReleaseReadiness, formatReleaseReadiness } from "./releaseCheck.ts";
 import { buildHostValidationReport, renderHostValidationReport, writeHostValidationReport } from "./validationReport.ts";
+import { formatDiagnose, runDiagnose } from "./diagnose.ts";
 import {
   compactThreadWithAppServer,
   defaultDesktopTitle,
@@ -41,6 +42,8 @@ export async function main(argv: string[]): Promise<void> {
   switch (parsed.command) {
     case "doctor":
       return doctorCommand(parsed);
+    case "diagnose":
+      return diagnoseCommand(parsed);
     case "status":
       return statusCommand(parsed);
     case "install-hooks":
@@ -117,6 +120,21 @@ async function doctorCommand(parsed: ParsedArgs): Promise<void> {
     return;
   }
   console.log(formatDoctor(checks));
+}
+
+async function diagnoseCommand(parsed: ParsedArgs): Promise<void> {
+  const minutes = numberFlag(parsed, "minutes");
+  const report = await runDiagnose({
+    home: stringFlag(parsed, "home"),
+    threadId: stringFlag(parsed, "thread") || parsed.positional[0],
+    last: Boolean(parsed.flags.last),
+    lookbackMs: minutes ? minutes * 60 * 1000 : undefined
+  });
+  if (parsed.flags.json) {
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
+  console.log(formatDiagnose(report));
 }
 
 async function statusCommand(parsed: ParsedArgs): Promise<void> {
@@ -340,8 +358,12 @@ async function watchCommand(parsed: ParsedArgs): Promise<void> {
       dryRun: Boolean(parsed.flags.dryRun),
       desktop: Boolean(parsed.flags.desktop),
       fork: Boolean(parsed.flags.fork),
+      appServer: Boolean(parsed.flags.appServer),
+      createVisibleRelay: Boolean(parsed.flags.createVisibleRelay),
+      queueOnly: Boolean(parsed.flags.queueOnly),
       planMode: Boolean(parsed.flags.planMode),
-      goalMode: Boolean(parsed.flags.goalMode)
+      goalMode: Boolean(parsed.flags.goalMode),
+      backfill: Boolean(parsed.flags.backfill)
     });
     console.log(message);
     return;
@@ -352,8 +374,12 @@ async function watchCommand(parsed: ParsedArgs): Promise<void> {
     dryRun: Boolean(parsed.flags.dryRun),
     desktop: Boolean(parsed.flags.desktop),
     fork: Boolean(parsed.flags.fork),
+    appServer: Boolean(parsed.flags.appServer),
+    createVisibleRelay: Boolean(parsed.flags.createVisibleRelay),
+    queueOnly: Boolean(parsed.flags.queueOnly),
     planMode: Boolean(parsed.flags.planMode),
-    goalMode: Boolean(parsed.flags.goalMode)
+    goalMode: Boolean(parsed.flags.goalMode),
+    backfill: Boolean(parsed.flags.backfill)
   });
 }
 
@@ -674,10 +700,11 @@ function helpText(): string {
 
 Usage:
   relay-baton doctor [--json] [--home <CODEX_HOME>]
+  relay-baton diagnose --thread <id>|--last [--minutes 60] [--json] [--home <CODEX_HOME>]
   relay-baton status [--json] [--home <CODEX_HOME>]
   relay-baton install-hooks [--dry-run] [--home <CODEX_HOME>]
   relay-baton hook --phase <event-name> [--thread <id>] [--snapshot]
-  relay-baton watch [--auto] [--fork|--desktop] [--goal-mode] [--once] [--dry-run] [--home <CODEX_HOME>]
+  relay-baton watch [--auto] [--fork|--desktop] [--queue-only|--create-visible-relay] [--app-server] [--goal-mode] [--once] [--backfill] [--dry-run] [--home <CODEX_HOME>]
   relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]

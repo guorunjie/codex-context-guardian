@@ -175,6 +175,9 @@ export async function recover(options: RecoveryOptions = {}): Promise<RecoveryPl
       return plan;
     }
     for (const step of plan.steps) {
+      if (step.interactive && !process.stdin.isTTY) {
+        throw new Error("interactive Codex recovery requires a TTY; use app-server recovery or run the bundle manually");
+      }
       await spawnInteractive(step.command, step.args, { cwd: step.cwd });
     }
   }

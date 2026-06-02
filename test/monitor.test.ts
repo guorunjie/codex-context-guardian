@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { buildLinuxMonitorService, buildMonitorPlist, buildWindowsMonitorScript } from "../src/monitor.ts";
 
-test("builds LaunchAgent plist for fork-first auto monitor", () => {
+test("builds LaunchAgent plist for queue-only auto monitor", () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-monitor-home-"));
   const result = buildMonitorPlist({
     home,
@@ -19,6 +19,8 @@ test("builds LaunchAgent plist for fork-first auto monitor", () => {
   assert.match(result.plist, /<string>watch<\/string>/);
   assert.match(result.plist, /<string>--auto<\/string>/);
   assert.match(result.plist, /<string>--fork<\/string>/);
+  assert.match(result.plist, /<string>--queue-only<\/string>/);
+  assert.doesNotMatch(result.plist, /<string>--app-server<\/string>/);
   assert.match(result.plist, /<string>--goal-mode<\/string>/);
   assert.match(result.plist, /<key>PATH<\/key>/);
   assert.match(result.plist, /\/opt\/homebrew\/bin/);
@@ -28,7 +30,7 @@ test("builds LaunchAgent plist for fork-first auto monitor", () => {
   assert.match(result.stderrPath, /monitor\.err\.log$/);
 });
 
-test("builds Windows scheduled task script for fork-first auto monitor", () => {
+test("builds Windows scheduled task script for queue-only auto monitor", () => {
   const home = "C:\\Users\\me\\.codex";
   const result = buildWindowsMonitorScript({
     home,
@@ -43,6 +45,8 @@ test("builds Windows scheduled task script for fork-first auto monitor", () => {
   assert.match(result.plist, /Set-Content/);
   assert.match(result.plist, /run-monitor\.cmd/);
   assert.match(result.plist, /--fork/);
+  assert.match(result.plist, /--queue-only/);
+  assert.doesNotMatch(result.plist, /--app-server/);
   assert.match(result.plist, /--goal-mode/);
   assert.match(result.plist, /monitor\.out\.log/);
   assert.match(result.plist, /monitor\.err\.log/);
@@ -51,7 +55,7 @@ test("builds Windows scheduled task script for fork-first auto monitor", () => {
   assert.match(result.launcherPath || "", /run-monitor\.cmd$/);
 });
 
-test("builds Linux systemd user service for fork-first auto monitor", () => {
+test("builds Linux systemd user service for queue-only auto monitor", () => {
   const home = "/home/me/.codex";
   const result = buildLinuxMonitorService({
     home,
@@ -65,6 +69,8 @@ test("builds Linux systemd user service for fork-first auto monitor", () => {
   assert.match(result.plist, /\[Unit\]/);
   assert.match(result.plist, /ExecStart=\/usr\/bin\/node/);
   assert.match(result.plist, /--fork/);
+  assert.match(result.plist, /--queue-only/);
+  assert.doesNotMatch(result.plist, /--app-server/);
   assert.match(result.plist, /--goal-mode/);
   assert.match(result.plist, /Environment="PATH=/);
   assert.match(result.plist, /GUARDIAN_CODEX_BIN=\/home\/linuxbrew\/\.linuxbrew\/bin\/codex/);

@@ -130,12 +130,17 @@ export async function forkThreadWithAppServer(options: AppServerForkOptions): Pr
 
     let turnStarted = false;
     if (options.startTurn !== false) {
-      await client.request("turn/start", buildTurnStartParams({
-        threadId,
-        cwd: options.cwd,
-        model: options.model,
-        prompt: options.prompt
-      }));
+      try {
+        await client.request("turn/start", buildTurnStartParams({
+          threadId,
+          cwd: options.cwd,
+          model: options.model,
+          prompt: options.prompt
+        }));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`app-server turn/start failed after creating fork ${threadId}: ${message}`);
+      }
       if (options.title) {
         await sleep(1_000);
         await setTitleOnClient(client, threadId, options.title);
@@ -230,12 +235,17 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
 
     let turnStarted = false;
     if (options.startTurn !== false) {
-      await client.request("turn/start", buildTurnStartParams({
-        threadId,
-        cwd: options.cwd,
-        model: options.model,
-        prompt: options.prompt
-      }));
+      try {
+        await client.request("turn/start", buildTurnStartParams({
+          threadId,
+          cwd: options.cwd,
+          model: options.model,
+          prompt: options.prompt
+        }));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`app-server turn/start failed after creating Desktop handoff ${threadId}: ${message}`);
+      }
       // Keep the sidebar title stable; first-turn auto-titling can arrive shortly after turn/start.
       await sleep(options.titleStabilizeDelayMs ?? 1_000);
       await setTitleOnClient(client, threadId, options.title);

@@ -62,6 +62,7 @@ export function buildMonitorPlist(options: {
     "watch",
     "--auto",
     "--fork",
+    "--queue-only",
     "--goal-mode",
     "--home",
     home
@@ -131,6 +132,7 @@ export function buildWindowsMonitorScript(options: {
     "watch",
     "--auto",
     "--fork",
+    "--queue-only",
     "--goal-mode",
     "--home",
     quoteWindowsArg(home)
@@ -187,6 +189,7 @@ export function buildLinuxMonitorService(options: {
     "watch",
     "--auto",
     "--fork",
+    "--queue-only",
     "--goal-mode",
     "--home",
     home

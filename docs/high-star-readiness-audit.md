@@ -38,8 +38,8 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 3. Diagnostics are not user-facing enough.
    The project can recover and track state, but users need a command like `relay-baton diagnose --thread <id>` that explains why a stuck thread did or did not trigger a relay.
 
-4. App-server integration is opt-in.
-   `recover --app-server` and `app-server fork` exist, but background monitor recovery still defaults to CLI fork. The next high-value feature is a safe app-server-first monitor mode.
+4. Visible app-server recovery is intentionally opt-in.
+   `recover --app-server` and `app-server fork` exist, but background monitoring now defaults to queue-only bundles to avoid empty Desktop/sidebar relays. The next high-value feature is a smoother "review queued bundle -> create one visible relay" flow.
 
 5. Distribution is early.
    GitHub topics and npm are aligned, but the project has not yet entered awesome lists, Codex community docs, Reddit/HN/X/中文社区 posts, or plugin/action ecosystems.
@@ -48,7 +48,7 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 
 ### P0: Trust Assets
 
-- Add a 30-60 second GIF showing: compact failure, Relay Baton detection, one relay created, continuation reads bundle.
+- Add a 30-60 second GIF showing: compact failure, Relay Baton detection, one bundle queued, optional visible relay created after audit, continuation reads bundle.
 - Add a README section titled "What happens when Codex dies overnight?"
 - Add a redacted real recovery transcript with exact commands and outputs.
 - Add npm download and version badges.
@@ -64,11 +64,12 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 - Add `relay-baton follow doctor` as a guided monitor onboarding command.
 - Add a troubleshooting matrix for common failures: missing Codex CLI, no hooks, app-server unavailable, compact failure not classified.
 
-### P2: App-Server-First Recovery
+### P2: Safe Visible Relay Recovery
 
 - Add `GUARDIAN_RECOVERY_TRANSPORT=app-server|cli`.
-- Make `watch --auto --fork --app-server` available.
-- Use `thread/fork` with `excludeTurns` as the preferred fork transport when app-server is healthy.
+- Keep `watch --auto --fork --queue-only` as the default unattended monitor path.
+- Make `watch --once --auto --fork --app-server --create-visible-relay` available for explicit visible recovery.
+- Use `thread/fork` with `excludeTurns` as the preferred visible fork transport when app-server is healthy.
 - Keep CLI fork as fallback.
 
 ### P3: Growth
@@ -81,5 +82,5 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 ## Star Potential
 
 - Near term, 50-100 stars is realistic after a strong README/GIF/case-study launch because the pain is visible in upstream issues.
-- 300+ stars likely requires either app-server-first recovery becoming very smooth, or a broader "Codex long task supervisor" mode that users can adopt even before they hit compact failure.
+- 300+ stars likely requires either the queued-bundle-to-visible-relay flow becoming very smooth, or a broader "Codex long task supervisor" mode that users can adopt even before they hit compact failure.
 - 1000+ stars would require the project to become the default local reliability layer for Codex, with clean onboarding, strong diagnostics, and visible community proof.

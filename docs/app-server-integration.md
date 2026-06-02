@@ -1,6 +1,6 @@
 # App-Server Integration
 
-Relay Baton now treats Codex app-server as the preferred control plane when it is available. The local monitor still uses hooks and SQLite logs for detection, but recovery can use app-server methods for lower-loss branching and explicit thread operations.
+Relay Baton treats Codex app-server as the preferred control plane for explicit visible recovery. The local monitor still uses hooks and SQLite logs for detection, but unattended background recovery defaults to queue-only bundles so it never creates empty visible threads when a remote-control turn cannot start.
 
 ## Why It Matters
 
@@ -49,14 +49,16 @@ The recovery order is:
 
 1. Detect stuck state with hooks/logs/activity.
 2. Write the recovery bundle.
-3. Prefer app-server fork when `--app-server` is requested and the source thread is readable.
-4. Fall back to CLI fork/new-session behavior when app-server is unavailable.
+3. In unattended monitor mode, record a queued handoff and stop before creating a visible thread.
+4. Prefer app-server fork when `--app-server` and `--create-visible-relay` are requested and the source thread is readable.
+5. Fall back to CLI fork/new-session behavior when app-server is unavailable and a TTY exists.
 
 ## Next Iteration
 
-The next app-server milestone is automatic app-server-first recovery in the background monitor:
+The next app-server milestone is making explicit visible recovery smoother after the queue-only monitor has saved the task state:
 
 - Probe app-server health during `doctor` and `status`.
-- Add a config flag for `GUARDIAN_RECOVERY_TRANSPORT=app-server|cli`.
+- Keep `GUARDIAN_RECOVERY_TRANSPORT=app-server|cli` for explicit visible recovery.
+- Add a guided command that opens the best queued bundle and creates one visible fork only after review.
 - Use `thread/rollback` only after a source turn is known to contain unsafe partial context.
 - Page turns with `thread/turns/list` for diagnostics instead of reconstructing full histories.
