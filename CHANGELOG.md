@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 - 2026-06-02
+
+- Added app-server-first recovery controls for probing Codex app-server, forking threads with `excludeTurns`, rolling back unsafe turns, and triggering manual compaction.
+- Added `relay-baton app-server status|fork|rollback|compact` and `recover --app-server` so recovery can use official thread operations when available.
+- Added app-server integration and growth/release planning docs for the next public distribution push.
+
 ## 1.0.1 - 2026-05-29
 
 - Added hard context-window overflow detection for `Codex ran out of room in the model's context window`.

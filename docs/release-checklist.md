@@ -12,6 +12,13 @@ npm pack --dry-run --json
 npm publish --dry-run --json
 ```
 
+For app-server releases, also run:
+
+```bash
+relay-baton app-server status
+relay-baton recover --last --strategy fork --app-server --dry-run
+```
+
 `relay-baton release check` verifies package metadata, npm-safe bin paths, package-lock sync, changelog entry, built CLI, README install paths, v1 docs, v1 launch audit, support intake template, competitive analysis, cross-platform CI, publish dry-run coverage, npm publish workflow presence, and clean git state.
 It also verifies that the manual host-validation workflow exists so maintainers can collect packed-CLI evidence on Linux, macOS, and Windows.
 
@@ -68,7 +75,8 @@ gh release create "v$VERSION" "$RELEASE_DIR/$TARBALL" "$RELEASE_DIR/SHA256SUMS" 
 ## npm Publish Gate
 
 ```bash
-gh workflow run publish-npm.yml -f tag=v1.0.0
+VERSION=$(node -p "require('./package.json').version")
+gh workflow run publish-npm.yml -f tag="v$VERSION"
 npm view codex-relay-baton-guardian version
 relay-baton release check --online
 ```

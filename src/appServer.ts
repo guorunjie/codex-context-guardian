@@ -32,28 +32,183 @@ export type DesktopHandoffResult = {
   goalApplied: boolean;
 };
 
+export type AppServerProbeResult = {
+  socketPath: string;
+  initialized: boolean;
+  loadedThreadIds?: string[];
+  warnings: string[];
+};
+
+export type AppServerForkOptions = {
+  home?: string;
+  sourceThreadId: string;
+  cwd: string;
+  model: string;
+  title?: string;
+  prompt: string;
+  startTurn?: boolean;
+  planMode?: boolean;
+  excludeTurns?: boolean;
+  timeoutMs?: number;
+  goal?: DesktopHandoffOptions["goal"];
+};
+
+export type AppServerForkResult = {
+  sourceThreadId: string;
+  threadId: string;
+  forkedFromId?: string;
+  sessionId?: string;
+  title?: string;
+  socketPath: string;
+  turnStarted: boolean;
+  planModeApplied: boolean;
+  goalApplied: boolean;
+  excludeTurns: boolean;
+};
+
+export type AppServerRollbackResult = {
+  threadId: string;
+  droppedTurns: number;
+  socketPath: string;
+  returnedThreadId?: string;
+};
+
+export type AppServerCompactResult = {
+  threadId: string;
+  socketPath: string;
+};
+
 type PendingRequest = {
   resolve: (value: any) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 
+export async function probeAppServer(options: {
+  home?: string;
+  timeoutMs?: number;
+} = {}): Promise<AppServerProbeResult> {
+  const socketPath = ensureRemoteControlSocket(options.home);
+  const client = new AppServerClient(socketPath, options.timeoutMs || 15_000);
+  const warnings: string[] = [];
+  await client.connect();
+  try {
+    await initializeClient(client);
+    let loadedThreadIds: string[] | undefined;
+    try {
+      const loaded = await client.request("thread/loaded/list", {});
+      const rawIds = Array.isArray(loaded?.threadIds)
+        ? loaded.threadIds
+        : Array.isArray(loaded?.threads)
+          ? loaded.threads
+          : undefined;
+      loadedThreadIds = rawIds?.map((item: unknown) => typeof item === "string" ? item : String((item as any)?.id || "")).filter(Boolean);
+    } catch (error) {
+      warnings.push(`thread/loaded/list unavailable: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    return { socketPath, initialized: true, loadedThreadIds, warnings };
+  } finally {
+    client.close();
+  }
+}
+
+export async function forkThreadWithAppServer(options: AppServerForkOptions): Promise<AppServerForkResult> {
+  const socketPath = ensureRemoteControlSocket(options.home);
+  const client = new AppServerClient(socketPath, options.timeoutMs || 15_000);
+  await client.connect();
+  try {
+    await initializeClient(client);
+    const excludeTurns = options.excludeTurns !== false;
+    const forked = await client.request("thread/fork", buildThreadForkParams(options, excludeTurns));
+    const thread = forked?.thread;
+    const threadId = thread?.id;
+    if (!threadId) throw new Error("app-server thread/fork did not return a thread id");
+
+    if (options.title) await setTitleOnClient(client, threadId, options.title);
+    const planModeApplied = options.planMode ? await applyPlanMode(client, threadId, options.model) : false;
+    const goalApplied = await applyGoal(client, threadId, options.goal);
+
+    let turnStarted = false;
+    if (options.startTurn !== false) {
+      await client.request("turn/start", buildTurnStartParams({
+        threadId,
+        cwd: options.cwd,
+        model: options.model,
+        prompt: options.prompt
+      }));
+      if (options.title) {
+        await sleep(1_000);
+        await setTitleOnClient(client, threadId, options.title);
+      }
+      turnStarted = true;
+    }
+
+    return {
+      sourceThreadId: options.sourceThreadId,
+      threadId,
+      forkedFromId: typeof thread?.forkedFromId === "string" ? thread.forkedFromId : undefined,
+      sessionId: typeof thread?.sessionId === "string" ? thread.sessionId : undefined,
+      title: options.title,
+      socketPath,
+      turnStarted,
+      planModeApplied,
+      goalApplied,
+      excludeTurns
+    };
+  } finally {
+    client.close();
+  }
+}
+
+export async function rollbackThreadWithAppServer(options: {
+  home?: string;
+  threadId: string;
+  droppedTurns: number;
+  timeoutMs?: number;
+}): Promise<AppServerRollbackResult> {
+  const socketPath = ensureRemoteControlSocket(options.home);
+  const client = new AppServerClient(socketPath, options.timeoutMs || 15_000);
+  await client.connect();
+  try {
+    await initializeClient(client);
+    const result = await client.request("thread/rollback", {
+      threadId: options.threadId,
+      droppedTurns: options.droppedTurns
+    });
+    return {
+      threadId: options.threadId,
+      droppedTurns: options.droppedTurns,
+      socketPath,
+      returnedThreadId: typeof result?.thread?.id === "string" ? result.thread.id : undefined
+    };
+  } finally {
+    client.close();
+  }
+}
+
+export async function compactThreadWithAppServer(options: {
+  home?: string;
+  threadId: string;
+  timeoutMs?: number;
+}): Promise<AppServerCompactResult> {
+  const socketPath = ensureRemoteControlSocket(options.home);
+  const client = new AppServerClient(socketPath, options.timeoutMs || 15_000);
+  await client.connect();
+  try {
+    await initializeClient(client);
+    await client.request("thread/compact/start", { threadId: options.threadId });
+    return { threadId: options.threadId, socketPath };
+  } finally {
+    client.close();
+  }
+}
+
 export async function createDesktopHandoff(options: DesktopHandoffOptions): Promise<DesktopHandoffResult> {
   const socketPath = ensureRemoteControlSocket(options.home);
   const client = new AppServerClient(socketPath, options.timeoutMs || 15_000);
   await client.connect();
   try {
-    await client.request("initialize", {
-      clientInfo: {
-        name: "relay-baton",
-        title: "Relay Baton",
-        version: APP_CLIENT_VERSION
-      },
-      capabilities: {
-        experimentalApi: true,
-        requestAttestation: false
-      }
-    });
+    await initializeClient(client);
 
     const started = await client.request("thread/start", {
       model: options.model,
@@ -70,57 +225,17 @@ export async function createDesktopHandoff(options: DesktopHandoffOptions): Prom
 
     await setTitleOnClient(client, threadId, options.title);
 
-    let planModeApplied = false;
-    if (options.planMode) {
-      await client.request("thread/settings/update", {
-        threadId,
-        collaborationMode: {
-          mode: "plan",
-          settings: {
-            model: options.model,
-            reasoning_effort: null,
-            developer_instructions: null
-          }
-        }
-      });
-      planModeApplied = true;
-    }
-
-    let goalApplied = false;
-    const goalObjective = options.goal?.objective?.trim();
-    if (goalObjective) {
-      const goalParams: {
-        threadId: string;
-        objective: string;
-        status: "active" | "paused" | "blocked" | "usageLimited" | "budgetLimited" | "complete";
-        tokenBudget?: number;
-      } = {
-        threadId,
-        objective: goalObjective,
-        status: options.goal?.status || "active"
-      };
-      if (typeof options.goal?.tokenBudget === "number" && Number.isFinite(options.goal.tokenBudget) && options.goal.tokenBudget > 0) {
-        goalParams.tokenBudget = Math.floor(options.goal.tokenBudget);
-      }
-      await client.request("thread/goal/set", goalParams);
-      goalApplied = true;
-    }
+    const planModeApplied = options.planMode ? await applyPlanMode(client, threadId, options.model) : false;
+    const goalApplied = await applyGoal(client, threadId, options.goal);
 
     let turnStarted = false;
     if (options.startTurn !== false) {
-      await client.request("turn/start", {
+      await client.request("turn/start", buildTurnStartParams({
         threadId,
-        input: [{
-          type: "text",
-          text: options.prompt,
-          text_elements: []
-        }],
         cwd: options.cwd,
-        runtimeWorkspaceRoots: [options.cwd],
-        approvalPolicy: "never",
-        sandboxPolicy: { type: "dangerFullAccess" },
-        model: options.model
-      });
+        model: options.model,
+        prompt: options.prompt
+      }));
       // Keep the sidebar title stable; first-turn auto-titling can arrive shortly after turn/start.
       await sleep(options.titleStabilizeDelayMs ?? 1_000);
       await setTitleOnClient(client, threadId, options.title);
@@ -150,17 +265,7 @@ export async function setDesktopThreadTitle(options: {
   const client = new AppServerClient(socketPath, options.timeoutMs || 15_000);
   await client.connect();
   try {
-    await client.request("initialize", {
-      clientInfo: {
-        name: "relay-baton",
-        title: "Relay Baton",
-        version: APP_CLIENT_VERSION
-      },
-      capabilities: {
-        experimentalApi: true,
-        requestAttestation: false
-      }
-    });
+    await initializeClient(client);
     await setTitleOnClient(client, options.threadId, options.title);
   } finally {
     client.close();
@@ -223,6 +328,91 @@ function setTitleOnClient(client: AppServerClient, threadId: string, title: stri
     threadId,
     name: title
   });
+}
+
+function initializeClient(client: AppServerClient): Promise<any> {
+  return client.request("initialize", {
+    clientInfo: {
+      name: "relay-baton",
+      title: "Relay Baton",
+      version: APP_CLIENT_VERSION
+    },
+    capabilities: {
+      experimentalApi: true,
+      requestAttestation: false
+    }
+  });
+}
+
+export function buildThreadForkParams(options: AppServerForkOptions, excludeTurns = true): Record<string, unknown> {
+  return {
+    threadId: options.sourceThreadId,
+    model: options.model,
+    cwd: options.cwd,
+    runtimeWorkspaceRoots: [options.cwd],
+    approvalPolicy: "never",
+    sandbox: "danger-full-access",
+    threadSource: "user",
+    experimentalRawEvents: false,
+    persistExtendedHistory: false,
+    excludeTurns
+  };
+}
+
+export function buildTurnStartParams(input: {
+  threadId: string;
+  cwd: string;
+  model: string;
+  prompt: string;
+}): Record<string, unknown> {
+  return {
+    threadId: input.threadId,
+    input: [{
+      type: "text",
+      text: input.prompt,
+      text_elements: []
+    }],
+    cwd: input.cwd,
+    runtimeWorkspaceRoots: [input.cwd],
+    approvalPolicy: "never",
+    sandboxPolicy: { type: "dangerFullAccess" },
+    model: input.model
+  };
+}
+
+async function applyPlanMode(client: AppServerClient, threadId: string, model: string): Promise<boolean> {
+  await client.request("thread/settings/update", {
+    threadId,
+    collaborationMode: {
+      mode: "plan",
+      settings: {
+        model,
+        reasoning_effort: null,
+        developer_instructions: null
+      }
+    }
+  });
+  return true;
+}
+
+async function applyGoal(client: AppServerClient, threadId: string, goal?: DesktopHandoffOptions["goal"]): Promise<boolean> {
+  const goalObjective = goal?.objective?.trim();
+  if (!goalObjective) return false;
+  const goalParams: {
+    threadId: string;
+    objective: string;
+    status: "active" | "paused" | "blocked" | "usageLimited" | "budgetLimited" | "complete";
+    tokenBudget?: number;
+  } = {
+    threadId,
+    objective: goalObjective,
+    status: goal?.status || "active"
+  };
+  if (typeof goal?.tokenBudget === "number" && Number.isFinite(goal.tokenBudget) && goal.tokenBudget > 0) {
+    goalParams.tokenBudget = Math.floor(goal.tokenBudget);
+  }
+  await client.request("thread/goal/set", goalParams);
+  return true;
 }
 
 function sleep(ms: number): Promise<void> {

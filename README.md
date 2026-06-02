@@ -19,6 +19,7 @@ Long agent sessions often fail after the project has already changed direction. 
 Relay Baton avoids that by combining:
 
 - Codex `fork` when the original session is still readable, because fork keeps the original conversation history and workspace state closest to intact.
+- Codex app-server `thread/fork` with `excludeTurns` when available, because it branches through the official thread control plane without forcing a full history rebuild.
 - Last-healthy-checkpoint fork for hard context overflow, using the newest successful `Stop` or `PostCompact` hook instead of retrying the saturated source thread.
 - Fallback-model recovery for model-specific compact failures, tried twice per source thread.
 - Structured memory files that prioritize the latest goal, latest real user intent, concrete tool progress, current worktree state, and superseded directions.
@@ -33,6 +34,8 @@ Relay Baton avoids that by combining:
 - `relay-baton follow repair` repairs hooks, LaunchAgent PATH, and monitor startup after shell or Homebrew path changes.
 - `relay-baton watch --auto --fork` monitors Codex logs and runs the recovery ladder automatically.
 - `relay-baton recover --thread <id> --strategy auto` executes fallback-model, last-healthy-fork, fork, or new-session recovery.
+- `relay-baton recover --thread <id> --strategy fork --app-server` uses Codex app-server `thread/fork` for official-control-plane recovery.
+- `relay-baton app-server status|fork|rollback|compact` probes and exercises Codex app-server thread operations directly.
 - `relay-baton audit <bundle>` scores a recovery bundle without creating a fork or Desktop conversation.
 - `relay-baton demo` creates an auditable sample recovery bundle for trying the workflow without waiting for a real stuck thread.
 - `relay-baton handoff --thread <id> --desktop --goal-mode` creates a Desktop-visible continuation with a quality gate.
@@ -175,6 +178,16 @@ Recover a hard context-window overflow from the latest healthy checkpoint:
 relay-baton recover --thread <stuck-thread-id> --strategy last-healthy-fork
 ```
 
+Use Codex app-server as the recovery transport when available:
+
+```bash
+relay-baton app-server status
+relay-baton recover --thread <stuck-thread-id> --strategy fork --app-server
+relay-baton recover --thread <stuck-thread-id> --strategy last-healthy-fork --app-server
+```
+
+App-server recovery uses `thread/fork` with `excludeTurns` by default, then starts the recovery prompt in the forked thread. See [docs/app-server-integration.md](docs/app-server-integration.md).
+
 Create a recovery bundle for manual use:
 
 ```bash
@@ -273,4 +286,4 @@ See [docs/v1-launch-audit.md](docs/v1-launch-audit.md) for the evidence required
 
 See [docs/validation-report-guide.md](docs/validation-report-guide.md) for collecting support and release-validation reports.
 
-See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch gates, [docs/release-checklist.md](docs/release-checklist.md) for release verification, [docs/support-matrix.md](docs/support-matrix.md) for platform status, [docs/architecture.md](docs/architecture.md) for the recovery flow, [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md) for a concrete stuck-thread scenario, and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.
+See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch gates, [docs/release-checklist.md](docs/release-checklist.md) for release verification, [docs/growth-and-release-plan.md](docs/growth-and-release-plan.md) for the public growth plan, [docs/app-server-integration.md](docs/app-server-integration.md) for official thread-control integration, [docs/support-matrix.md](docs/support-matrix.md) for platform status, [docs/architecture.md](docs/architecture.md) for the recovery flow, [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md) for a concrete stuck-thread scenario, and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.

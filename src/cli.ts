@@ -17,6 +17,14 @@ import { auditHandoffMemory } from "./handoffQuality.ts";
 import { writeDemoBundle } from "./demo.ts";
 import { evaluateReleaseReadiness, formatReleaseReadiness } from "./releaseCheck.ts";
 import { buildHostValidationReport, renderHostValidationReport, writeHostValidationReport } from "./validationReport.ts";
+import {
+  compactThreadWithAppServer,
+  defaultDesktopTitle,
+  defaultGoalObjective,
+  forkThreadWithAppServer,
+  probeAppServer,
+  rollbackThreadWithAppServer
+} from "./appServer.ts";
 
 type ParsedArgs = {
   command: string;
@@ -57,6 +65,8 @@ export async function main(argv: string[]): Promise<void> {
       return followCommand(parsed);
     case "activity":
       return activityCommand(parsed);
+    case "app-server":
+      return appServerCommand(parsed);
     case "release":
       return releaseCommand(parsed);
     case "validate":
@@ -167,7 +177,9 @@ async function recoverCommand(parsed: ParsedArgs): Promise<void> {
     primaryModel: stringFlag(parsed, "primary"),
     fallbackModel: stringFlag(parsed, "fallback"),
     dryRun: Boolean(parsed.flags.dryRun),
-    cwd: stringFlag(parsed, "cwd")
+    cwd: stringFlag(parsed, "cwd"),
+    appServer: Boolean(parsed.flags.appServer),
+    startTurn: !Boolean(parsed.flags.noStartTurn)
   });
 
   if (parsed.flags.dryRun) {
@@ -179,7 +191,16 @@ async function recoverCommand(parsed: ParsedArgs): Promise<void> {
       bundleDir: plan.bundleDir,
       cwd: plan.cwd,
       signal: plan.signal,
-      thread: plan.thread
+      thread: plan.thread,
+      appServer: Boolean(parsed.flags.appServer),
+      appServerRecovery: parsed.flags.appServer && (plan.strategy === "fork" || plan.strategy === "last-healthy-fork") && plan.thread
+        ? {
+          method: "thread/fork",
+          sourceThreadId: plan.thread.id,
+          excludeTurns: true,
+          startTurn: !Boolean(parsed.flags.noStartTurn)
+        }
+        : undefined
     }, null, 2));
   }
 }
@@ -454,6 +475,57 @@ async function activityCommand(parsed: ParsedArgs): Promise<void> {
   console.log(formatActivityState(state));
 }
 
+async function appServerCommand(parsed: ParsedArgs): Promise<void> {
+  const action = parsed.positional[0] || "status";
+  const home = stringFlag(parsed, "home");
+  if (action === "status") {
+    const status = await probeAppServer({ home });
+    if (parsed.flags.json) {
+      console.log(JSON.stringify(status, null, 2));
+      return;
+    }
+    console.log(formatAppServerStatus(status));
+    return;
+  }
+  if (action === "fork") {
+    const sourceThreadId = stringFlag(parsed, "thread") || parsed.positional[1];
+    if (!sourceThreadId) throw new Error("Usage: relay-baton app-server fork --thread <id> --prompt <text> [--cwd <dir>] [--model <model>]");
+    const cwd = stringFlag(parsed, "cwd") || process.cwd();
+    const model = stringFlag(parsed, "model") || defaultGuardianConfig(home).primaryModel;
+    const prompt = stringFlag(parsed, "prompt") || "Continue this interrupted Codex task from the latest reliable state.";
+    const result = await forkThreadWithAppServer({
+      home,
+      sourceThreadId,
+      cwd,
+      model,
+      prompt,
+      title: stringFlag(parsed, "title") || defaultDesktopTitle(`fork ${sourceThreadId}`),
+      startTurn: !Boolean(parsed.flags.noStartTurn),
+      planMode: Boolean(parsed.flags.planMode),
+      excludeTurns: !Boolean(parsed.flags.includeTurns),
+      goal: Boolean(parsed.flags.goalMode)
+        ? { objective: stringFlag(parsed, "goal") || defaultGoalObjective({ sourceThreadId }), status: "active" }
+        : undefined
+    });
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (action === "rollback") {
+    const threadId = stringFlag(parsed, "thread") || parsed.positional[1];
+    const turns = numberFlag(parsed, "turns") || numberFlag(parsed, "drop") || 1;
+    if (!threadId) throw new Error("Usage: relay-baton app-server rollback --thread <id> --turns <n>");
+    console.log(JSON.stringify(await rollbackThreadWithAppServer({ home, threadId, droppedTurns: turns }), null, 2));
+    return;
+  }
+  if (action === "compact") {
+    const threadId = stringFlag(parsed, "thread") || parsed.positional[1];
+    if (!threadId) throw new Error("Usage: relay-baton app-server compact --thread <id>");
+    console.log(JSON.stringify(await compactThreadWithAppServer({ home, threadId }), null, 2));
+    return;
+  }
+  throw new Error(`Unknown app-server action: ${action}`);
+}
+
 async function releaseCommand(parsed: ParsedArgs): Promise<void> {
   const action = parsed.positional[0] || "check";
   if (action !== "check") throw new Error(`Unknown release action: ${action}`);
@@ -468,6 +540,16 @@ async function releaseCommand(parsed: ParsedArgs): Promise<void> {
     console.log(formatReleaseReadiness(readiness));
   }
   if (!readiness.ok) process.exitCode = 1;
+}
+
+function formatAppServerStatus(status: Awaited<ReturnType<typeof probeAppServer>>): string {
+  return [
+    "Relay Baton app-server",
+    `socket: ${status.socketPath}`,
+    `initialized: ${status.initialized ? "yes" : "no"}`,
+    `loaded threads: ${status.loadedThreadIds?.length ?? "unknown"}`,
+    status.warnings.length > 0 ? `warnings: ${status.warnings.join("; ")}` : "warnings: none"
+  ].join("\n");
 }
 
 async function validateCommand(parsed: ParsedArgs): Promise<void> {
@@ -599,13 +681,17 @@ Usage:
   relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]
+  relay-baton app-server status [--json] [--home <CODEX_HOME>]
+  relay-baton app-server fork --thread <id> [--prompt <text>] [--no-start-turn] [--plan-mode] [--goal-mode] [--include-turns]
+  relay-baton app-server rollback --thread <id> --turns <n>
+  relay-baton app-server compact --thread <id>
   relay-baton release check [--online] [--v1] [--json] [--root <repo>]
   relay-baton validate host [--online] [--strict-release] [--json] [--output <dir>] [--root <repo>] [--home <CODEX_HOME>]
   relay-baton pack --thread <id>|--last [--home <CODEX_HOME>]
   relay-baton audit <bundle-dir|HANDOFF_MEMORY.json> [--json]
   relay-baton demo [--output <dir>] [--json] [--home <CODEX_HOME>]
   relay-baton handoff --thread <id>|--last [--desktop] [--plan-mode] [--goal-mode] [--goal "<objective>"] [--goal-budget <n>] [--no-start-turn] [--force] [--json] [--home <CODEX_HOME>]
-  relay-baton recover --thread <id> [--strategy auto|fallback-model|last-healthy-fork|fork|new-session] [--dry-run]
+  relay-baton recover --thread <id> [--strategy auto|fallback-model|last-healthy-fork|fork|new-session] [--app-server] [--dry-run]
   relay-baton recover --last [--dry-run]
 
 Legacy aliases remain available: guardian, codex-context-guardian.

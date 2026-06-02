@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDesktopHandoffPrompt, defaultDesktopTitle, defaultGoalObjective } from "../src/appServer.ts";
+import {
+  buildDesktopHandoffPrompt,
+  buildThreadForkParams,
+  buildTurnStartParams,
+  defaultDesktopTitle,
+  defaultGoalObjective
+} from "../src/appServer.ts";
 
 test("builds desktop handoff prompt with source and bundle", () => {
   const prompt = buildDesktopHandoffPrompt({
@@ -31,4 +37,36 @@ test("default goal objective includes source context", () => {
   });
   assert.match(objective, /确认影刀RPA编辑能力/);
   assert.match(objective, /thread-xyz/);
+});
+
+test("app-server fork params default to excludeTurns for lightweight branch recovery", () => {
+  const params = buildThreadForkParams({
+    sourceThreadId: "source-thread",
+    cwd: "/tmp/work",
+    model: "gpt-5.5",
+    prompt: "Recover",
+    title: "Relay"
+  });
+
+  assert.equal(params.threadId, "source-thread");
+  assert.equal(params.cwd, "/tmp/work");
+  assert.equal(params.model, "gpt-5.5");
+  assert.equal(params.excludeTurns, true);
+  assert.deepEqual(params.runtimeWorkspaceRoots, ["/tmp/work"]);
+  assert.equal(params.approvalPolicy, "never");
+});
+
+test("app-server turn/start params carry the recovery prompt and workspace", () => {
+  const params = buildTurnStartParams({
+    threadId: "fork-thread",
+    cwd: "/tmp/work",
+    model: "gpt-5.5",
+    prompt: "Read HANDOFF_MEMORY.json first."
+  });
+
+  assert.equal(params.threadId, "fork-thread");
+  assert.equal(params.cwd, "/tmp/work");
+  assert.equal(params.model, "gpt-5.5");
+  assert.deepEqual(params.runtimeWorkspaceRoots, ["/tmp/work"]);
+  assert.equal((params.input as Array<{ text: string }>)[0].text, "Read HANDOFF_MEMORY.json first.");
 });

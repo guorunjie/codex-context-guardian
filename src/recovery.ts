@@ -8,6 +8,7 @@ import { spawnInteractive } from "./exec.ts";
 import { buildFallbackSummaryPrompt, buildPrimaryResumePrompt, buildRecoveryPrompt } from "./prompt.ts";
 import { recoveriesDir } from "./paths.ts";
 import { plannedBundleDir, writeRecoveryBundle } from "./bundle.ts";
+import { forkThreadWithAppServer, defaultDesktopTitle } from "./appServer.ts";
 
 export type RecoveryOptions = {
   home?: string;
@@ -20,6 +21,8 @@ export type RecoveryOptions = {
   cwd?: string;
   signal?: FailureSignal;
   bundleDir?: string;
+  appServer?: boolean;
+  startTurn?: boolean;
 };
 
 export type RecoveryPlan = {
@@ -157,6 +160,19 @@ export async function recover(options: RecoveryOptions = {}): Promise<RecoveryPl
         projectRoot: plan.cwd,
         healthyCheckpoint: plan.healthyCheckpoint
       });
+    }
+    if (options.appServer && (plan.strategy === "fork" || plan.strategy === "last-healthy-fork") && plan.thread) {
+      await forkThreadWithAppServer({
+        home: options.home,
+        sourceThreadId: plan.thread.id,
+        cwd: plan.cwd,
+        model: options.primaryModel || defaultGuardianConfig(options.home).primaryModel,
+        title: defaultDesktopTitle(plan.thread.title),
+        prompt: plan.prompt,
+        startTurn: options.startTurn !== false,
+        excludeTurns: true
+      });
+      return plan;
     }
     for (const step of plan.steps) {
       await spawnInteractive(step.command, step.args, { cwd: step.cwd });

@@ -58,6 +58,19 @@ test("parses status command and follow repair", () => {
   assert.equal(repair.flags.dryRun, true);
 });
 
+test("parses app-server commands and app-server recovery flag", () => {
+  const status = parseArgs(["app-server", "status", "--json"]);
+  assert.equal(status.command, "app-server");
+  assert.equal(status.positional[0], "status");
+  assert.equal(status.flags.json, true);
+
+  const recover = parseArgs(["recover", "--thread", "thread-1", "--strategy", "fork", "--app-server", "--no-start-turn"]);
+  assert.equal(recover.command, "recover");
+  assert.equal(recover.flags.thread, "thread-1");
+  assert.equal(recover.flags.appServer, true);
+  assert.equal(recover.flags.noStartTurn, true);
+});
+
 test("parses audit command", () => {
   const parsed = parseArgs(["audit", "/tmp/bundle", "--json"]);
   assert.equal(parsed.command, "audit");
