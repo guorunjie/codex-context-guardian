@@ -286,4 +286,6 @@ See [docs/v1-launch-audit.md](docs/v1-launch-audit.md) for the evidence required
 
 See [docs/validation-report-guide.md](docs/validation-report-guide.md) for collecting support and release-validation reports.
 
+See [docs/high-star-readiness-audit.md](docs/high-star-readiness-audit.md) for the current gap between Relay Baton and a high-star GitHub repository.
+
 See [docs/v1-upgrade-roadmap.md](docs/v1-upgrade-roadmap.md) for the v1.0 launch gates, [docs/release-checklist.md](docs/release-checklist.md) for release verification, [docs/growth-and-release-plan.md](docs/growth-and-release-plan.md) for the public growth plan, [docs/app-server-integration.md](docs/app-server-integration.md) for official thread-control integration, [docs/support-matrix.md](docs/support-matrix.md) for platform status, [docs/architecture.md](docs/architecture.md) for the recovery flow, [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md) for a concrete stuck-thread scenario, and [docs/competitive-analysis.md](docs/competitive-analysis.md) for the horizontal competitor analysis.

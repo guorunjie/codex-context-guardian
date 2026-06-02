@@ -5,18 +5,19 @@ Relay Baton has a working local recovery core. The next release work is about tr
 ## Current State
 
 - GitHub repository is public.
-- Local package version is `1.0.1`.
-- npm registry currently serves `1.0.0`, so the registry is behind the repository.
+- Local package version is `1.1.0`.
+- npm registry currently serves `1.1.0`, so GitHub Release and npm latest are aligned.
 - The project has a clear wedge: sleep-safe recovery for Codex long-running tasks.
 - Tests, build, release check, host validation, and monitor install commands exist.
+- Codex app-server integration exists for `thread/fork`, `thread/rollback`, `thread/compact/start`, and app-server status probing.
 
 ## Release Priorities
 
-1. Publish the repository state to npm as the next patch or minor version.
-2. Create the matching GitHub Release with package tarball and checksums.
-3. Run `relay-baton release check --online` and capture the output in release notes.
-4. Add one short demo GIF or screenshot sequence under `docs/assets/`.
-5. Update README first screen with the app-server-first path and the three-command install flow.
+1. Add one short demo GIF or screenshot sequence under `docs/assets/`.
+2. Publish a redacted real recovery case study as a scannable README section.
+3. Add a `diagnose` command that explains why a stuck thread was or was not rescued.
+4. Run one public app-server recovery drill and link the evidence in release notes.
+5. Submit Relay Baton to Codex/agent tool directories and publish one technical launch post.
 
 ## Growth Priorities
 
