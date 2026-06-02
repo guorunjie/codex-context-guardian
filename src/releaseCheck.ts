@@ -85,8 +85,17 @@ export function evaluateReleaseReadiness(options: {
   add(checks, "cross-platform CI matrix",
     ci.includes("ubuntu-latest") && ci.includes("macos-latest") && ci.includes("windows-latest") && ci.includes("Smoke test packed CLI"),
     "CI should test Linux, macOS, Windows, and packed CLI smoke");
-  add(checks, "publish dry-run CI", ci.includes("npm publish --dry-run"),
-    "CI should run npm publish --dry-run before release");
+
+  const scripts = isObject(packageJson.scripts) ? packageJson.scripts : {};
+  const publishDryRunScript = typeof scripts["publish:dry-run"] === "string" ? scripts["publish:dry-run"] : "";
+  const publishDryRunHelper = readText(path.join(root, "scripts", "publish-dry-run.mjs"));
+  add(checks, "publish dry-run CI",
+    ci.includes("npm run publish:dry-run")
+      && publishDryRunScript.includes("publish-dry-run")
+      && publishDryRunHelper.includes("npm")
+      && publishDryRunHelper.includes("publish")
+      && publishDryRunHelper.includes("--dry-run"),
+    "CI should run a version-aware npm publish --dry-run before release");
 
   const publishWorkflow = readText(path.join(root, ".github", "workflows", "publish-npm.yml"));
   add(checks, "npm publish workflow",
@@ -213,7 +222,7 @@ function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
     else if (check.name === "GitHub release") actions.push("Create the matching GitHub Release after CI passes.");
     else if (check.name === "latest GitHub CI") actions.push("Wait for the latest GitHub CI run to pass on the current commit.");
     else if (check.name === "npm-safe bin paths") actions.push("Use npm-normalized bin paths such as bin/relay-baton.js.");
-    else if (check.name === "publish dry-run CI") actions.push("Add npm publish --dry-run to CI.");
+    else if (check.name === "publish dry-run CI") actions.push("Add a version-aware npm publish --dry-run script to CI.");
     else if (check.name === "npm publish workflow") actions.push("Add a manual npm publish workflow using NODE_AUTH_TOKEN.");
     else if (check.name === "host validation workflow") actions.push("Add a manual host validation workflow that uploads Linux and Windows validation artifacts.");
     else if (check.name === "v1 launch audit") actions.push("Add docs/v1-launch-audit.md with requirement evidence and blockers.");

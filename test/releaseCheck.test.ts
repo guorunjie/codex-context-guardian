@@ -146,10 +146,14 @@ function makeReleaseFixture(version: string): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "relay-baton-release-"));
   fs.mkdirSync(path.join(root, "dist"), { recursive: true });
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+  fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
   fs.mkdirSync(path.join(root, ".github", "workflows"), { recursive: true });
   fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({
     name: "codex-relay-baton-guardian",
     version,
+    scripts: {
+      "publish:dry-run": "node ./scripts/publish-dry-run.mjs"
+    },
     bin: {
       "relay-baton": "bin/relay-baton.js"
     }
@@ -170,6 +174,7 @@ function makeReleaseFixture(version: string): string {
     "npm install -g github:guorunjie/codex-relay-baton-guardian",
     "npm install -g codex-relay-baton-guardian"
   ].join("\n"));
+  fs.writeFileSync(path.join(root, "scripts", "publish-dry-run.mjs"), "npm publish --dry-run --json\n");
   fs.writeFileSync(path.join(root, "docs", "v1-upgrade-roadmap.md"), "# v1\n");
   fs.writeFileSync(path.join(root, "docs", "v1-launch-audit.md"), [
     "# v1 Launch Audit",
@@ -190,7 +195,7 @@ function makeReleaseFixture(version: string): string {
   fs.writeFileSync(path.join(root, ".github", "workflows", "ci.yml"), [
     "os: [ubuntu-latest, macos-latest, windows-latest]",
     "Smoke test packed CLI",
-    "npm publish --dry-run"
+    "npm run publish:dry-run"
   ].join("\n"));
   fs.writeFileSync(path.join(root, ".github", "workflows", "publish-npm.yml"), [
     "workflow_dispatch:",

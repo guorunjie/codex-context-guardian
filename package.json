@@ -23,6 +23,7 @@
     "test": "node --test",
     "doctor": "node ./bin/relay-baton.js doctor",
     "release:check": "node ./bin/relay-baton.js release check",
+    "publish:dry-run": "node ./scripts/publish-dry-run.mjs",
     "watch": "node ./bin/relay-baton.js watch",
     "recover:dry": "node ./bin/relay-baton.js recover --last --dry-run"
   },
@@ -30,6 +31,7 @@
     "bin/",
     "dist/",
     "docs/",
+    "scripts/",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "LICENSE",
