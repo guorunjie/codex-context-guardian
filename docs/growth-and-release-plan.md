@@ -5,19 +5,20 @@ Relay Baton has a working local recovery core. The next release work is about tr
 ## Current State
 
 - GitHub repository is public.
-- Local package version is `1.1.0`.
-- npm registry currently serves `1.1.0`, so GitHub Release and npm latest are aligned.
+- Local package version is `1.1.2`.
+- npm registry currently serves `1.1.2`, so GitHub Release and npm latest are aligned.
 - The project has a clear wedge: sleep-safe recovery for Codex long-running tasks.
 - Tests, build, release check, host validation, and monitor install commands exist.
 - Codex app-server integration exists for `thread/fork`, `thread/rollback`, `thread/compact/start`, and app-server status probing.
+- `relay-baton release check --v1 --online` passes with GitHub Release, npm registry, latest CI, real case study, visual demo, and three-platform host validation evidence.
 
 ## Release Priorities
 
-1. Add one short demo GIF or screenshot sequence under `docs/assets/`.
-2. Publish a redacted real recovery case study as a scannable README section.
-3. Add a `diagnose` command that explains why a stuck thread was or was not rescued.
-4. Run one public app-server recovery drill and link the evidence in release notes.
-5. Submit Relay Baton to Codex/agent tool directories and publish one technical launch post.
+1. Publish one technical launch post and link it from the README.
+2. Submit Relay Baton to Codex/agent tool directories and relevant awesome lists.
+3. Run one public app-server recovery drill and link the evidence in release notes.
+4. Convert the static demo screenshot into a 30-60 second GIF or short video.
+5. Gather at least three external recovery reports through issues or discussions.
 
 ## Growth Priorities
 
@@ -46,3 +47,4 @@ Use concrete failure language in posts and docs:
 - A new user can run `npm install -g codex-relay-baton-guardian` and then `relay-baton follow install`.
 - README explains the app-server path without overstating that Relay Baton replaces Codex compaction.
 - At least one public issue or case study proves a real stuck Codex task was recovered.
+- Launch copy exists for GitHub README, Hacker News, Reddit, X, Chinese developer communities, and awesome-list submissions.

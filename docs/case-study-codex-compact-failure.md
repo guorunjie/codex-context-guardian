@@ -160,15 +160,18 @@ relay-baton audit ~/.codex/relay-baton/bundles/<demo-bundle>
 relay-baton recover --last --dry-run
 ```
 
-## Known Remaining Limit
+## Current Publication Status
 
-NPM registry installation is prepared, but npm publication requires maintainer 2FA or a granular token with publish permission:
+Relay Baton is published on npm and GitHub:
 
 ```bash
-npm publish
+npm install -g codex-relay-baton-guardian
+relay-baton doctor
+relay-baton follow install
+relay-baton follow start
 ```
 
-Until then, the supported public install path is:
+The GitHub install path remains available for users who want the repository version directly:
 
 ```bash
 npm install -g github:guorunjie/codex-relay-baton-guardian

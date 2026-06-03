@@ -27,6 +27,7 @@ Public evidence:
 - 30-60 second demo outline: [docs/demo-30s-rescue.md](docs/demo-30s-rescue.md)
 - Host validation guide: [docs/validation-report-guide.md](docs/validation-report-guide.md)
 - High-star readiness audit: [docs/high-star-readiness-audit.md](docs/high-star-readiness-audit.md)
+- Promotion kit and launch copy: [docs/promotion-kit.md](docs/promotion-kit.md)
 
 ## Why It Exists
 

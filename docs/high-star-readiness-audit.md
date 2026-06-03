@@ -7,11 +7,11 @@ Relay Baton is technically usable, published, and differentiated, but it is not 
 ## Current Evidence
 
 - GitHub: `guorunjie/codex-relay-baton-guardian`, public, `1` star, `0` forks.
-- GitHub Release: `v1.1.0` published with tarball and `SHA256SUMS`.
-- npm: `codex-relay-baton-guardian@1.1.0`, `latest` points to `1.1.0`.
+- GitHub Release: `v1.1.2` published.
+- npm: `codex-relay-baton-guardian@1.1.2`, `latest` points to `1.1.2`.
 - CI: latest GitHub CI passes on Linux, macOS, and Windows.
 - Local monitor: LaunchAgent installed, loaded, and running on this Mac.
-- Release gate: `relay-baton release check --online` passes.
+- Release gate: `relay-baton release check --v1 --online` passes.
 - Codex pain signal: open upstream issues still include `responses/compact`, `stream disconnected before completion`, and `Codex ran out of room...`.
 
 ## Competitive Read
@@ -29,14 +29,14 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 
 ## Biggest Gaps
 
-1. Public proof is thin.
-   The README has a diagram and a case-study document, but it does not yet show a short before/after failure recovery story in the first screen.
+1. Public proof needs more external validation.
+   The README has a diagram, demo guide, and case-study document, but most evidence is still local and redacted.
 
-2. First-run experience is too CLI-heavy.
-   Users need to know whether hooks, monitor, app-server, npm, Codex CLI, and local databases are all healthy. `doctor` exists, but the README does not yet turn it into a guided onboarding flow.
+2. First-run experience is still CLI-heavy.
+   Users need to know whether hooks, monitor, app-server, npm, Codex CLI, and local databases are all healthy. `doctor`, `status`, `diagnose`, and `validate host` exist, but the next product step is a smoother guided flow.
 
-3. Diagnostics are not user-facing enough.
-   The project can recover and track state, but users need a command like `relay-baton diagnose --thread <id>` that explains why a stuck thread did or did not trigger a relay.
+3. Diagnostics now exist, but need more examples.
+   `relay-baton diagnose --thread <id>` explains why a stuck thread was or was not rescued. More screenshots and real outputs would improve trust.
 
 4. Visible app-server recovery is intentionally opt-in.
    `recover --app-server` and `app-server fork` exist, but background monitoring now defaults to queue-only bundles to avoid empty Desktop/sidebar relays. The next high-value feature is a smoother "review queued bundle -> create one visible relay" flow.
@@ -55,12 +55,6 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 
 ### P1: User Confidence
 
-- Add `relay-baton diagnose --thread <id>`:
-  - latest failure signal;
-  - matched recovery thread;
-  - gate decision;
-  - existing relay;
-  - next recommended command.
 - Add `relay-baton follow doctor` as a guided monitor onboarding command.
 - Add a troubleshooting matrix for common failures: missing Codex CLI, no hooks, app-server unavailable, compact failure not classified.
 
@@ -78,6 +72,7 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 - Publish a technical post using the exact failure messages users search for.
 - Open helpful comments on upstream Codex compact issues with reproducible recovery steps, avoiding spam.
 - Package a GitHub Action only as install/demo validation, not as the core local monitor.
+- Use [promotion-kit.md](promotion-kit.md) for launch copy, target channels, and star-conversion follow-up.
 
 ## Star Potential
 
