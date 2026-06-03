@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.2 - 2026-06-03
+
+- Ignored archived Codex threads during monitor recovery so archived sessions no longer trigger failing restore attempts or user-facing archive errors.
+- Extended diagnostics to surface archived-thread skips, making it clearer why a compact signal was intentionally not recovered.
+- Kept the default unattended monitor path on queued recovery bundles instead of visible blank relays.
+
+## 1.1.1 - 2026-06-02
+
+- Changed unattended recovery to queue audited handoff bundles by default, preventing background monitors from creating multiple empty visible relay conversations.
+- Added `relay-baton diagnose` to explain missed or skipped recoveries, including stale log cursors, missing activity hooks, non-TTY fork failures, and recovery gate decisions.
+- Added app-server-first recovery docs, real compact-failure case study evidence, and a 30-second rescue demo guide for public launch credibility.
+
 ## 1.1.0 - 2026-06-02
 
 - Added app-server-first recovery controls for probing Codex app-server, forking threads with `excludeTurns`, rolling back unsafe turns, and triggering manual compaction.
