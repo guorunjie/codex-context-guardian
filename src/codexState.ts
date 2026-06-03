@@ -11,6 +11,7 @@ export type ThreadInfo = {
   modelProvider: string;
   tokensUsed: number;
   updatedAt: number;
+  archived: boolean;
 };
 
 export type LogRow = {
@@ -29,6 +30,7 @@ export function getThread(threadId: string, home?: string): ThreadInfo | null {
   const rolloutSelect = columnExists(db, "threads", "rollout_path") ? "rollout_path as rolloutPath," : "null as rolloutPath,";
   const rows = queryJson(db, `
     select id, ${rolloutSelect} title, cwd, model, model_provider as modelProvider,
+           coalesce(archived, 0) as archived,
            tokens_used as tokensUsed, updated_at as updatedAt
     from threads
     where id = '${escaped}'
@@ -43,6 +45,7 @@ export function getLatestThread(home?: string): ThreadInfo | null {
   const rolloutSelect = columnExists(db, "threads", "rollout_path") ? "rollout_path as rolloutPath," : "null as rolloutPath,";
   const rows = queryJson(db, `
     select id, ${rolloutSelect} title, cwd, model, model_provider as modelProvider,
+           coalesce(archived, 0) as archived,
            tokens_used as tokensUsed, updated_at as updatedAt
     from threads
     where archived = 0
@@ -110,7 +113,8 @@ function normalizeThread(row: Record<string, unknown>): ThreadInfo {
     model: String(row.model || ""),
     modelProvider: String(row.modelProvider || ""),
     tokensUsed: Number(row.tokensUsed || 0),
-    updatedAt: Number(row.updatedAt || 0)
+    updatedAt: Number(row.updatedAt || 0),
+    archived: Boolean(Number(row.archived || 0))
   };
 }
 

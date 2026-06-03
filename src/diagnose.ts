@@ -49,6 +49,7 @@ export type DiagnoseReport = {
   recovery: {
     state?: ThreadRecoveryState;
     gate?: { ok: boolean; reason?: string };
+    archived: boolean;
   };
   runtime: {
     stdinIsTTY: boolean;
@@ -112,6 +113,7 @@ export async function runDiagnose(options: {
     lastSeenLogId: recoveryState.lastSeenLogId || 0,
     gate,
     threadState,
+    threadArchived: Boolean(thread?.archived),
     monitorDetail: monitor.detail,
     stderrTail,
     appServerOk: appServer.ok
@@ -163,7 +165,8 @@ export async function runDiagnose(options: {
     },
     recovery: {
       state: threadState,
-      gate: gate ? gate.ok ? { ok: true } : { ok: false, reason: gate.reason } : undefined
+      gate: gate ? gate.ok ? { ok: true } : { ok: false, reason: gate.reason } : undefined,
+      archived: Boolean(thread?.archived)
     },
     runtime: {
       stdinIsTTY: Boolean(process.stdin.isTTY),
@@ -181,6 +184,7 @@ export function formatDiagnose(report: DiagnoseReport): string {
     "Relay Baton diagnose",
     `Thread: ${report.threadId || "unknown"}`,
     `Title: ${report.thread?.title || "unknown"}`,
+    `Archived: ${report.recovery.archived ? "yes" : "no"}`,
     `Monitor: ${report.monitor.loaded ? "running" : "not running"}${report.monitor.queueOnly ? " (queue-only)" : report.monitor.appServerFirst ? " (app-server-first)" : report.monitor.forkFirst ? " (fork-first)" : ""}`,
     `Signal: ${report.logs.signal ? `${report.logs.signal.kind} (${report.logs.signal.confidence})` : "none"}`,
     `Activity: ${report.activity.present ? report.activity.compactStalled ? "compact stalled" : report.activity.compactInFlight ? "compact in flight" : "present" : "missing"}`,
@@ -222,11 +226,13 @@ function reasons(input: {
   lastSeenLogId: number;
   gate?: { ok: true } | { ok: false; reason: string };
   threadState?: ThreadRecoveryState;
+  threadArchived: boolean;
   monitorDetail: string;
   stderrTail: string;
   appServerOk: boolean;
 }): string[] {
   const result: string[] = [];
+  if (input.threadArchived) result.push("thread is archived; Relay Baton monitor ignores archived threads");
   if (input.signal?.sourceLogId && input.signal.sourceLogId <= input.lastSeenLogId) {
     result.push(`signal log ${input.signal.sourceLogId} is at or below lastSeenLogId ${input.lastSeenLogId}`);
   }
@@ -257,6 +263,7 @@ function reasons(input: {
 
 function recommendedActions(reasonsList: string[], appServerOk: boolean): string[] {
   const actions = new Set<string>();
+  if (reasonsList.some((reason) => /thread is archived/.test(reason))) actions.add("No recovery action is needed for archived threads. Use codex unarchive <thread-id> only if you want to continue that source conversation.");
   if (reasonsList.some((reason) => /lastSeenLogId/.test(reason))) actions.add("Run watch with startup backfill enabled or reset only after auditing recent compact failures.");
   if (reasonsList.some((reason) => /non-TTY|fork-first/.test(reason))) actions.add("Reinstall the monitor so it runs queue-only in the background: relay-baton follow repair && relay-baton follow start.");
   if (reasonsList.some((reason) => /lineage resolved/.test(reason))) actions.add("Audit lineage matching; same cwd alone should not merge unrelated Codex threads.");

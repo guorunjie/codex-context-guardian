@@ -253,6 +253,53 @@ test("app-server watch does not create visible relay unless explicitly enabled",
   assert.equal(state.threads["source-thread"].lastRecoveryTransport, "bundle");
 });
 
+test("watch ignores compact logs from archived threads", async () => {
+  const home = makeHome();
+  createThreadDb(home);
+  createLogsDb(home, 10, "archived-thread");
+
+  const result = await tick({
+    home,
+    auto: true,
+    fork: true,
+    backfill: true
+  });
+
+  assert.equal(result, "no failure signal");
+});
+
+test("watch ignores stalled compact activity from archived threads", async () => {
+  const home = makeHome();
+  createThreadDb(home);
+  fs.mkdirSync(path.join(home, "relay-baton"), { recursive: true });
+  fs.writeFileSync(path.join(home, "relay-baton", "activity-state.json"), JSON.stringify({
+    schemaVersion: 1,
+    updatedAt: Date.now() - 10 * 60 * 1000,
+    threads: {
+      "archived-thread": {
+        threadId: "archived-thread",
+        title: "Archived RPA task",
+        cwd: "/tmp/project-a",
+        model: "gpt-5.5",
+        lastEventAt: Date.now() - 10 * 60 * 1000,
+        lastEventName: "PreCompact",
+        compactInFlight: true,
+        lastCompactStartedAt: Date.now() - 10 * 60 * 1000,
+        recentEvents: []
+      }
+    }
+  }, null, 2));
+
+  const result = await tick({
+    home,
+    auto: true,
+    fork: true,
+    backfill: true
+  });
+
+  assert.equal(result, "no failure signal");
+});
+
 function makeHome(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "guardian-watch-test-"));
 }
@@ -273,14 +320,16 @@ function createThreadDb(home: string): void {
     insert into threads (id, title, cwd, model, model_provider, tokens_used, updated_at, archived)
     values
       ('source-thread', 'Confirm Codex can edit RPA workflows', '/tmp/project-a', 'gpt-5.5', 'openai', 123, 900, 0),
-      ('visible-thread', 'Confirm Codex can edit RPA workflows', '/tmp/project-a', 'gpt-5.5', 'openai', 123, 2000, 0);
+      ('visible-thread', 'Confirm Codex can edit RPA workflows', '/tmp/project-a', 'gpt-5.5', 'openai', 123, 2000, 0),
+      ('archived-thread', 'Archived RPA task', '/tmp/project-a', 'gpt-5.5', 'openai', 123, 3000, 1);
   `;
   const result = spawnSync("sqlite3", [db, sql], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
 }
 
-function createLogsDb(home: string, id: number): void {
+function createLogsDb(home: string, id: number, threadId = "source-thread"): void {
   const db = path.join(home, "logs_2.sqlite");
+  const escapedThreadId = threadId.replaceAll("'", "''");
   const sql = `
     create table logs (
       id integer primary key,
@@ -293,7 +342,7 @@ function createLogsDb(home: string, id: number): void {
     insert into logs (id, ts, level, target, feedback_log_body, thread_id)
     values (${id}, ${Date.now()}, 'ERROR', 'codex_core::compact_remote',
       'Error running remote compact task: stream disconnected before completion: error sending request for url (https://chatgpt.com/backend-api/codex/responses/compact)',
-      'source-thread');
+      '${escapedThreadId}');
   `;
   const result = spawnSync("sqlite3", [db, sql], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);

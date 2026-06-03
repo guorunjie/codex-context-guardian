@@ -57,6 +57,7 @@ export type ActivityFailureOptions = {
   now?: number;
   compactTimeoutMs: number;
   turnStallMs: number;
+  ignoredThreadIds?: Iterable<string>;
 };
 
 const MAX_RECENT_EVENTS = 20;
@@ -107,8 +108,10 @@ export function detectActivityFailure(
   options: ActivityFailureOptions
 ): FailureSignal | null {
   const now = options.now ?? Date.now();
+  const ignoredThreadIds = new Set(options.ignoredThreadIds || []);
   const threads = Object.values(state.threads)
     .filter((thread) => thread.threadId && thread.threadId !== "unknown")
+    .filter((thread) => !ignoredThreadIds.has(thread.threadId))
     .sort((a, b) => b.lastEventAt - a.lastEventAt);
 
   for (const thread of threads) {

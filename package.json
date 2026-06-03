@@ -1,6 +1,6 @@
 {
   "name": "codex-relay-baton-guardian",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Sleep-safe Codex recovery: queue audited handoff bundles for long tasks stuck on compact failures or context-window overflow.",
   "type": "module",
   "repository": {

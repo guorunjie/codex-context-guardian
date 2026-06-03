@@ -65,9 +65,12 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
     ? rows.reduce((max, row) => Math.max(max, row.id), state.lastSeenLogId || 0)
     : Math.max(state.lastSeenLogId || 0, getMaxLogId(options.home));
   const activityState = loadActivityState(options.home);
-  const signal = classifyLogs(rows) || detectActivityFailure(activityState, {
+  const ignoredThreadIds = archivedActivityThreadIds(activityState, options.home);
+  const recoverableRows = rows.filter((row) => !row.threadId || !ignoredThreadIds.has(row.threadId));
+  const signal = classifyLogs(recoverableRows) || detectActivityFailure(activityState, {
     compactTimeoutMs: config.compactTimeoutMs,
-    turnStallMs: config.turnStallMs
+    turnStallMs: config.turnStallMs,
+    ignoredThreadIds
   });
   state.lastSeenLogId = maxSeen;
 
@@ -80,6 +83,10 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
   if (!threadId) {
     saveRecoveryState(state, options.home);
     return "failure signal found, but no thread id was available";
+  }
+  if (isArchivedThread(threadId, options.home)) {
+    saveRecoveryState(state, options.home);
+    return "no failure signal";
   }
   const logId = signal.sourceLogId || maxSeen;
 
@@ -280,6 +287,18 @@ function recoveryDestination(options: WatchOptions, config: GuardianConfig): Gua
 function recoveryTransport(options: WatchOptions, config: GuardianConfig): GuardianConfig["recoveryTransport"] {
   if (options.appServer) return "app-server";
   return config.recoveryTransport;
+}
+
+function archivedActivityThreadIds(activityState: ActivityState, home?: string): Set<string> {
+  const ignored = new Set<string>();
+  for (const threadId of Object.keys(activityState.threads)) {
+    if (isArchivedThread(threadId, home)) ignored.add(threadId);
+  }
+  return ignored;
+}
+
+function isArchivedThread(threadId: string, home?: string): boolean {
+  return Boolean(getThread(threadId, home)?.archived);
 }
 
 function shouldCreateVisibleRelay(options: WatchOptions, config: GuardianConfig): boolean {
