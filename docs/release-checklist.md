@@ -82,3 +82,42 @@ relay-baton release check --online
 ```
 
 The workflow requires an `NPM_TOKEN` repository secret with publish permission. It checks out the requested tag, verifies the tag matches `package.json`, runs tests/build/release check, and publishes with npm provenance.
+
+### Maintainer Token Runbook
+
+Use this path when `relay-baton release check --online` fails on `npm auth` or `npm package version` while the GitHub Release and CI are already green.
+
+Current package ownership must include the npm maintainer account:
+
+```bash
+npm view codex-relay-baton-guardian maintainers --json
+```
+
+For the current package line, the publishing account is expected to be `guorunjie <15911869@qq.com>`.
+
+Recommended GitHub Actions path:
+
+1. Log in to npmjs.com as the package maintainer.
+2. Create an automation/granular access token that can publish `codex-relay-baton-guardian`.
+3. Replace the GitHub repository secret `NPM_TOKEN` with that token.
+4. Run:
+
+```bash
+VERSION=$(node -p "require('./package.json').version")
+gh workflow run publish-npm.yml -f tag="v$VERSION"
+gh run list --workflow "Publish npm"
+npm view codex-relay-baton-guardian version dist-tags.latest --json
+relay-baton release check --online
+```
+
+Local fallback path:
+
+```bash
+npm login --auth-type=web
+npm whoami
+npm publish --access public
+npm view codex-relay-baton-guardian version dist-tags.latest --json
+relay-baton release check --online
+```
+
+Do not publish from a non-maintainer npm account. If npm returns `E401`, the local machine is not logged in. If npm returns `E404` while publishing an existing package, the token is missing package publish permission.
