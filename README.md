@@ -28,6 +28,7 @@ Public evidence:
 - Host validation guide: [docs/validation-report-guide.md](docs/validation-report-guide.md)
 - High-star readiness audit: [docs/high-star-readiness-audit.md](docs/high-star-readiness-audit.md)
 - Promotion kit and launch copy: [docs/promotion-kit.md](docs/promotion-kit.md)
+- Outreach log: [docs/outreach-log.md](docs/outreach-log.md)
 
 ## Why It Exists
 

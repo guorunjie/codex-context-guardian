@@ -14,6 +14,7 @@ It should not be pitched as a generic relay, memory, or summarization tool. The 
 - Demo: [demo-30s-rescue.md](demo-30s-rescue.md)
 - Case study: [case-study-codex-compact-failure.md](case-study-codex-compact-failure.md)
 - Validation guide: [validation-report-guide.md](validation-report-guide.md)
+- Outreach log: [outreach-log.md](outreach-log.md)
 
 ## Short Pitch
 
