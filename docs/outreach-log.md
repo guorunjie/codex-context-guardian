@@ -16,17 +16,17 @@ Relay Baton's growth goal is to earn discovery from Codex users who actually hit
 
 | Date | Target | Status | Link | Why it fits |
 | --- | --- | --- | --- | --- |
-| 2026-06-09 | `RoggeOhta/awesome-codex-cli` | PR opened | <https://github.com/RoggeOhta/awesome-codex-cli/pull/78> | Most relevant Codex-specific directory; Relay Baton fits `Monitoring & Analytics` because it watches Codex hooks/logs and recovers compact/context-window failures. |
-| 2026-06-09 | `milisp/awesome-codex-cli` | PR opened | <https://github.com/milisp/awesome-codex-cli/pull/42> | Codex-specific directory with a broad `Development Tools` section; Relay Baton fits as a local reliability/recovery tool for long-running Codex tasks. |
-| 2026-06-09 | `bradAGI/awesome-cli-coding-agents` | PR opened | <https://github.com/bradAGI/awesome-cli-coding-agents/pull/120> | Larger CLI agent directory with an `Agent infrastructure` section; Relay Baton is positioned as Codex long-task recovery infrastructure rather than a standalone coding agent. |
-| 2026-06-09 | `brandonhimpfen/awesome-ai-coding-agents` | PR opened | <https://github.com/brandonhimpfen/awesome-ai-coding-agents/pull/22> | Smaller but scoped AI coding agents list with an `Agent Infrastructure` section; Relay Baton is submitted as local reliability infrastructure for Codex long tasks. |
+| 2026-06-09 | `RoggeOhta/awesome-codex-cli` | PR opened; mergeable, no review/comments as of 2026-06-09 | <https://github.com/RoggeOhta/awesome-codex-cli/pull/78> | Most relevant Codex-specific directory; Relay Baton fits `Monitoring & Analytics` because it watches Codex hooks/logs and recovers compact/context-window failures. |
+| 2026-06-09 | `milisp/awesome-codex-cli` | PR opened; mergeable, no review/comments as of 2026-06-09 | <https://github.com/milisp/awesome-codex-cli/pull/42> | Codex-specific directory with a broad `Development Tools` section; Relay Baton fits as a local reliability/recovery tool for long-running Codex tasks. |
+| 2026-06-09 | `bradAGI/awesome-cli-coding-agents` | PR opened; mergeable, no review/comments as of 2026-06-09 | <https://github.com/bradAGI/awesome-cli-coding-agents/pull/120> | Larger CLI agent directory with an `Agent infrastructure` section; Relay Baton is positioned as Codex long-task recovery infrastructure rather than a standalone coding agent. |
+| 2026-06-09 | `brandonhimpfen/awesome-ai-coding-agents` | PR opened; mergeable, no review/comments as of 2026-06-09 | <https://github.com/brandonhimpfen/awesome-ai-coding-agents/pull/22> | Smaller but scoped AI coding agents list with an `Agent Infrastructure` section; Relay Baton is submitted as local reliability infrastructure for Codex long tasks. |
 
 ## Release Operations
 
 | Date | Item | Status | Evidence | Next action |
 | --- | --- | --- | --- | --- |
-| 2026-06-09 | `v1.1.3` GitHub Release | Complete | <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3> | None |
-| 2026-06-09 | `v1.1.3` npm publication | Blocked | <https://github.com/guorunjie/codex-relay-baton-guardian/actions/runs/27193705058> failed at `npm publish` with npm `E404` / no package permission | Replace repository `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, then rerun `Publish npm` with `tag=v1.1.3`. |
+| 2026-06-09 | `v1.1.3` GitHub Release | Complete | <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3>; tag, target commit, tarball, and `SHA256SUMS` assets are present. | None |
+| 2026-06-09 | `v1.1.3` npm publication | Blocked | <https://github.com/guorunjie/codex-relay-baton-guardian/actions/runs/27198149765> reached `npm publish`, signed provenance, then failed with npm `E404` / no package permission. | Replace repository `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, then rerun `Publish npm` with `tag=v1.1.3`. |
 
 ## Next Targets
 

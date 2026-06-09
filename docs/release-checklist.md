@@ -31,7 +31,7 @@ relay-baton release check --online
 relay-baton release check --v1 --online
 ```
 
-Online checks add matching GitHub Release tag, GitHub Release target matching the current commit, latest GitHub CI success for the current commit, npm authentication, and npm registry publication for the current package version.
+Online checks add matching GitHub Release tag, GitHub Release target matching the current commit, downloadable GitHub Release assets (`<package>-<version>.tgz` plus `SHA256SUMS`), latest GitHub CI success for the current commit, npm authentication, and npm registry publication for the current package version.
 
 For v1.0, `--v1 --online` must pass. Before npm publication, it is expected to fail on `npm auth` or `npm package version`; that failure is the distribution blocker.
 
