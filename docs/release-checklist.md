@@ -31,7 +31,7 @@ relay-baton release check --online
 relay-baton release check --v1 --online
 ```
 
-Online checks add matching GitHub Release tag, latest GitHub CI success for the current commit, npm authentication, and npm registry publication for the current package version.
+Online checks add matching GitHub Release tag, GitHub Release target matching the current commit, latest GitHub CI success for the current commit, npm authentication, and npm registry publication for the current package version.
 
 For v1.0, `--v1 --online` must pass. Before npm publication, it is expected to fail on `npm auth` or `npm package version`; that failure is the distribution blocker.
 
@@ -121,3 +121,12 @@ relay-baton release check --online
 ```
 
 Do not publish from a non-maintainer npm account. If npm returns `E401`, the local machine is not logged in. If npm returns `E404` while publishing an existing package, the token is missing package publish permission.
+
+If GitHub Actions reaches `Publish to npm`, prints the tarball contents, signs provenance, and then fails on `PUT https://registry.npmjs.org/codex-relay-baton-guardian` with `E404`, treat it as an invalid or under-scoped `NPM_TOKEN`. Confirm:
+
+```bash
+npm owner ls codex-relay-baton-guardian
+npm view codex-relay-baton-guardian version dist-tags.latest maintainers --json
+```
+
+If the package owner is still `guorunjie <15911869@qq.com>` and the registry package exists, replace the GitHub repository secret `NPM_TOKEN` with a fresh maintainer-owned token, then rerun `publish-npm.yml`.
