@@ -101,6 +101,40 @@ test("online release readiness includes command failure details", () => {
   assert.match(readiness.checks.find((check) => check.name === "latest GitHub CI")?.detail || "", /proxy denied/);
 });
 
+test("online release readiness fails when the GitHub release targets an older commit", () => {
+  const root = makeReleaseFixture("1.2.3");
+  const readiness = evaluateReleaseReadiness({
+    root,
+    online: true,
+    runner: (command, args = [], options) => {
+      const joined = [command, ...args].join(" ");
+      if (joined === "git status --short") return { status: 0, stdout: "", stderr: "" };
+      if (joined === "git rev-parse HEAD") return { status: 0, stdout: "new-sha\n", stderr: "" };
+      if (joined.startsWith("gh release view")) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({ targetCommitish: "old-sha" }),
+          stderr: ""
+        };
+      }
+      if (joined.startsWith("gh run list")) {
+        return {
+          status: 0,
+          stdout: JSON.stringify([{ headSha: "new-sha", status: "completed", conclusion: "success" }]),
+          stderr: ""
+        };
+      }
+      if (joined === "npm whoami") return { status: 0, stdout: "maintainer\n", stderr: "" };
+      if (joined.startsWith("npm view")) return { status: 0, stdout: "1.2.3\n", stderr: "" };
+      return cleanGitRunner(command, args, options);
+    }
+  });
+
+  assert.equal(readiness.ok, false);
+  assert.equal(readiness.checks.find((check) => check.name === "GitHub release target")?.status, "fail");
+  assert.match(readiness.nextActions.join("\n"), /Move the GitHub Release tag/);
+});
+
 test("v1 release readiness surfaces evidence blockers", () => {
   const root = makeReleaseFixture("1.2.3");
   const readiness = evaluateReleaseReadiness({
@@ -268,7 +302,7 @@ function fakeOnlineRunner(options: { npmAuth: boolean; npmPublished: boolean }):
     const joined = [command, ...args].join(" ");
     if (joined === "git status --short") return { status: 0, stdout: "", stderr: "" };
     if (joined === "git rev-parse HEAD") return { status: 0, stdout: "abc123\n", stderr: "" };
-    if (joined.startsWith("gh release view")) return { status: 0, stdout: "{}", stderr: "" };
+    if (joined.startsWith("gh release view")) return { status: 0, stdout: JSON.stringify({ targetCommitish: "abc123" }), stderr: "" };
     if (joined.startsWith("gh run list")) {
       return {
         status: 0,
