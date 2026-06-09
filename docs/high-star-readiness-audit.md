@@ -7,8 +7,8 @@ Relay Baton is technically usable, published, and differentiated, but it is not 
 ## Current Evidence
 
 - GitHub: `guorunjie/codex-relay-baton-guardian`, public, `1` star, `0` forks.
-- GitHub Release: `v1.1.2` published.
-- npm: `codex-relay-baton-guardian@1.1.2`, `latest` points to `1.1.2`.
+- GitHub Release: `v1.1.3` is the target release for the npm-auth advisory gate fix.
+- npm: `codex-relay-baton-guardian@1.1.3` should become `latest` after the publish workflow completes.
 - CI: latest GitHub CI passes on Linux, macOS, and Windows.
 - Local monitor: LaunchAgent installed, loaded, and running on this Mac.
 - Release gate: `relay-baton release check --v1 --online` passes.

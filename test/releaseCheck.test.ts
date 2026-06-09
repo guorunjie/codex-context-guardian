@@ -40,6 +40,23 @@ test("online release readiness surfaces npm publication blockers", () => {
   assert.match(readiness.nextActions.join("\n"), /npm publish/);
 });
 
+test("online release readiness treats npm auth as advisory after the version is published", () => {
+  const root = makeReleaseFixture("1.2.3");
+  const readiness = evaluateReleaseReadiness({
+    root,
+    online: true,
+    runner: fakeOnlineRunner({
+      npmAuth: false,
+      npmPublished: true
+    })
+  });
+
+  assert.equal(readiness.ok, true);
+  assert.equal(readiness.checks.find((check) => check.name === "npm package version")?.status, "pass");
+  assert.equal(readiness.checks.find((check) => check.name === "npm auth")?.status, "warn");
+  assert.doesNotMatch(readiness.nextActions.join("\n"), /npm adduser/);
+});
+
 test("online release readiness inspects the CI workflow instead of the latest manual run", () => {
   const root = makeReleaseFixture("1.2.3");
   const calls: string[] = [];

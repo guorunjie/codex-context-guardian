@@ -10,7 +10,7 @@ It should not be pitched as a generic relay, memory, or summarization tool. The 
 
 - GitHub: <https://github.com/guorunjie/codex-relay-baton-guardian>
 - npm: <https://www.npmjs.com/package/codex-relay-baton-guardian>
-- Release: <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.2>
+- Release: <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3>
 - Demo: [demo-30s-rescue.md](demo-30s-rescue.md)
 - Case study: [case-study-codex-compact-failure.md](case-study-codex-compact-failure.md)
 - Validation guide: [validation-report-guide.md](validation-report-guide.md)

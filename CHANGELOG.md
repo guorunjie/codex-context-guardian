@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3 - 2026-06-09
+
+- Changed online release checks so npm authentication is advisory once the requested package version is already published on the registry.
+- Kept unpublished versions strict: missing npm auth and missing registry publication still block release readiness before publishing.
+- Added release-check coverage for published-version verification when the maintainer is not logged in locally.
+
 ## 1.1.2 - 2026-06-03
 
 - Ignored archived Codex threads during monitor recovery so archived sessions no longer trigger failing restore attempts or user-facing archive errors.

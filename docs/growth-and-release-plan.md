@@ -5,8 +5,8 @@ Relay Baton has a working local recovery core. The next release work is about tr
 ## Current State
 
 - GitHub repository is public.
-- Local package version is `1.1.2`.
-- npm registry currently serves `1.1.2`, so GitHub Release and npm latest are aligned.
+- Local package version is `1.1.3`.
+- npm registry should serve `1.1.3` after the `Publish npm` workflow completes, keeping GitHub Release and npm latest aligned.
 - The project has a clear wedge: sleep-safe recovery for Codex long-running tasks.
 - Tests, build, release check, host validation, and monitor install commands exist.
 - Codex app-server integration exists for `thread/fork`, `thread/rollback`, `thread/compact/start`, and app-server status probing.

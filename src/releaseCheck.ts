@@ -180,12 +180,23 @@ function addOnlineChecks(
   }
   add(checks, "latest GitHub CI", ciOk, ciDetail);
 
-  const npmAuth = runner("npm", ["whoami"], { cwd: root, timeoutMs: ONLINE_NPM_TIMEOUT_MS });
-  add(checks, "npm auth", npmAuth.status === 0, npmAuth.status === 0 ? `logged in as ${npmAuth.stdout.trim()}` : "not logged in; run npm adduser");
-
   const npmPackage = runner("npm", ["view", `${packageName}@${version}`, "version"], { cwd: root, timeoutMs: ONLINE_NPM_TIMEOUT_MS });
-  add(checks, "npm package version", npmPackage.status === 0 && npmPackage.stdout.trim() === version,
+  const npmPublished = npmPackage.status === 0 && npmPackage.stdout.trim() === version;
+  add(checks, "npm package version", npmPublished,
     npmPackage.status === 0 ? `registry version ${npmPackage.stdout.trim()}` : commandFailureDetail(npmPackage, `${packageName}@${version} not published`));
+
+  const npmAuth = runner("npm", ["whoami"], { cwd: root, timeoutMs: ONLINE_NPM_TIMEOUT_MS });
+  if (npmAuth.status === 0) {
+    add(checks, "npm auth", true, `logged in as ${npmAuth.stdout.trim()}`);
+  } else if (npmPublished) {
+    checks.push({
+      name: "npm auth",
+      status: "warn",
+      detail: "not logged in; published registry version already matches, auth is only needed for the next npm publish"
+    });
+  } else {
+    add(checks, "npm auth", false, "not logged in; run npm adduser");
+  }
 }
 
 function addV1Checks(checks: ReleaseCheck[], root: string, online: boolean): void {
