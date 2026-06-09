@@ -162,14 +162,19 @@ function addOnlineChecks(
   const head = runner("git", ["rev-parse", "HEAD"], { cwd: root, timeoutMs: 5000 });
   const headSha = head.status === 0 ? head.stdout.trim() : "";
 
-  const ghRelease = runner("gh", ["release", "view", tag, "--json", "tagName,targetCommitish,url"], { cwd: root, timeoutMs: ONLINE_GITHUB_TIMEOUT_MS });
+  const ghRelease = runner("gh", ["release", "view", tag, "--json", "tagName,targetCommitish,url,assets"], { cwd: root, timeoutMs: ONLINE_GITHUB_TIMEOUT_MS });
   add(checks, "GitHub release", ghRelease.status === 0, ghRelease.status === 0 ? `${tag} exists` : commandFailureDetail(ghRelease, `missing ${tag}`));
   if (ghRelease.status === 0) {
     const releaseTarget = releaseTargetCommitish(ghRelease.stdout);
     add(checks, "GitHub release target", releaseTarget === headSha,
       releaseTarget ? `${tag} targets ${releaseTarget}` : `could not parse ${tag} targetCommitish`);
+    const releaseAssets = releaseAssetNames(ghRelease.stdout);
+    add(checks, "GitHub release assets",
+      releaseAssets.includes(`${packageName}-${version}.tgz`) && releaseAssets.includes("SHA256SUMS"),
+      releaseAssets.length > 0 ? releaseAssets.join(", ") : `${tag} has no downloadable release assets`);
   } else {
     checks.push({ name: "GitHub release target", status: "fail", detail: `missing ${tag}` });
+    checks.push({ name: "GitHub release assets", status: "fail", detail: `missing ${tag}` });
   }
 
   const ci = runner("gh", ["run", "list", "--workflow", "CI", "--limit", "1", "--json", "headSha,conclusion,status"], { cwd: root, timeoutMs: ONLINE_GITHUB_TIMEOUT_MS });
@@ -239,6 +244,7 @@ function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
     else if (check.name === "git worktree clean") actions.push("Commit or stash local changes before cutting a release.");
     else if (check.name === "GitHub release") actions.push("Create the matching GitHub Release after CI passes.");
     else if (check.name === "GitHub release target") actions.push("Move the GitHub Release tag to the exact commit being published, or bump the package version and create a new release.");
+    else if (check.name === "GitHub release assets") actions.push("Upload the npm tarball and SHA256SUMS to the matching GitHub Release.");
     else if (check.name === "latest GitHub CI") actions.push("Wait for the latest GitHub CI run to pass on the current commit.");
     else if (check.name === "npm-safe bin paths") actions.push("Use npm-normalized bin paths such as bin/relay-baton.js.");
     else if (check.name === "publish dry-run CI") actions.push("Add a version-aware npm publish --dry-run script to CI.");
@@ -277,6 +283,18 @@ function releaseTargetCommitish(stdout: string): string {
     // Keep the caller-facing failure in the release check detail.
   }
   return "";
+}
+
+function releaseAssetNames(stdout: string): string[] {
+  try {
+    const parsed = JSON.parse(stdout) as unknown;
+    if (!isObject(parsed) || !Array.isArray(parsed.assets)) return [];
+    return parsed.assets
+      .map((asset) => isObject(asset) && typeof asset.name === "string" ? asset.name : "")
+      .filter((name) => name.length > 0);
+  } catch {
+    return [];
+  }
 }
 
 function label(status: ReleaseCheckStatus): string {
