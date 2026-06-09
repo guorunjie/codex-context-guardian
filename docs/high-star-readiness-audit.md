@@ -7,8 +7,8 @@ Relay Baton is technically usable, published, and differentiated, but it is not 
 ## Current Evidence
 
 - GitHub: `guorunjie/codex-relay-baton-guardian`, public, `1` star, `0` forks.
-- GitHub Release: `v1.1.3` is the target release for the npm-auth advisory gate fix.
-- npm: `codex-relay-baton-guardian@1.1.3` should become `latest` after the publish workflow completes.
+- GitHub Release: `v1.1.3` published for the npm-auth advisory gate fix.
+- npm: `codex-relay-baton-guardian@1.1.2` remains `latest`; `v1.1.3` npm publication is blocked by an `NPM_TOKEN` permission failure in GitHub Actions.
 - CI: latest GitHub CI passes on Linux, macOS, and Windows.
 - Local monitor: LaunchAgent installed, loaded, and running on this Mac.
 - Release gate: `relay-baton release check --v1 --online` passes.
@@ -32,16 +32,19 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 1. Public proof needs more external validation.
    The README has a diagram, demo guide, and case-study document, but most evidence is still local and redacted.
 
-2. First-run experience is still CLI-heavy.
+2. npm release operations need a fresh maintainer token.
+   GitHub Actions has an `NPM_TOKEN` secret, but the `v1.1.3` publish run failed with npm `E404` / no package permission. Replace the secret with a token from the `guorunjie` npm maintainer account before the next npm release.
+
+3. First-run experience is still CLI-heavy.
    Users need to know whether hooks, monitor, app-server, npm, Codex CLI, and local databases are all healthy. `doctor`, `status`, `diagnose`, and `validate host` exist, but the next product step is a smoother guided flow.
 
-3. Diagnostics now exist, but need more examples.
+4. Diagnostics now exist, but need more examples.
    `relay-baton diagnose --thread <id>` explains why a stuck thread was or was not rescued. More screenshots and real outputs would improve trust.
 
-4. Visible app-server recovery is intentionally opt-in.
+5. Visible app-server recovery is intentionally opt-in.
    `recover --app-server` and `app-server fork` exist, but background monitoring now defaults to queue-only bundles to avoid empty Desktop/sidebar relays. The next high-value feature is a smoother "review queued bundle -> create one visible relay" flow.
 
-5. Distribution is early.
+6. Distribution is early.
    GitHub topics and npm are aligned, but the project has not yet entered awesome lists, Codex community docs, Reddit/HN/X/中文社区 posts, or plugin/action ecosystems.
 
 ## High-Star Roadmap

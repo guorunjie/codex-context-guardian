@@ -6,7 +6,7 @@ Relay Baton has a working local recovery core. The next release work is about tr
 
 - GitHub repository is public.
 - Local package version is `1.1.3`.
-- npm registry should serve `1.1.3` after the `Publish npm` workflow completes, keeping GitHub Release and npm latest aligned.
+- GitHub Release `v1.1.3` exists; npm registry currently remains on `1.1.2` until the repository `NPM_TOKEN` secret is replaced with a maintainer token that can publish `codex-relay-baton-guardian`.
 - The project has a clear wedge: sleep-safe recovery for Codex long-running tasks.
 - Tests, build, release check, host validation, and monitor install commands exist.
 - Codex app-server integration exists for `thread/fork`, `thread/rollback`, `thread/compact/start`, and app-server status probing.
@@ -14,11 +14,12 @@ Relay Baton has a working local recovery core. The next release work is about tr
 
 ## Release Priorities
 
-1. Publish one technical launch post and link it from the README.
-2. Submit Relay Baton to Codex/agent tool directories and relevant awesome lists.
-3. Run one public app-server recovery drill and link the evidence in release notes.
-4. Convert the static demo screenshot into a 30-60 second GIF or short video.
-5. Gather at least three external recovery reports through issues or discussions.
+1. Replace the GitHub `NPM_TOKEN` secret with a token owned by the `guorunjie` npm maintainer account, then rerun `Publish npm` for `v1.1.3`.
+2. Publish one technical launch post and link it from the README.
+3. Submit Relay Baton to Codex/agent tool directories and relevant awesome lists.
+4. Run one public app-server recovery drill and link the evidence in release notes.
+5. Convert the static demo screenshot into a 30-60 second GIF or short video.
+6. Gather at least three external recovery reports through issues or discussions.
 
 ## Growth Priorities
 

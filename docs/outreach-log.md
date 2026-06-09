@@ -10,12 +10,20 @@ Relay Baton's growth goal is to earn discovery from Codex users who actually hit
 - GitHub forks: 0
 - npm package: <https://www.npmjs.com/package/codex-relay-baton-guardian>
 - Current release line: `v1.1.3`
+- npm latest: `1.1.2` until the `NPM_TOKEN` secret is replaced and the `Publish npm` workflow is rerun for `v1.1.3`
 
 ## Submitted
 
 | Date | Target | Status | Link | Why it fits |
 | --- | --- | --- | --- | --- |
 | 2026-06-09 | `RoggeOhta/awesome-codex-cli` | PR opened | <https://github.com/RoggeOhta/awesome-codex-cli/pull/78> | Most relevant Codex-specific directory; Relay Baton fits `Monitoring & Analytics` because it watches Codex hooks/logs and recovers compact/context-window failures. |
+
+## Release Operations
+
+| Date | Item | Status | Evidence | Next action |
+| --- | --- | --- | --- | --- |
+| 2026-06-09 | `v1.1.3` GitHub Release | Complete | <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3> | None |
+| 2026-06-09 | `v1.1.3` npm publication | Blocked | <https://github.com/guorunjie/codex-relay-baton-guardian/actions/runs/27193705058> failed at `npm publish` with npm `E404` / no package permission | Replace repository `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, then rerun `Publish npm` with `tag=v1.1.3`. |
 
 ## Next Targets
 
