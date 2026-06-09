@@ -17,7 +17,7 @@ jobs:
           - platform: linux
             os: ubuntu-latest
           - platform: windows
-            os: windows-latest
+            os: windows-2025-vs2026
           - platform: macos
             os: macos-latest
     steps:

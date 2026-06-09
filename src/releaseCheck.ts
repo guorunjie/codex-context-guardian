@@ -83,7 +83,7 @@ export function evaluateReleaseReadiness(options: {
 
   const ci = readText(path.join(root, ".github", "workflows", "ci.yml"));
   add(checks, "cross-platform CI matrix",
-    ci.includes("ubuntu-latest") && ci.includes("macos-latest") && ci.includes("windows-latest") && ci.includes("Smoke test packed CLI"),
+    hasLinuxRunner(ci) && hasMacosRunner(ci) && hasWindowsRunner(ci) && ci.includes("Smoke test packed CLI"),
     "CI should test Linux, macOS, Windows, and packed CLI smoke");
 
   const scripts = isObject(packageJson.scripts) ? packageJson.scripts : {};
@@ -107,8 +107,8 @@ export function evaluateReleaseReadiness(options: {
     hostValidationWorkflow.includes("workflow_dispatch")
       && hostValidationWorkflow.includes("relay-baton validate host")
       && hostValidationWorkflow.includes("actions/upload-artifact")
-      && hostValidationWorkflow.includes("ubuntu-latest")
-      && hostValidationWorkflow.includes("windows-latest"),
+      && hasLinuxRunner(hostValidationWorkflow)
+      && hasWindowsRunner(hostValidationWorkflow),
     ".github/workflows/host-validation.yml should collect host validation artifacts on Linux and Windows");
 
   const gitStatus = runner("git", ["status", "--short"], { cwd: root, timeoutMs: 5000 });
@@ -276,6 +276,18 @@ function binPathDetail(bin: Record<string, unknown>): string {
   const entries = Object.entries(bin);
   if (entries.length === 0) return "no bin entries";
   return entries.map(([name, value]) => `${name} -> ${String(value)}`).join(", ");
+}
+
+function hasLinuxRunner(workflow: string): boolean {
+  return /\bubuntu-(?:latest|\d{2}\.\d{2})\b/.test(workflow);
+}
+
+function hasMacosRunner(workflow: string): boolean {
+  return /\bmacos-(?:latest|\d+(?:-[A-Za-z0-9]+)*)\b/.test(workflow);
+}
+
+function hasWindowsRunner(workflow: string): boolean {
+  return /\bwindows-(?:latest|\d{4}(?:-[A-Za-z0-9]+)*)\b/.test(workflow);
 }
 
 function hasVisualDemo(root: string): boolean {

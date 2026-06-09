@@ -210,7 +210,7 @@ function makeReleaseFixture(version: string): string {
     "relay-baton audit"
   ].join("\n"));
   fs.writeFileSync(path.join(root, ".github", "workflows", "ci.yml"), [
-    "os: [ubuntu-latest, macos-latest, windows-latest]",
+    "os: [ubuntu-latest, macos-latest, windows-2025-vs2026]",
     "Smoke test packed CLI",
     "npm run publish:dry-run"
   ].join("\n"));
@@ -223,7 +223,7 @@ function makeReleaseFixture(version: string): string {
     "workflow_dispatch:",
     "runs-on: ${{ matrix.os }}",
     "ubuntu-latest",
-    "windows-latest",
+    "windows-2025-vs2026",
     "relay-baton validate host",
     "actions/upload-artifact"
   ].join("\n"));
