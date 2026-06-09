@@ -26,6 +26,7 @@ Public evidence:
 - Real compact-failure case study: [docs/case-study-codex-compact-failure.md](docs/case-study-codex-compact-failure.md)
 - 30-60 second demo outline: [docs/demo-30s-rescue.md](docs/demo-30s-rescue.md)
 - Host validation guide: [docs/validation-report-guide.md](docs/validation-report-guide.md)
+- Privacy and local data: [PRIVACY.md](PRIVACY.md)
 - High-star readiness audit: [docs/high-star-readiness-audit.md](docs/high-star-readiness-audit.md)
 - Promotion kit and launch copy: [docs/promotion-kit.md](docs/promotion-kit.md)
 - Outreach log: [docs/outreach-log.md](docs/outreach-log.md)
@@ -294,6 +295,7 @@ The environment variable names keep the old `GUARDIAN_` prefix for compatibility
 ## Safety Model
 
 - Does not edit `~/.codex/config.toml`.
+- Runs core monitor, bundle generation, diagnosis, and audit flows locally; see [PRIVACY.md](PRIVACY.md).
 - Uses per-command `--model` overrides.
 - Stores Relay Baton state under `~/.codex/relay-baton/`.
 - Redacts obvious secrets from hook snapshots.

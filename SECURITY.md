@@ -2,6 +2,8 @@
 
 Relay Baton reads local Codex state and writes recovery bundles under `~/.codex/relay-baton/`.
 
+For the data-handling and sharing model, see [PRIVACY.md](PRIVACY.md).
+
 ## Supported Versions
 
 Security fixes target the latest release.
