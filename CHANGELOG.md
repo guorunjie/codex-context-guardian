@@ -5,6 +5,7 @@
 - Changed online release checks so npm authentication is advisory once the requested package version is already published on the registry.
 - Kept unpublished versions strict: missing npm auth and missing registry publication still block release readiness before publishing.
 - Added release-check coverage for published-version verification when the maintainer is not logged in locally.
+- Added `relay-baton follow doctor` as a guided first-run monitor check for hooks, background service state, observed activity, and recovery tracking.
 
 ## 1.1.2 - 2026-06-03
 

@@ -18,6 +18,7 @@ import { writeDemoBundle } from "./demo.ts";
 import { evaluateReleaseReadiness, formatReleaseReadiness } from "./releaseCheck.ts";
 import { buildHostValidationReport, renderHostValidationReport, writeHostValidationReport } from "./validationReport.ts";
 import { formatDiagnose, runDiagnose } from "./diagnose.ts";
+import { buildFollowDoctorReport, formatFollowDoctorReport } from "./followDoctor.ts";
 import {
   compactThreadWithAppServer,
   defaultDesktopTitle,
@@ -487,6 +488,21 @@ async function followCommand(parsed: ParsedArgs): Promise<void> {
     }, null, 2));
     return;
   }
+  if (action === "doctor") {
+    const home = stringFlag(parsed, "home");
+    const report = buildFollowDoctorReport({
+      doctor: runDoctor(home),
+      monitor: monitorStatus(home),
+      activity: loadActivityState(home),
+      recovery: loadRecoveryState(home)
+    });
+    if (parsed.flags.json) {
+      console.log(JSON.stringify(report, null, 2));
+      return;
+    }
+    console.log(formatFollowDoctorReport(report));
+    return;
+  }
   throw new Error(`Unknown follow action: ${action}`);
 }
 
@@ -705,7 +721,7 @@ Usage:
   relay-baton install-hooks [--dry-run] [--home <CODEX_HOME>]
   relay-baton hook --phase <event-name> [--thread <id>] [--snapshot]
   relay-baton watch [--auto] [--fork|--desktop] [--queue-only|--create-visible-relay] [--app-server] [--goal-mode] [--once] [--backfill] [--dry-run] [--home <CODEX_HOME>]
-  relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]
+  relay-baton follow install|repair|doctor|status|start|stop [--dry-run] [--json] [--home <CODEX_HOME>]
   relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]
   relay-baton activity status [--json] [--home <CODEX_HOME>]
   relay-baton app-server status [--json] [--home <CODEX_HOME>]

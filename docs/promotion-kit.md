@@ -47,9 +47,9 @@ Relay Baton runs locally. It watches Codex lifecycle hooks and logs, detects com
 Install:
 
 npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
-relay-baton doctor
 relay-baton follow install
 relay-baton follow start
+relay-baton follow doctor
 
 The goal is simple: let long Codex jobs survive overnight without losing the latest task direction.
 ```
@@ -91,9 +91,9 @@ Relay Baton 在本机运行，监控 Codex hooks 和日志，发现 compact/cont
 
 安装：
 npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
-relay-baton doctor
 relay-baton follow install
 relay-baton follow start
+relay-baton follow doctor
 ```
 
 ## Directory Submission Blurb

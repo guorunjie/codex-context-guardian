@@ -58,7 +58,7 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 
 ### P1: User Confidence
 
-- Add `relay-baton follow doctor` as a guided monitor onboarding command.
+- Keep `relay-baton follow doctor` as the guided monitor onboarding command in README and launch copy.
 - Add a troubleshooting matrix for common failures: missing Codex CLI, no hooks, app-server unavailable, compact failure not classified.
 
 ### P2: Safe Visible Relay Recovery

@@ -70,6 +70,11 @@ test("parses status command and follow repair", () => {
   assert.equal(repair.command, "follow");
   assert.deepEqual(repair.positional, ["repair"]);
   assert.equal(repair.flags.dryRun, true);
+
+  const doctor = parseArgs(["follow", "doctor", "--json"]);
+  assert.equal(doctor.command, "follow");
+  assert.deepEqual(doctor.positional, ["doctor"]);
+  assert.equal(doctor.flags.json, true);
 });
 
 test("parses app-server commands and app-server recovery flag", () => {

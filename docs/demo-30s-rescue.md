@@ -18,7 +18,7 @@ Codex long tasks can die after context compaction. Relay Baton watches locally, 
 2. Show the monitor already running:
 
    ```bash
-   relay-baton follow status
+   relay-baton follow doctor
    ```
 
 3. Show the diagnostic explanation:

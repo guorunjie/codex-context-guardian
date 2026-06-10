@@ -24,7 +24,7 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 | Handoff fidelity | New continuation prefers latest goal, latest user intent, recent assistant/tool progress, current worktree, and superseded directions. | `HANDOFF_MEMORY.json`, `RECENT_THREAD_CONTEXT.md`, `RECOVERY.md`, git diff/status, audit command, quality tests, and case-study audit excerpt exist. | Ready | Keep future case studies redacted before publication. |
 | Fork-first strategy | `codex fork` is preferred when the source session is readable; Desktop is explicit or fallback. | README, recovery strategy, tests, and local `codex fork --help` confirm fork path availability. | Ready | Keep Desktop path documented as less-lossless and experimental. |
 | Duplicate prevention | One source thread must not create parallel fork/Desktop relays unless forced. | Recovery state tracks `forkHandoffCreated` and `desktopHandoffCreated`; tests cover duplicate source recovery. | Ready | Document operator response when a duplicate is blocked. |
-| Operability | `doctor`, `status`, `follow repair`, `release check`, and `validate host` provide actionable output. | Commands exist and are covered by tests; release gate passes offline. | Mostly ready | Improve public troubleshooting with real failure examples. |
+| Operability | `doctor`, `status`, `follow doctor`, `follow repair`, `release check`, and `validate host` provide actionable output. | Commands exist and are covered by tests; release gate passes offline. | Ready | Keep adding public troubleshooting examples from real reports. |
 | Support intake | Bug reports collect host validation, bundle audit, commands, environment, and logs. | Bug template requests `VALIDATION_REPORT.json`, `relay-baton audit`, command output, environment, and monitor logs. | Ready | Keep `docs/validation-report-guide.md` linked from support docs. |
 | Public trust assets | README shows the failure, relay, and audit workflow visually. | README includes `docs/assets/relay-baton-demo.png`; case study includes a redacted recovery record and audit excerpt. | Mostly ready | Replace the static visual with a real GIF/video before broad launch if possible. |
 | API stability | v1.0 command names and primary options are frozen. | Stable CLI surface and experimental Desktop boundary are documented below. | Ready | Only add new flags after v1.0 unless a breaking change is documented with a deprecation window. |
@@ -59,7 +59,7 @@ These commands are the v1.0 compatibility surface:
 
 - `relay-baton doctor [--json] [--home <CODEX_HOME>]`
 - `relay-baton status [--json] [--home <CODEX_HOME>]`
-- `relay-baton follow install|repair|status|start|stop [--dry-run] [--home <CODEX_HOME>]`
+- `relay-baton follow install|repair|doctor|status|start|stop [--dry-run] [--json] [--home <CODEX_HOME>]`
 - `relay-baton monitor install|uninstall|status|start|stop [--dry-run] [--home <CODEX_HOME>]`
 - `relay-baton activity status [--json] [--home <CODEX_HOME>]`
 - `relay-baton recover --thread <id>|--last [--strategy auto|fallback-model|fork|new-session] [--dry-run]`

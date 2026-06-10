@@ -15,10 +15,9 @@ The core rule is simple: keep one best relay anchored on the latest real task st
 
 ```bash
 npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
-relay-baton doctor
 relay-baton follow install
 relay-baton follow start
-relay-baton diagnose --last
+relay-baton follow doctor
 ```
 
 Distribution status: the current GitHub Release is `v1.1.3`. npm currently serves `v1.1.2`, so use the GitHub install line above for the latest release bundle until npm publication catches up.
@@ -63,6 +62,7 @@ Relay Baton avoids that by combining:
 - `relay-baton status` summarizes doctor, monitor, activity, and recovery state in one view.
 - `relay-baton install-hooks` installs Codex lifecycle hooks for activity tracking and compact snapshots.
 - `relay-baton follow install` installs Codex lifecycle hooks and the background monitor together.
+- `relay-baton follow doctor` confirms hooks, monitor, activity, and recovery state after first install.
 - `relay-baton follow repair` repairs hooks, LaunchAgent PATH, and monitor startup after shell or Homebrew path changes.
 - `relay-baton watch --auto --fork --queue-only` monitors Codex logs and queues audited recovery bundles automatically.
 - `relay-baton recover --thread <id> --strategy auto` executes fallback-model, last-healthy-fork, fork, or new-session recovery.
@@ -114,7 +114,7 @@ Install the full local follower:
 ```bash
 relay-baton follow install
 relay-baton follow start
-relay-baton follow status
+relay-baton follow doctor
 ```
 
 Inspect recorded activity:
@@ -160,18 +160,18 @@ Install directly from GitHub:
 
 ```bash
 npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
-relay-baton doctor
 relay-baton follow install
 relay-baton follow start
+relay-baton follow doctor
 ```
 
 Install from npm after `v1.1.3` publication catches up:
 
 ```bash
 npm install -g codex-relay-baton-guardian
-relay-baton doctor
 relay-baton follow install
 relay-baton follow start
+relay-baton follow doctor
 ```
 
 Local development:
