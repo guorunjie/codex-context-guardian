@@ -37,18 +37,18 @@
 - Added release checklist and support matrix documentation.
 - Added manual npm publish workflow with provenance and CI publish dry-run coverage.
 - Added `relay-baton validate host` for shareable host validation reports.
+- Released `v1.1.3` on GitHub with tarball and `SHA256SUMS` assets aligned to the current `main` commit.
+- Updated README, case study, and promotion copy so new users install the current `v1.1.3` bundle from GitHub until npm publication catches up.
 
 ## Next
 
+- Publish `codex-relay-baton-guardian@1.1.3` to npm after maintainer authentication.
+- Replace repository secret `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, or log in locally with the same maintainer account and run `npm publish --access public`.
+- Re-run `relay-baton release check --v1 --online` and require it to pass after npm publication.
 - Add structured event ingestion if Codex exposes stable compaction failure events.
 - Add a small terminal dashboard showing watched thread, last failure, and recovery attempts.
 - Add optional desktop notification integration.
 - Add an upstream PR against `openai/codex` once the standalone behavior is validated locally.
-- Validate Linux and Windows monitor lifecycle on real hosts.
-- Attach `relay-baton validate host --output <dir>` reports for Linux and Windows.
-- Publish `codex-relay-baton-guardian` to npm after maintainer authentication.
-- Configure repository secret `NPM_TOKEN`, then run `gh workflow run publish-npm.yml -f tag=v1.0.0` for the v1.0 package.
-- Run `relay-baton release check --online` green before cutting v1.0.
 
 ## Open Questions
 

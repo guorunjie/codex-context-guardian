@@ -26,7 +26,7 @@ Relay Baton's growth goal is to earn discovery from Codex users who actually hit
 
 | Date | Item | Status | Evidence | Next action |
 | --- | --- | --- | --- | --- |
-| 2026-06-09 | `v1.1.3` GitHub Release | Complete | <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3>; tag, target commit, tarball, and `SHA256SUMS` assets are present. | None |
+| 2026-06-10 | `v1.1.3` GitHub Release | Complete | <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3>; release target, tarball, and `SHA256SUMS` assets are present and should match the current `main` release commit. | None |
 | 2026-06-09 | `v1.1.3` npm publication | Blocked | <https://github.com/guorunjie/codex-relay-baton-guardian/actions/runs/27198149765> reached `npm publish`, signed provenance, then failed with npm `E404` / no package permission. | Replace repository `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, then rerun `Publish npm` with `tag=v1.1.3`. |
 
 ## Next Targets
