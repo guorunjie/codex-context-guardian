@@ -29,7 +29,7 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 | Public trust assets | README shows the failure, relay, and audit workflow visually. | README includes `docs/assets/relay-baton-demo.png`; case study includes a redacted recovery record and audit excerpt. | Mostly ready | Replace the static visual with a real GIF/video before broad launch if possible. |
 | API stability | v1.0 command names and primary options are frozen. | Stable CLI surface and experimental Desktop boundary are documented below. | Ready | Only add new flags after v1.0 unless a breaking change is documented with a deprecation window. |
 
-## Current Blockers
+## v1.0 Blockers
 
 1. Publish `codex-relay-baton-guardian@1.1.3` to npm.
 2. Confirm `npm view codex-relay-baton-guardian@1.1.3 version` returns `1.1.3`.
