@@ -16,6 +16,7 @@ export type FollowDoctorReport = {
   recoveryThreads: number;
   lastSeenLogId: number;
   latestActivityAt?: string;
+  monitorMode: string;
   nextActions: string[];
 };
 
@@ -35,13 +36,15 @@ export function buildFollowDoctorReport(input: {
   const latestActivity = Math.max(0, ...Object.values(input.activity.threads).map((thread) => Number(thread.lastEventAt || 0)));
   const doctorOk = failedDoctorChecks.length === 0;
   const ok = doctorOk && hooksInstalled && input.monitor.installed && input.monitor.loaded;
+  const monitorMode = describeMonitorMode(input.monitor.detail);
   const nextActions = followDoctorNextActions({
     doctorOk,
     failedDoctorChecks,
     hooksInstalled,
     monitorInstalled: input.monitor.installed,
     monitorLoaded: input.monitor.loaded,
-    activityThreads
+    activityThreads,
+    monitorMode
   });
 
   return {
@@ -57,6 +60,7 @@ export function buildFollowDoctorReport(input: {
     recoveryThreads,
     lastSeenLogId: Number(input.recovery.lastSeenLogId || 0),
     latestActivityAt: latestActivity > 0 ? new Date(latestActivity).toISOString() : undefined,
+    monitorMode,
     nextActions
   };
 }
@@ -66,7 +70,7 @@ export function formatFollowDoctorReport(report: FollowDoctorReport): string {
     `Relay Baton follow doctor: ${report.status}`,
     `doctor: ${report.doctorOk ? "ok" : `failed (${report.failedDoctorChecks.join(", ")})`}`,
     `hooks: ${report.hooksInstalled ? "installed" : "missing"}`,
-    `monitor: ${report.monitorLoaded ? "running" : report.monitorInstalled ? "installed but stopped" : "not installed"}`,
+    `monitor: ${report.monitorLoaded ? `running (${report.monitorMode})` : report.monitorInstalled ? "installed but stopped" : "not installed"}`,
     `activity threads: ${report.activityThreads}, active: ${report.activeThreads}`,
     `recovery-tracked threads: ${report.recoveryThreads}`,
     `last seen log id: ${report.lastSeenLogId}`,
@@ -86,6 +90,7 @@ function followDoctorNextActions(input: {
   monitorInstalled: boolean;
   monitorLoaded: boolean;
   activityThreads: number;
+  monitorMode: string;
 }): string[] {
   const actions: string[] = [];
   if (!input.doctorOk) {
@@ -100,7 +105,25 @@ function followDoctorNextActions(input: {
     actions.push("No Codex hook activity has been observed yet; start or continue a Codex task, then re-run relay-baton follow doctor.");
   }
   if (actions.length === 0) {
-    actions.push("Ready for unattended queue-only monitoring. Use relay-baton diagnose --last after a stuck task to inspect any rescue decision.");
+    if (input.monitorMode === "app-server visible relay") {
+      actions.push("Ready for unattended app-server visible relay monitoring. Use relay-baton diagnose --last after a stuck task to inspect any rescue decision.");
+    } else if (input.monitorMode === "queue-only") {
+      actions.push("Ready for unattended queue-only monitoring. Use relay-baton diagnose --last after a stuck task to inspect any rescue decision.");
+    } else {
+      actions.push(`Ready for unattended ${input.monitorMode} monitoring. Use relay-baton diagnose --last after a stuck task to inspect any rescue decision.`);
+    }
   }
   return actions;
+}
+
+function describeMonitorMode(detail: string): string {
+  const appServer = /--app-server/.test(detail);
+  const visible = /--create-visible-relay/.test(detail) || /GUARDIAN_CREATE_VISIBLE_RELAY\s*=>\s*(true|1|yes|on)/i.test(detail);
+  const queueOnly = /--queue-only/.test(detail);
+  if (queueOnly) return "queue-only";
+  if (appServer && visible) return "app-server visible relay";
+  if (appServer) return "app-server bundle";
+  if (/--fork/.test(detail)) return "fork";
+  if (/--desktop/.test(detail)) return "desktop";
+  return "unknown";
 }

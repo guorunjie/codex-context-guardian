@@ -22,8 +22,44 @@ test("follow doctor reports ready monitor with no activity yet", () => {
 
   assert.equal(report.ok, true);
   assert.equal(report.status, "ready");
+  assert.equal(report.monitorMode, "unknown");
   assert.match(report.nextActions.join("\n"), /No Codex hook activity/);
   assert.match(formatFollowDoctorReport(report), /Relay Baton follow doctor: ready/);
+});
+
+test("follow doctor reports app-server visible relay mode", () => {
+  const report = buildFollowDoctorReport({
+    doctor: [
+      { name: "codex cli", ok: true, detail: "ok" },
+      { name: "relay-baton compact hooks", ok: true, detail: "hooks.json" }
+    ],
+    monitor: {
+      label: "com.relay-baton.monitor",
+      plistPath: "/tmp/monitor.plist",
+      installed: true,
+      loaded: true,
+      detail: "watch --auto --fork --app-server --create-visible-relay --goal-mode",
+      recoveryStatePath: "/tmp/recovery-state.json"
+    },
+    activity: {
+      schemaVersion: 1,
+      updatedAt: 123,
+      threads: {
+        "thread-1": {
+          threadId: "thread-1",
+          lastEventAt: 123,
+          lastEventName: "Stop",
+          lastStopAt: 123,
+          recentEvents: []
+        }
+      }
+    },
+    recovery: { lastSeenLogId: 42, threads: {} }
+  });
+
+  assert.equal(report.monitorMode, "app-server visible relay");
+  assert.match(report.nextActions.join("\n"), /app-server visible relay/);
+  assert.match(formatFollowDoctorReport(report), /monitor: running \(app-server visible relay\)/);
 });
 
 test("follow doctor explains missing hooks and stopped monitor", () => {
