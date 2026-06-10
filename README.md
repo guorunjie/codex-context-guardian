@@ -14,12 +14,14 @@ Relay Baton is a local monitor for Codex Desktop/CLI. When a long task hits remo
 The core rule is simple: keep one best relay anchored on the latest real task state, not an old title, stale summary, or abandoned direction.
 
 ```bash
-npm install -g codex-relay-baton-guardian
+npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
 relay-baton doctor
 relay-baton follow install
 relay-baton follow start
 relay-baton diagnose --last
 ```
+
+Distribution status: the current GitHub Release is `v1.1.3`. npm currently serves `v1.1.2`, so use the GitHub install line above for the latest release bundle until npm publication catches up.
 
 Public evidence:
 
@@ -149,13 +151,13 @@ The default fallback model is `gpt-5.4`; override it with `GUARDIAN_FALLBACK_MOD
 Install directly from GitHub:
 
 ```bash
-npm install -g github:guorunjie/codex-relay-baton-guardian
+npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
 relay-baton doctor
 relay-baton follow install
 relay-baton follow start
 ```
 
-Install from npm after package publication:
+Install from npm after `v1.1.3` publication catches up:
 
 ```bash
 npm install -g codex-relay-baton-guardian

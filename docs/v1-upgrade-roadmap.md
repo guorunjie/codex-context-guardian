@@ -110,10 +110,10 @@ relay-baton doctor
 relay-baton follow repair
 relay-baton status
 relay-baton recover --last --dry-run
-npm install -g github:guorunjie/codex-relay-baton-guardian
+npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
 ```
 
-v1.0 is complete only when these commands pass on a clean machine and the npm install path also works:
+v1.0 is complete only when these commands pass on a clean machine and the npm install path also works for the current release:
 
 ```bash
 npm install -g codex-relay-baton-guardian

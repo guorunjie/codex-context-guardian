@@ -162,17 +162,17 @@ relay-baton recover --last --dry-run
 
 ## Current Publication Status
 
-Relay Baton is published on npm and GitHub:
+Relay Baton's latest verified bundle is available from the GitHub Release:
 
 ```bash
-npm install -g codex-relay-baton-guardian
+npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
 relay-baton doctor
 relay-baton follow install
 relay-baton follow start
 ```
 
-The GitHub install path remains available for users who want the repository version directly:
+The npm install path remains the stable package route after publication catches up:
 
 ```bash
-npm install -g github:guorunjie/codex-relay-baton-guardian
+npm install -g codex-relay-baton-guardian
 ```
