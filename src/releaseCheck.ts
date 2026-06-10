@@ -207,7 +207,7 @@ function addOnlineChecks(
       detail: "not logged in; published registry version already matches, auth is only needed for the next npm publish"
     });
   } else {
-    add(checks, "npm auth", false, "not logged in; run npm adduser");
+    add(checks, "npm auth", false, "not logged in locally and no publish-capable token was verified");
   }
 }
 
@@ -252,8 +252,8 @@ function nextActions(checks: ReleaseCheck[], online: boolean): string[] {
     else if (check.name === "host validation workflow") actions.push("Add a manual host validation workflow that uploads Linux and Windows validation artifacts.");
     else if (check.name === "v1 launch audit") actions.push("Add docs/v1-launch-audit.md with requirement evidence and blockers.");
     else if (check.name === "support intake template") actions.push("Update bug reports to request validation reports and bundle audit output.");
-    else if (check.name === "npm auth") actions.push("Log in with npm adduser before publishing to the registry.");
-    else if (check.name === "npm package version") actions.push("Publish the package with npm publish after authentication.");
+    else if (check.name === "npm auth") actions.push("Log in with npm adduser for local publishing, or replace the GitHub NPM_TOKEN secret with a publish-capable maintainer token before running the publish workflow.");
+    else if (check.name === "npm package version") actions.push("Publish the package with npm publish or rerun publish-npm.yml after authentication.");
     else if (check.name === "validation report guide") actions.push("Add docs/validation-report-guide.md with collection and redaction instructions.");
     else if (check.name === "v1 online release gate") actions.push("Run relay-baton release check --v1 --online before tagging v1.0.");
     else if (check.name === "real recovery case study") actions.push("Record one redacted real compact-failure recovery and mark its case-study evidence status complete.");

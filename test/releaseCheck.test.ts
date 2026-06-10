@@ -37,6 +37,8 @@ test("online release readiness surfaces npm publication blockers", () => {
   assert.equal(readiness.checks.find((check) => check.name === "npm auth")?.status, "fail");
   assert.equal(readiness.checks.find((check) => check.name === "npm package version")?.status, "fail");
   assert.match(readiness.nextActions.join("\n"), /npm adduser/);
+  assert.match(readiness.nextActions.join("\n"), /NPM_TOKEN/);
+  assert.match(readiness.nextActions.join("\n"), /publish-npm\.yml/);
   assert.match(readiness.nextActions.join("\n"), /npm publish/);
 });
 
