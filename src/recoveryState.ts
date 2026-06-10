@@ -23,6 +23,7 @@ export type ThreadRecoveryState = {
   lastRecoveryError?: string;
   manualHandoffRequired?: boolean;
   lastManualHandoffBundleDir?: string;
+  lastFailureDedupeKey?: string;
 };
 
 export type GuardianRecoveryState = {
@@ -52,12 +53,19 @@ export function canRecoverThread(state: GuardianRecoveryState, threadId: string,
   cooldownMs: number;
   maxConsecutiveRecoveries: number;
   failureLogId?: number;
+  failureDedupeKey?: string;
 }): { ok: true } | { ok: false; reason: string } {
   const current = state.threads[threadId];
   if (!current) return { ok: true };
   const failureLogId = Number(options.failureLogId || 0);
+  const failureDedupeKey = options.failureDedupeKey || "";
   const hasHandoff = Boolean(current.desktopHandoffCreated || current.forkHandoffCreated || current.queuedHandoffCreated);
-  const isNewerFailure = failureLogId > 0 && (!current.lastFailureLogId || failureLogId > current.lastFailureLogId);
+  const sameDedupeKey = Boolean(failureDedupeKey && current.lastFailureDedupeKey === failureDedupeKey);
+  const isNewerFailure = (failureLogId > 0 && (!current.lastFailureLogId || failureLogId > current.lastFailureLogId))
+    || Boolean(failureDedupeKey && current.lastFailureDedupeKey !== failureDedupeKey);
+  if (hasHandoff && sameDedupeKey) {
+    return { ok: false, reason: "existing handoff already covers this failure" };
+  }
   if (hasHandoff && failureLogId > 0 && current.lastFailureLogId && failureLogId <= current.lastFailureLogId) {
     return { ok: false, reason: "existing handoff already covers this failure" };
   }
@@ -70,7 +78,7 @@ export function canRecoverThread(state: GuardianRecoveryState, threadId: string,
   return { ok: true };
 }
 
-export function recordRecoveryAttempt(state: GuardianRecoveryState, threadId: string, logId: number, now: number): void {
+export function recordRecoveryAttempt(state: GuardianRecoveryState, threadId: string, logId: number, now: number, failureDedupeKey?: string): void {
   const current = normalizeThreadState(state.threads[threadId]);
   state.threads[threadId] = {
     lastRecoveryAt: now,
@@ -92,12 +100,13 @@ export function recordRecoveryAttempt(state: GuardianRecoveryState, threadId: st
     lastRecoveryTransport: current.lastRecoveryTransport,
     lastRecoveryError: current.lastRecoveryError,
     manualHandoffRequired: current.manualHandoffRequired,
-    lastManualHandoffBundleDir: current.lastManualHandoffBundleDir
+    lastManualHandoffBundleDir: current.lastManualHandoffBundleDir,
+    lastFailureDedupeKey: failureDedupeKey || current.lastFailureDedupeKey
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
 
-export function recordFallbackAttempt(state: GuardianRecoveryState, threadId: string, logId: number, now: number): void {
+export function recordFallbackAttempt(state: GuardianRecoveryState, threadId: string, logId: number, now: number, failureDedupeKey?: string): void {
   const current = normalizeThreadState(state.threads[threadId]);
   state.threads[threadId] = {
     ...current,
@@ -106,7 +115,8 @@ export function recordFallbackAttempt(state: GuardianRecoveryState, threadId: st
     fallbackAttempts: current.fallbackAttempts + 1,
     lastFallbackAt: now,
     lastFailureLogId: logId || current.lastFailureLogId,
-    lastLogId: Math.max(current.lastLogId || 0, logId || 0)
+    lastLogId: Math.max(current.lastLogId || 0, logId || 0),
+    lastFailureDedupeKey: failureDedupeKey || current.lastFailureDedupeKey
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -121,6 +131,7 @@ export function recordDesktopHandoff(
     bundleDir?: string;
     qualityScore?: number;
     qualityOk?: boolean;
+    failureDedupeKey?: string;
   } = {}
 ): void {
   const current = normalizeThreadState(state.threads[threadId]);
@@ -137,7 +148,8 @@ export function recordDesktopHandoff(
     lastDesktopHandoffQualityOk: details.qualityOk ?? current.lastDesktopHandoffQualityOk,
     lastRecoveryTransport: "desktop",
     lastRecoveryError: undefined,
-    manualHandoffRequired: false
+    manualHandoffRequired: false,
+    lastFailureDedupeKey: details.failureDedupeKey || current.lastFailureDedupeKey
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -150,6 +162,7 @@ export function recordForkHandoff(
   details: {
     bundleDir?: string;
     transport?: "app-server" | "cli";
+    failureDedupeKey?: string;
   } = {}
 ): void {
   const current = normalizeThreadState(state.threads[threadId]);
@@ -163,7 +176,8 @@ export function recordForkHandoff(
     lastForkHandoffBundleDir: details.bundleDir || current.lastForkHandoffBundleDir,
     lastRecoveryTransport: details.transport || current.lastRecoveryTransport,
     lastRecoveryError: undefined,
-    manualHandoffRequired: false
+    manualHandoffRequired: false,
+    lastFailureDedupeKey: details.failureDedupeKey || current.lastFailureDedupeKey
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -176,6 +190,7 @@ export function recordQueuedHandoff(
   details: {
     bundleDir?: string;
     strategy?: ThreadRecoveryState["lastQueuedHandoffStrategy"];
+    failureDedupeKey?: string;
   } = {}
 ): void {
   const current = normalizeThreadState(state.threads[threadId]);
@@ -191,7 +206,8 @@ export function recordQueuedHandoff(
     lastRecoveryTransport: "bundle",
     lastRecoveryError: undefined,
     manualHandoffRequired: true,
-    lastManualHandoffBundleDir: details.bundleDir || current.lastManualHandoffBundleDir
+    lastManualHandoffBundleDir: details.bundleDir || current.lastManualHandoffBundleDir,
+    lastFailureDedupeKey: details.failureDedupeKey || current.lastFailureDedupeKey
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -206,6 +222,7 @@ export function recordRecoveryFailure(
     transport?: "app-server" | "cli" | "desktop" | "bundle";
     bundleDir?: string;
     manualHandoffRequired?: boolean;
+    failureDedupeKey?: string;
   }
 ): void {
   const current = normalizeThreadState(state.threads[threadId]);
@@ -218,7 +235,8 @@ export function recordRecoveryFailure(
     lastRecoveryTransport: details.transport || current.lastRecoveryTransport,
     lastRecoveryError: details.error,
     manualHandoffRequired: details.manualHandoffRequired ?? current.manualHandoffRequired,
-    lastManualHandoffBundleDir: details.bundleDir || current.lastManualHandoffBundleDir
+    lastManualHandoffBundleDir: details.bundleDir || current.lastManualHandoffBundleDir,
+    lastFailureDedupeKey: details.failureDedupeKey || current.lastFailureDedupeKey
   };
   state.lastSeenLogId = Math.max(state.lastSeenLogId || 0, logId || 0);
 }
@@ -248,7 +266,8 @@ export function normalizeThreadState(current?: Partial<ThreadRecoveryState>): Th
     lastRecoveryTransport: current?.lastRecoveryTransport,
     lastRecoveryError: current?.lastRecoveryError,
     manualHandoffRequired: Boolean(current?.manualHandoffRequired),
-    lastManualHandoffBundleDir: current?.lastManualHandoffBundleDir
+    lastManualHandoffBundleDir: current?.lastManualHandoffBundleDir,
+    lastFailureDedupeKey: current?.lastFailureDedupeKey
   };
 }
 

@@ -120,6 +120,7 @@ export function detectActivityFailure(
         kind: "compact_stalled",
         confidence: "high",
         reason: `PreCompact was observed but PostCompact did not arrive within ${Math.round(options.compactTimeoutMs / 1000)}s`,
+        dedupeKey: `compact_stalled:${thread.threadId}:${thread.lastCompactStartedAt}`,
         threadId: thread.threadId
       };
     }
@@ -128,6 +129,7 @@ export function detectActivityFailure(
         kind: "turn_stalled",
         confidence: "medium",
         reason: `Codex turn activity has been open for ${Math.round((now - thread.activeTurnStartedAt) / 1000)}s without Stop`,
+        dedupeKey: `turn_stalled:${thread.threadId}:${thread.activeTurnStartedAt}:${thread.lastTurnId || ""}`,
         threadId: thread.threadId
       };
     }

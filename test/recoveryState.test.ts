@@ -76,3 +76,25 @@ test("allows newer handoff upgrade even when prior recovery count reached limit"
     failureLogId: 100
   }), { ok: true });
 });
+
+test("allows one dedupe-key migration for old handoff state at recovery limit", () => {
+  const state: GuardianRecoveryState = {
+    lastSeenLogId: 0,
+    threads: {
+      "source-1": {
+        lastRecoveryAt: 2000,
+        consecutiveRecoveries: 114,
+        lastLogId: 99,
+        lastFailureLogId: 99,
+        fallbackAttempts: 2,
+        queuedHandoffCreated: true
+      }
+    }
+  };
+
+  assert.deepEqual(canRecoverThread(state, "source-1", 2500, {
+    cooldownMs: 10_000,
+    maxConsecutiveRecoveries: 3,
+    failureDedupeKey: "turn_stalled:source-1:123:turn-1"
+  }), { ok: true });
+});

@@ -88,15 +88,18 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
     saveRecoveryState(state, options.home);
     return "no failure signal";
   }
-  const logId = signal.sourceLogId || maxSeen;
+  const logId = signal.sourceLogId || 0;
+  const failureDedupeKey = signal.dedupeKey;
 
   const gate = canRecoverThread(state, threadId, Date.now(), {
     cooldownMs: config.recoveryCooldownMs,
     maxConsecutiveRecoveries: config.maxConsecutiveRecoveries,
-    failureLogId: logId
+    failureLogId: signal.sourceLogId,
+    failureDedupeKey
   });
   if (!gate.ok) {
     saveRecoveryState(state, options.home);
+    if (gate.reason === "existing handoff already covers this failure") return "no failure signal";
     return `recovery skipped: ${gate.reason}; why_not_rescued=${describeSkippedRecovery(signal, threadId)}`;
   }
 
@@ -156,7 +159,7 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
 
     if (strategy === "fallback-model") {
       if (options.dryRun) return `recovery planned: fallback-model for ${thread?.id || threadId}`;
-      recordFallbackAttempt(state, threadId, logId, now);
+      recordFallbackAttempt(state, threadId, logId, now, failureDedupeKey);
       saveRecoveryState(state, options.home);
       await recover({ home: options.home, threadId, signal, dryRun: false, strategy, bundleDir: plan.bundleDir });
       return `recovery launched: fallback-model for ${thread?.id || threadId}`;
@@ -177,7 +180,7 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
         stateLogId: logId
       });
       if (handoff.blocked) {
-        recordRecoveryAttempt(state, threadId, logId, now);
+        recordRecoveryAttempt(state, threadId, logId, now, failureDedupeKey);
         saveRecoveryState(state, options.home);
         return `desktop handoff blocked: ${handoff.blocked.reason}`;
       }
@@ -188,7 +191,8 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
       recordDesktopHandoff(state, threadId, logId, now, handoff.desktop?.threadId, {
         bundleDir: handoff.bundleDir,
         qualityScore: handoff.quality?.score,
-        qualityOk: handoff.quality?.ok
+        qualityOk: handoff.quality?.ok,
+        failureDedupeKey
       });
       recordVisibleRelay(state, now, { visibleRelayWindowMs: config.visibleRelayWindowMs });
       saveRecoveryState(state, options.home);
@@ -213,11 +217,12 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
       if (strategy === "fork" || strategy === "last-healthy-fork") {
         recordForkHandoff(state, threadId, logId, now, {
           bundleDir: plan.bundleDir,
-          transport: recoveryTransport(options, config) === "app-server" ? "app-server" : "cli"
+          transport: recoveryTransport(options, config) === "app-server" ? "app-server" : "cli",
+          failureDedupeKey
         });
         recordVisibleRelay(state, now, { visibleRelayWindowMs: config.visibleRelayWindowMs });
       } else {
-        recordRecoveryAttempt(state, threadId, logId, now);
+        recordRecoveryAttempt(state, threadId, logId, now, failureDedupeKey);
       }
       saveRecoveryState(state, options.home);
       return `${upgrade ? "recovery upgraded" : "recovery launched"}: ${plan.strategy} via ${recoveryTransport(options, config)} for ${thread?.id || threadId}`;
@@ -227,7 +232,8 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
         error: message,
         transport: recoveryTransport(options, config) === "app-server" ? "app-server" : "cli",
         bundleDir: plan.bundleDir,
-        manualHandoffRequired: true
+        manualHandoffRequired: true,
+        failureDedupeKey
       });
       saveRecoveryState(state, options.home);
       return `recovery blocked: ${message}; bundle=${plan.bundleDir || "none"}; manual_handoff_required=true`;
@@ -345,7 +351,8 @@ function queueRecovery(input: {
   });
   recordQueuedHandoff(input.state, input.threadId, input.logId, input.now, {
     bundleDir: input.plan.bundleDir,
-    strategy: input.plan.strategy
+    strategy: input.plan.strategy,
+    failureDedupeKey: input.plan.signal.dedupeKey
   });
   saveRecoveryState(input.state, input.options.home);
   return [

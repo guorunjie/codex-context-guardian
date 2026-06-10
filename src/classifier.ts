@@ -14,6 +14,7 @@ export type FailureSignal = {
   confidence: "high" | "medium" | "low";
   reason: string;
   sourceLogId?: number;
+  dedupeKey?: string;
   threadId?: string;
 };
 

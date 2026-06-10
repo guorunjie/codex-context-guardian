@@ -300,6 +300,53 @@ test("watch ignores stalled compact activity from archived threads", async () =>
   assert.equal(result, "no failure signal");
 });
 
+test("activity turn_stalled queues only once for the same open turn", async () => {
+  const home = makeHome();
+  createThreadDb(home);
+  createGenericLogsDb(home, 10);
+  const startedAt = Date.now() - 31 * 60 * 1000;
+  fs.mkdirSync(path.join(home, "relay-baton"), { recursive: true });
+  fs.writeFileSync(path.join(home, "relay-baton", "activity-state.json"), JSON.stringify({
+    schemaVersion: 1,
+    updatedAt: startedAt,
+    threads: {
+      "source-thread": {
+        threadId: "source-thread",
+        title: "Confirm Codex can edit RPA workflows",
+        cwd: "/tmp/project-a",
+        model: "gpt-5.5",
+        lastEventAt: startedAt,
+        lastEventName: "PreToolUse",
+        lastTurnId: "turn-1",
+        activeTurnStartedAt: startedAt,
+        recentEvents: []
+      }
+    }
+  }, null, 2));
+
+  const first = await tick({
+    home,
+    auto: true,
+    fork: true,
+    appServer: true
+  });
+
+  assert.match(first, /recovery queued/);
+
+  appendGenericLog(home, 20);
+  const second = await tick({
+    home,
+    auto: true,
+    fork: true,
+    appServer: true
+  });
+
+  assert.equal(second, "no failure signal");
+  const state = JSON.parse(fs.readFileSync(path.join(home, "relay-baton", "recovery-state.json"), "utf8"));
+  assert.equal(state.threads["source-thread"].lastFailureDedupeKey, `turn_stalled:source-thread:${startedAt}:turn-1`);
+  assert.equal(state.threads["source-thread"].consecutiveRecoveries, 1);
+});
+
 function makeHome(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "guardian-watch-test-"));
 }
@@ -343,6 +390,34 @@ function createLogsDb(home: string, id: number, threadId = "source-thread"): voi
     values (${id}, ${Date.now()}, 'ERROR', 'codex_core::compact_remote',
       'Error running remote compact task: stream disconnected before completion: error sending request for url (https://chatgpt.com/backend-api/codex/responses/compact)',
       '${escapedThreadId}');
+  `;
+  const result = spawnSync("sqlite3", [db, sql], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+}
+
+function createGenericLogsDb(home: string, id: number): void {
+  const db = path.join(home, "logs_2.sqlite");
+  const sql = `
+    create table logs (
+      id integer primary key,
+      ts integer not null,
+      level text not null,
+      target text not null,
+      feedback_log_body text,
+      thread_id text
+    );
+    insert into logs (id, ts, level, target, feedback_log_body, thread_id)
+    values (${id}, ${Date.now()}, 'INFO', 'codex_core::session', 'ordinary progress log', 'source-thread');
+  `;
+  const result = spawnSync("sqlite3", [db, sql], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+}
+
+function appendGenericLog(home: string, id: number): void {
+  const db = path.join(home, "logs_2.sqlite");
+  const sql = `
+    insert into logs (id, ts, level, target, feedback_log_body, thread_id)
+    values (${id}, ${Date.now()}, 'INFO', 'codex_core::session', 'ordinary progress log', 'source-thread');
   `;
   const result = spawnSync("sqlite3", [db, sql], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
