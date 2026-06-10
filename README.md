@@ -33,6 +33,14 @@ Public evidence:
 - Promotion kit and launch copy: [docs/promotion-kit.md](docs/promotion-kit.md)
 - Outreach log: [docs/outreach-log.md](docs/outreach-log.md)
 
+## What Happens When Codex Dies Overnight?
+
+1. Codex hits a real failure such as `Error running remote compact task: stream disconnected before completion` or `Codex ran out of room in the model's context window`.
+2. Relay Baton detects the signal from local Codex hooks/logs, then snapshots the current workspace state.
+3. It writes an auditable bundle with `HANDOFF_MEMORY.json`, `RECENT_THREAD_CONTEXT.md`, git status, selected diffs, blockers, and the next action.
+4. Background monitoring queues that bundle by default instead of creating surprise blank sidebar threads while you are away.
+5. When you return, `relay-baton diagnose --last` explains what happened and `relay-baton recover --last --strategy fork --app-server` can create one reviewed visible relay.
+
 ## Why It Exists
 
 Long agent sessions often fail after the project has already changed direction. A naive handoff based on the old thread title or an early summary can revive abandoned work and mislead the next conversation.

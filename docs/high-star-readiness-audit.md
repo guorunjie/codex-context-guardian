@@ -1,8 +1,8 @@
 # High-Star Readiness Audit
 
-Date: 2026-06-03
+Date: 2026-06-10
 
-Relay Baton is technically usable, published, and differentiated, but it is not yet packaged like a high-star open-source project. The current gap is mostly trust and distribution, not core functionality.
+Relay Baton is technically usable, published on GitHub, and differentiated, but it is not yet packaged like a high-star open-source project. The current gap is mostly trust, npm distribution, and community proof, not core functionality.
 
 ## Current Evidence
 
@@ -11,7 +11,7 @@ Relay Baton is technically usable, published, and differentiated, but it is not 
 - npm: `codex-relay-baton-guardian@1.1.2` remains `latest`; `v1.1.3` npm publication is blocked by an `NPM_TOKEN` permission failure in GitHub Actions.
 - CI: latest GitHub CI passes on Linux, macOS, and Windows.
 - Local monitor: LaunchAgent installed, loaded, and running on this Mac.
-- Release gate: `relay-baton release check --v1 --online` passes.
+- Release gate: `relay-baton release check --v1 --online` passes every GitHub/package/CI/evidence check except npm `1.1.3` publication and local/npm-token authentication.
 - Codex pain signal: open upstream issues still include `responses/compact`, `stream disconnected before completion`, and `Codex ran out of room...`.
 
 ## Competitive Read
@@ -52,7 +52,7 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
 ### P0: Trust Assets
 
 - Add a 30-60 second GIF showing: compact failure, Relay Baton detection, one bundle queued, optional visible relay created after audit, continuation reads bundle.
-- Add a README section titled "What happens when Codex dies overnight?"
+- Keep the README section titled "What happens when Codex dies overnight?" near the first screen and link it in launch posts.
 - Add a redacted real recovery transcript with exact commands and outputs.
 - Add npm download and version badges.
 

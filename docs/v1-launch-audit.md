@@ -1,10 +1,10 @@
-# Relay Baton v1.0 Launch Audit
+# Relay Baton v1.x Launch Audit
 
-This audit is the source of truth for deciding whether Relay Baton is ready to call itself v1.0.
+This audit is the source of truth for deciding whether the current Relay Baton v1 release line is complete.
 
-Date: 2026-05-28
-Current package version: 1.0.0
-Target package version: 1.0.0
+Date: 2026-06-10
+Current package version: 1.1.3
+Target package version: 1.1.3
 
 ## Launch Definition
 
@@ -14,12 +14,12 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 
 | Area | v1.0 requirement | Current evidence | Status | Evidence still required |
 | --- | --- | --- | --- | --- |
-| GitHub distribution | Public repository, release assets, checksums, install docs, CI badge. | Repository `guorunjie/codex-relay-baton-guardian`, v0.8.x GitHub Releases, tarball assets, README install commands, CI matrix, manual host-validation workflow. | Ready for final release | Cut final `v1.0.0` release after CI passes on this commit. |
-| npm distribution | `npm install -g codex-relay-baton-guardian` works on a clean machine. | `0.8.7` is published to npm; publish workflow exists with `NPM_TOKEN`; CI runs `npm publish --dry-run --json`; package name and bin paths are npm-safe. | Ready for final release | Publish `1.0.0`, then verify `npm view codex-relay-baton-guardian@1.0.0 version`. |
-| Local install from GitHub | GitHub install path works without TypeScript source stripping issues. | Package uses built `dist/` output, `files` whitelist, and packed CLI smoke tests. | Ready | Re-run smoke test from the final GitHub release tarball. |
-| macOS monitor | LaunchAgent install/start/status works and monitor can see Codex. | This Mac reports `com.relay-baton.monitor` loaded and running; `docs/validation-reports/macos/VALIDATION_REPORT.json` is attached and redacted. | Ready | Re-run validation on the final v1.0 tag. |
-| Linux monitor | systemd user service can be installed, started, inspected, stopped, and repaired. | Linux CI covers CLI/build/package smoke; `docs/validation-reports/linux/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the systemd user service in the Host Validation workflow. | Ready | Re-run validation on the final v1.0 tag. |
-| Windows monitor | Task Scheduler script can install, start, inspect, stop, and repair monitoring. | Windows CI covers CLI/build/package smoke; `docs/validation-reports/windows/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the Task Scheduler task in the Host Validation workflow. | Ready | Re-run validation on the final v1.0 tag. |
+| GitHub distribution | Public repository, release assets, checksums, install docs, CI badge. | Repository `guorunjie/codex-relay-baton-guardian`, `v1.1.3` GitHub Release, tarball and `SHA256SUMS` assets, README install commands, CI matrix, manual host-validation workflow. | Ready | Keep the `v1.1.3` release target aligned to the current release commit. |
+| npm distribution | `npm install -g codex-relay-baton-guardian` works on a clean machine for the current package version. | `1.1.2` is published to npm; `1.1.3` is not yet published. Publish workflow exists, CI runs `npm publish --dry-run --json`, and package name/bin paths are npm-safe. | Blocked | Log in as the `guorunjie` npm maintainer or replace `NPM_TOKEN`, publish `1.1.3`, then verify `npm view codex-relay-baton-guardian@1.1.3 version`. |
+| Local install from GitHub | GitHub install path works without TypeScript source stripping issues. | README points to `npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3`; package uses built `dist/` output, `files` whitelist, and packed CLI smoke tests. | Ready | Keep GitHub install as the primary latest install route until npm catches up. |
+| macOS monitor | LaunchAgent install/start/status works and monitor can see Codex. | This Mac reports `com.relay-baton.monitor` loaded and running; `docs/validation-reports/macos/VALIDATION_REPORT.json` is attached and redacted. | Ready | Keep validation current for the active release line. |
+| Linux monitor | systemd user service can be installed, started, inspected, stopped, and repaired. | Linux CI covers CLI/build/package smoke; `docs/validation-reports/linux/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the systemd user service in the Host Validation workflow. | Ready | Keep validation current for the active release line. |
+| Windows monitor | Task Scheduler script can install, start, inspect, stop, and repair monitoring. | Windows CI covers CLI/build/package smoke; `docs/validation-reports/windows/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the Task Scheduler task in the Host Validation workflow. | Ready | Keep validation current for the active release line. |
 | Recovery correctness | Compact failures use two fallback attempts, then one best relay with duplicate protection. | Tests cover fallback, fork, CLI fallback, duplicate source recovery, bundle quality, turn-aborted handling, and `docs/case-study-codex-compact-failure.md` contains a redacted local recovery record. | Mostly ready | Repeat the drill on the final v1.0 tag. |
 | Handoff fidelity | New continuation prefers latest goal, latest user intent, recent assistant/tool progress, current worktree, and superseded directions. | `HANDOFF_MEMORY.json`, `RECENT_THREAD_CONTEXT.md`, `RECOVERY.md`, git diff/status, audit command, quality tests, and case-study audit excerpt exist. | Ready | Keep future case studies redacted before publication. |
 | Fork-first strategy | `codex fork` is preferred when the source session is readable; Desktop is explicit or fallback. | README, recovery strategy, tests, and local `codex fork --help` confirm fork path availability. | Ready | Keep Desktop path documented as less-lossless and experimental. |
@@ -29,15 +29,15 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 | Public trust assets | README shows the failure, relay, and audit workflow visually. | README includes `docs/assets/relay-baton-demo.png`; case study includes a redacted recovery record and audit excerpt. | Mostly ready | Replace the static visual with a real GIF/video before broad launch if possible. |
 | API stability | v1.0 command names and primary options are frozen. | Stable CLI surface and experimental Desktop boundary are documented below. | Ready | Only add new flags after v1.0 unless a breaking change is documented with a deprecation window. |
 
-## v1.0 Blockers
+## Current Blockers
 
-1. Publish `codex-relay-baton-guardian@1.0.0` to npm.
-2. Create the `v1.0.0` GitHub Release with tarball and checksum.
+1. Publish `codex-relay-baton-guardian@1.1.3` to npm.
+2. Confirm `npm view codex-relay-baton-guardian@1.1.3 version` returns `1.1.3`.
 3. Run final `relay-baton release check --v1 --online` and confirm it passes.
 
 ## v1.0 Release Gate
 
-Before tagging `v1.0.0`, all commands must pass on the release commit:
+Before declaring the current release line complete, all commands must pass on the release commit:
 
 ```bash
 npm test
@@ -79,7 +79,7 @@ Compatibility policy:
 
 ## Evidence Pack For Release Notes
 
-Attach or link these artifacts in the v1.0 release:
+Attach or link these artifacts in the current release:
 
 - macOS `VALIDATION_REPORT.md` and redacted `VALIDATION_REPORT.json`;
 - Linux `VALIDATION_REPORT.md` and redacted `VALIDATION_REPORT.json`;

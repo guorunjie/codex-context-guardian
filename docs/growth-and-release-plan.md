@@ -10,7 +10,7 @@ Relay Baton has a working local recovery core. The next release work is about tr
 - The project has a clear wedge: sleep-safe recovery for Codex long-running tasks.
 - Tests, build, release check, host validation, and monitor install commands exist.
 - Codex app-server integration exists for `thread/fork`, `thread/rollback`, `thread/compact/start`, and app-server status probing.
-- `relay-baton release check --v1 --online` passes with GitHub Release, npm registry, latest CI, real case study, visual demo, and three-platform host validation evidence.
+- `relay-baton release check --v1 --online` passes for GitHub Release, latest CI, package metadata, real case study, visual demo asset, and three-platform host validation evidence; it still fails on npm `1.1.3` publication and npm authentication until the maintainer token is replaced or local npm login succeeds.
 
 ## Release Priorities
 
@@ -45,7 +45,7 @@ Use concrete failure language in posts and docs:
 
 - npm latest equals `package.json` version.
 - GitHub Release exists for the same tag.
-- A new user can run `npm install -g codex-relay-baton-guardian` and then `relay-baton follow install`.
+- A new user can run `npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3` now, and `npm install -g codex-relay-baton-guardian` after npm publication catches up.
 - README explains the app-server path without overstating that Relay Baton replaces Codex compaction.
 - At least one public issue or case study proves a real stuck Codex task was recovered.
 - Launch copy exists for GitHub README, Hacker News, Reddit, X, Chinese developer communities, and awesome-list submissions.
