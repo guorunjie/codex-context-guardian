@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.4 - 2026-06-10
+
+- Added stable activity failure dedupe keys so the same open `turn_stalled` or `compact_stalled` signal is recovered once instead of queueing repeated bundles as log ids advance.
+- Added migration behavior for old recovery-state entries that predate dedupe keys, allowing one clean state update before subsequent duplicate signals are skipped quietly.
+- Changed `watch` to treat already-covered duplicate failures as quiet no-op signals, preventing background monitor log spam.
+- Updated `follow doctor` to report the actual monitor mode, including app-server visible relay mode, instead of always saying queue-only.
+
 ## 1.1.3 - 2026-06-09
 
 - Changed online release checks so npm authentication is advisory once the requested package version is already published on the registry.
