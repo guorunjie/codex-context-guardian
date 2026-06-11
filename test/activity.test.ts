@@ -119,3 +119,52 @@ test("detects long-running turns without stop hooks", () => {
   assert.equal(signal?.kind, "turn_stalled");
   assert.equal(signal?.threadId, "thread-turn");
 });
+
+test("does not mark a long-running turn stalled while tool activity is still progressing", () => {
+  const now = Date.now();
+  const signal = detectActivityFailure({
+    schemaVersion: 1,
+    updatedAt: now - 60_000,
+    threads: {
+      "thread-active": {
+        threadId: "thread-active",
+        lastEventAt: now - 60_000,
+        lastEventName: "PostToolUse",
+        activeTurnStartedAt: now - 3_600_000,
+        recentEvents: []
+      }
+    }
+  }, {
+    now,
+    compactTimeoutMs: 120_000,
+    turnStallMs: 1_800_000,
+    turnStallIdleMs: 900_000
+  });
+
+  assert.equal(signal, null);
+});
+
+test("ignores Relay Baton continuation threads for automatic activity recovery", () => {
+  const now = Date.now();
+  const signal = detectActivityFailure({
+    schemaVersion: 1,
+    updatedAt: now - 3_600_000,
+    threads: {
+      "relay-thread": {
+        threadId: "relay-thread",
+        title: "接力：查询github中data-analysis-agent项目",
+        lastEventAt: now - 3_600_000,
+        lastEventName: "UserPromptSubmit",
+        activeTurnStartedAt: now - 3_600_000,
+        recentEvents: []
+      }
+    }
+  }, {
+    now,
+    compactTimeoutMs: 120_000,
+    turnStallMs: 1_800_000,
+    turnStallIdleMs: 900_000
+  });
+
+  assert.equal(signal, null);
+});

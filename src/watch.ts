@@ -70,6 +70,7 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
   const signal = classifyLogs(recoverableRows) || detectActivityFailure(activityState, {
     compactTimeoutMs: config.compactTimeoutMs,
     turnStallMs: config.turnStallMs,
+    turnStallIdleMs: config.turnStallIdleMs,
     ignoredThreadIds
   });
   state.lastSeenLogId = maxSeen;
@@ -137,6 +138,19 @@ export async function tick(options: WatchOptions = {}): Promise<string> {
         plan,
         dryRunMessage: `${isRelayUpgrade(state, threadId, logId) ? "recovery queue upgrade planned" : "recovery queue planned"}: ${plan.strategy} for ${thread?.id || threadId}`,
         reason: "visible relay creation is disabled for unattended monitor runs"
+      });
+    }
+
+    if (signal.kind === "turn_stalled" && !config.turnStallVisibleRelay) {
+      return queueRecovery({
+        state,
+        options,
+        threadId,
+        logId,
+        now,
+        plan,
+        dryRunMessage: `turn_stalled visible relay blocked: recovery queue planned for ${thread?.id || threadId}`,
+        reason: "turn_stalled is advisory; visible relay waits for manual review or compact/context failure"
       });
     }
 
@@ -251,6 +265,7 @@ export function resolveRecoveryThreadId(
   home?: string
 ): string | undefined {
   const signalThreadId = signal.threadId;
+  if (signal.kind === "turn_stalled") return signalThreadId;
   const signalThread = signalThreadId ? getThread(signalThreadId, home) : null;
   const candidate = findLineageCandidate(signalThread, signalThreadId, activityState, recoveryState);
 

@@ -168,6 +168,85 @@ test("keeps source thread when related activity belongs to another cwd", () => {
   }, activityState, recoveryState, home), "source-thread");
 });
 
+test("keeps turn_stalled recovery on the signal thread instead of upgrading to a relay thread", () => {
+  const home = makeHome();
+  createThreadDb(home);
+  const recoveryState: GuardianRecoveryState = {
+    lastSeenLogId: 0,
+    threads: {
+      "source-thread": {
+        lastRecoveryAt: 1000,
+        consecutiveRecoveries: 1,
+        lastLogId: 0,
+        fallbackAttempts: 0,
+        forkHandoffCreated: true
+      }
+    }
+  };
+  const activityState: ActivityState = {
+    schemaVersion: 1,
+    updatedAt: 2000,
+    threads: {
+      "visible-thread": {
+        threadId: "visible-thread",
+        title: "接力：Confirm Codex can edit RPA workflows",
+        cwd: "/tmp/project-a",
+        model: "gpt-5.5",
+        lastEventAt: 2000,
+        lastEventName: "UserPromptSubmit",
+        activeTurnStartedAt: 100,
+        recentEvents: []
+      }
+    }
+  };
+
+  assert.equal(resolveRecoveryThreadId({
+    kind: "turn_stalled",
+    confidence: "medium",
+    reason: "open turn",
+    threadId: "source-thread"
+  }, activityState, recoveryState, home), "source-thread");
+});
+
+test("turn_stalled queues a bundle instead of creating an unattended visible relay by default", async () => {
+  const home = makeHome();
+  createThreadDb(home);
+  createGenericLogsDb(home, 10);
+  const startedAt = Date.now() - 60 * 60 * 1000;
+  fs.mkdirSync(path.join(home, "relay-baton"), { recursive: true });
+  fs.writeFileSync(path.join(home, "relay-baton", "activity-state.json"), JSON.stringify({
+    schemaVersion: 1,
+    updatedAt: startedAt,
+    threads: {
+      "source-thread": {
+        threadId: "source-thread",
+        title: "Confirm Codex can edit RPA workflows",
+        cwd: "/tmp/project-a",
+        model: "gpt-5.5",
+        lastEventAt: startedAt,
+        lastEventName: "UserPromptSubmit",
+        lastTurnId: "turn-1",
+        activeTurnStartedAt: startedAt,
+        recentEvents: []
+      }
+    }
+  }, null, 2));
+
+  const result = await tick({
+    home,
+    auto: true,
+    fork: true,
+    appServer: true,
+    createVisibleRelay: true
+  });
+
+  assert.match(result, /recovery queued/);
+  assert.match(result, /turn_stalled is advisory/);
+  const state = JSON.parse(fs.readFileSync(path.join(home, "relay-baton", "recovery-state.json"), "utf8"));
+  assert.equal(state.visibleRelaysCreatedInWindow, undefined);
+  assert.equal(state.threads["source-thread"].lastRecoveryTransport, "bundle");
+});
+
 test("keeps source thread when only cwd matches a different task", () => {
   const home = makeHome();
   createThreadDb(home);

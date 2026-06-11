@@ -57,7 +57,9 @@ export type ActivityFailureOptions = {
   now?: number;
   compactTimeoutMs: number;
   turnStallMs: number;
+  turnStallIdleMs?: number;
   ignoredThreadIds?: Iterable<string>;
+  ignoreRelayThreads?: boolean;
 };
 
 const MAX_RECENT_EVENTS = 20;
@@ -108,10 +110,12 @@ export function detectActivityFailure(
   options: ActivityFailureOptions
 ): FailureSignal | null {
   const now = options.now ?? Date.now();
+  const turnStallIdleMs = options.turnStallIdleMs ?? options.turnStallMs;
   const ignoredThreadIds = new Set(options.ignoredThreadIds || []);
   const threads = Object.values(state.threads)
     .filter((thread) => thread.threadId && thread.threadId !== "unknown")
     .filter((thread) => !ignoredThreadIds.has(thread.threadId))
+    .filter((thread) => !(options.ignoreRelayThreads ?? true) || !isRelayBatonThread(thread))
     .sort((a, b) => b.lastEventAt - a.lastEventAt);
 
   for (const thread of threads) {
@@ -124,11 +128,17 @@ export function detectActivityFailure(
         threadId: thread.threadId
       };
     }
-    if (thread.activeTurnStartedAt && !thread.lastStopAt && now - thread.activeTurnStartedAt >= options.turnStallMs) {
+    const latestActivityAt = Math.max(thread.lastEventAt || 0, thread.activeTurnStartedAt || 0);
+    if (
+      thread.activeTurnStartedAt
+      && !thread.lastStopAt
+      && now - thread.activeTurnStartedAt >= options.turnStallMs
+      && now - latestActivityAt >= turnStallIdleMs
+    ) {
       return {
         kind: "turn_stalled",
         confidence: "medium",
-        reason: `Codex turn activity has been open for ${Math.round((now - thread.activeTurnStartedAt) / 1000)}s without Stop`,
+        reason: `Codex turn activity has been open for ${Math.round((now - thread.activeTurnStartedAt) / 1000)}s without Stop and idle for ${Math.round((now - latestActivityAt) / 1000)}s`,
         dedupeKey: `turn_stalled:${thread.threadId}:${thread.activeTurnStartedAt}:${thread.lastTurnId || ""}`,
         threadId: thread.threadId
       };
@@ -136,6 +146,12 @@ export function detectActivityFailure(
   }
 
   return null;
+}
+
+export function isRelayBatonThread(thread: Pick<ThreadActivityState, "title">): boolean {
+  const title = (thread.title || "").trim();
+  return /^(接力|relay|recovery)\s*[:：]/i.test(title)
+    || /^relay baton\b/i.test(title);
 }
 
 export function latestHealthyCheckpoint(state: ActivityState, threadId: string): HealthyCheckpoint | null {

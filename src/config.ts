@@ -10,6 +10,8 @@ export type GuardianConfig = {
   recoveryCooldownMs: number;
   compactTimeoutMs: number;
   turnStallMs: number;
+  turnStallIdleMs: number;
+  turnStallVisibleRelay: boolean;
   maxConsecutiveRecoveries: number;
   freshSessionAfterAttempts: number;
   fallbackAttempts: number;
@@ -38,6 +40,8 @@ export function defaultGuardianConfig(home?: string): GuardianConfig {
     recoveryCooldownMs: numberFromEnv("GUARDIAN_COOLDOWN_MS", 10 * 60 * 1000),
     compactTimeoutMs: numberFromEnv("GUARDIAN_COMPACT_TIMEOUT_MS", 2 * 60 * 1000),
     turnStallMs: numberFromEnv("GUARDIAN_TURN_STALL_MS", 30 * 60 * 1000),
+    turnStallIdleMs: numberFromEnv("GUARDIAN_TURN_STALL_IDLE_MS", 15 * 60 * 1000),
+    turnStallVisibleRelay: boolFromEnv("GUARDIAN_TURN_STALL_VISIBLE_RELAY", false),
     maxConsecutiveRecoveries: numberFromEnv("GUARDIAN_MAX_RECOVERIES", 3),
     freshSessionAfterAttempts: numberFromEnv("GUARDIAN_FRESH_SESSION_AFTER", 2),
     fallbackAttempts: numberFromEnv("GUARDIAN_FALLBACK_ATTEMPTS", 2),
