@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.5 - 2026-06-11
+
+- Fixed advisory `turn_stalled` recovery so long-running turns must also be idle before they are treated as stalled.
+- Ignored Relay Baton-created continuation threads during automatic activity recovery to prevent relay-of-relay loops.
+- Kept `turn_stalled` recovery queue-only by default, even when visible relays are enabled, so compact/context failures remain the default source for automatic visible recovery.
+- Added regression tests for active long turns, Relay Baton continuation threads, and `turn_stalled` visible relay gating.
+
 ## 1.1.4 - 2026-06-10
 
 - Added stable activity failure dedupe keys so the same open `turn_stalled` or `compact_stalled` signal is recovered once instead of queueing repeated bundles as log ids advance.

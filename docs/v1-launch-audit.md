@@ -3,8 +3,8 @@
 This audit is the source of truth for deciding whether the current Relay Baton v1 release line is complete.
 
 Date: 2026-06-10
-Current package version: 1.1.3
-Target package version: 1.1.3
+Current package version: 1.1.5
+Target package version: 1.1.5
 
 ## Launch Definition
 
@@ -14,9 +14,9 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 
 | Area | v1.0 requirement | Current evidence | Status | Evidence still required |
 | --- | --- | --- | --- | --- |
-| GitHub distribution | Public repository, release assets, checksums, install docs, CI badge. | Repository `guorunjie/codex-relay-baton-guardian`, `v1.1.3` GitHub Release, tarball and `SHA256SUMS` assets, README install commands, CI matrix, manual host-validation workflow. | Ready | Keep the `v1.1.3` release target aligned to the current release commit. |
-| npm distribution | `npm install -g codex-relay-baton-guardian` works on a clean machine for the current package version. | `1.1.2` is published to npm; `1.1.3` is not yet published. Publish workflow exists, CI runs `npm publish --dry-run --json`, and package name/bin paths are npm-safe. | Blocked | Log in as the `guorunjie` npm maintainer or replace `NPM_TOKEN`, publish `1.1.3`, then verify `npm view codex-relay-baton-guardian@1.1.3 version`. |
-| Local install from GitHub | GitHub install path works without TypeScript source stripping issues. | README points to `npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3`; package uses built `dist/` output, `files` whitelist, and packed CLI smoke tests. | Ready | Keep GitHub install as the primary latest install route until npm catches up. |
+| GitHub distribution | Public repository, release assets, checksums, install docs, CI badge. | Repository `guorunjie/codex-relay-baton-guardian`, `v1.1.5` GitHub Release, tarball and `SHA256SUMS` assets, README install commands, CI matrix, manual host-validation workflow. | Ready | Keep each release target aligned to the release commit. |
+| npm distribution | `npm install -g codex-relay-baton-guardian` works on a clean machine for the current package version. | `1.1.5` is the npm publication target. Publish workflow exists, CI runs `npm publish --dry-run --json`, and package name/bin paths are npm-safe. | Ready | Verify `npm view codex-relay-baton-guardian@1.1.5 version` after publication. |
+| Local install from GitHub | GitHub install path works without TypeScript source stripping issues. | README points npm-first and keeps `npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.5` as an alternate route; package uses built `dist/` output, `files` whitelist, and packed CLI smoke tests. | Ready | Keep GitHub install as the fallback for users who want a pinned release tag. |
 | macOS monitor | LaunchAgent install/start/status works and monitor can see Codex. | This Mac reports `com.relay-baton.monitor` loaded and running; `docs/validation-reports/macos/VALIDATION_REPORT.json` is attached and redacted. | Ready | Keep validation current for the active release line. |
 | Linux monitor | systemd user service can be installed, started, inspected, stopped, and repaired. | Linux CI covers CLI/build/package smoke; `docs/validation-reports/linux/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the systemd user service in the Host Validation workflow. | Ready | Keep validation current for the active release line. |
 | Windows monitor | Task Scheduler script can install, start, inspect, stop, and repair monitoring. | Windows CI covers CLI/build/package smoke; `docs/validation-reports/windows/VALIDATION_REPORT.json` proves a packed global CLI installed and loaded the Task Scheduler task in the Host Validation workflow. | Ready | Keep validation current for the active release line. |
@@ -31,8 +31,8 @@ Relay Baton v1.0 means a new Codex user can install it, turn on following, survi
 
 ## v1.0 Blockers
 
-1. Publish `codex-relay-baton-guardian@1.1.3` to npm.
-2. Confirm `npm view codex-relay-baton-guardian@1.1.3 version` returns `1.1.3`.
+1. Publish `codex-relay-baton-guardian@1.1.5` to npm.
+2. Confirm `npm view codex-relay-baton-guardian@1.1.5 version` returns `1.1.5`.
 3. Run final `relay-baton release check --v1 --online` and confirm it passes.
 
 ## v1.0 Release Gate

@@ -5,16 +5,16 @@ Relay Baton has a working local recovery core. The next release work is about tr
 ## Current State
 
 - GitHub repository is public.
-- Local package version is `1.1.3`.
-- GitHub Release `v1.1.3` exists; npm registry currently remains on `1.1.2` until the repository `NPM_TOKEN` secret is replaced with a maintainer token that can publish `codex-relay-baton-guardian`.
+- Local package version is `1.1.5`.
+- GitHub Release `v1.1.5` and npm `codex-relay-baton-guardian@1.1.5` are the current public release targets.
 - The project has a clear wedge: sleep-safe recovery for Codex long-running tasks.
 - Tests, build, release check, host validation, and monitor install commands exist.
 - Codex app-server integration exists for `thread/fork`, `thread/rollback`, `thread/compact/start`, and app-server status probing.
-- `relay-baton release check --v1 --online` passes for GitHub Release, latest CI, package metadata, real case study, visual demo asset, and three-platform host validation evidence; it still fails on npm `1.1.3` publication and npm authentication until the maintainer token is replaced or local npm login succeeds.
+- `relay-baton release check --v1 --online` should pass after the `v1.1.5` GitHub Release, npm publication, and latest CI are visible.
 
 ## Release Priorities
 
-1. Replace the GitHub `NPM_TOKEN` secret with a token owned by the `guorunjie` npm maintainer account, then rerun `Publish npm` for `v1.1.3`.
+1. Keep GitHub `NPM_TOKEN` scoped to `codex-relay-baton-guardian` and rotate it after any accidental terminal/screenshot exposure.
 2. Publish one technical launch post and link it from the README.
 3. Submit Relay Baton to Codex/agent tool directories and relevant awesome lists.
 4. Run one public app-server recovery drill and link the evidence in release notes.
@@ -45,7 +45,7 @@ Use concrete failure language in posts and docs:
 
 - npm latest equals `package.json` version.
 - GitHub Release exists for the same tag.
-- A new user can run `npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3` now, and `npm install -g codex-relay-baton-guardian` after npm publication catches up.
+- A new user can run `npm install -g codex-relay-baton-guardian`, then `relay-baton follow install && relay-baton follow start && relay-baton follow doctor`.
 - README explains the app-server path without overstating that Relay Baton replaces Codex compaction.
 - At least one public issue or case study proves a real stuck Codex task was recovered.
 - Launch copy exists for GitHub README, Hacker News, Reddit, X, Chinese developer communities, and awesome-list submissions.

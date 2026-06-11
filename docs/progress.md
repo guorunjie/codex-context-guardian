@@ -37,13 +37,13 @@
 - Added release checklist and support matrix documentation.
 - Added manual npm publish workflow with provenance and CI publish dry-run coverage.
 - Added `relay-baton validate host` for shareable host validation reports.
-- Released `v1.1.3` on GitHub with tarball and `SHA256SUMS` assets aligned to the current `main` commit.
-- Updated README, case study, and promotion copy so new users install the current `v1.1.3` bundle from GitHub until npm publication catches up.
+- Released `v1.1.5` on GitHub and npm as the current npm-first public baseline.
+- Updated README, case study, and promotion copy so new users install from npm first and understand the queue-only safety model.
+- Recovery note, 2026-06-11: resumed the interrupted `1.1.5` release/growth task from Relay Baton bundle `019e8980-c232-7132-820b-fda919f7c77e-1781189560265`; continue from the already-applied README, promotion, changelog, and package version edits, then verify, publish, update GitHub metadata, and restart the local monitor.
 
 ## Next
 
-- Publish `codex-relay-baton-guardian@1.1.3` to npm after maintainer authentication.
-- Replace repository secret `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, or log in locally with the same maintainer account and run `npm publish --access public`.
+- Continue collecting real recovery reports and convert the demo outline into a short GIF/video for launch posts.
 - Re-run `relay-baton release check --v1 --online` and require it to pass after npm publication.
 - Add structured event ingestion if Codex exposes stable compaction failure events.
 - Add a small terminal dashboard showing watched thread, last failure, and recovery attempts.

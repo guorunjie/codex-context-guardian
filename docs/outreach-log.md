@@ -4,13 +4,13 @@ Relay Baton's growth goal is to earn discovery from Codex users who actually hit
 
 ## Baseline
 
-- Date: 2026-06-10
+- Date: 2026-06-11
 - GitHub repository: <https://github.com/guorunjie/codex-relay-baton-guardian>
 - GitHub stars: 1
 - GitHub forks: 0
 - npm package: <https://www.npmjs.com/package/codex-relay-baton-guardian>
-- Current release line: `v1.1.3`
-- npm latest: `1.1.2` until the `NPM_TOKEN` secret is replaced and the `Publish npm` workflow is rerun for `v1.1.3`
+- Current release line: `v1.1.5`
+- npm latest: `1.1.5`
 
 ## Submitted
 
@@ -28,6 +28,12 @@ Relay Baton's growth goal is to earn discovery from Codex users who actually hit
 | --- | --- | --- | --- | --- |
 | 2026-06-10 | `v1.1.3` GitHub Release | Complete | <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3>; release target, tarball, and `SHA256SUMS` assets are present and should match the current `main` release commit. | None |
 | 2026-06-09 | `v1.1.3` npm publication | Blocked | <https://github.com/guorunjie/codex-relay-baton-guardian/actions/runs/27198149765> reached `npm publish`, signed provenance, then failed with npm `E404` / no package permission. | Replace repository `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, then rerun `Publish npm` with `tag=v1.1.3`. |
+| 2026-06-11 | `v1.1.5` GitHub/npm release | Complete | `v1.1.5` packages the advisory turn-stall safety fix, Relay Baton continuation-thread ignore rule, README refresh, and npm-first install path. | Use this as the public launch baseline for the next outreach pass. |
+
+## Product Evidence Notes
+
+- 2026-06-11 real-world regression: an active long task plus visible recovery mode could produce multiple Relay Baton-created continuation threads even though the source task later resumed. `v1.1.5` hardens this by requiring idle time for advisory `turn_stalled`, ignoring Relay Baton continuation titles, and keeping advisory turn-stall recovery queue-only.
+- This is useful promotion evidence, but phrase it as a safety improvement rather than a perfect-autonomy claim: Relay Baton is designed to keep one auditable best recovery path, not to create a new visible thread for every ambiguous stall.
 
 ## Next Targets
 

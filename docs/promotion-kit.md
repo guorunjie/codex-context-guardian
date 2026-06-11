@@ -10,7 +10,7 @@ It should not be pitched as a generic relay, memory, or summarization tool. The 
 
 - GitHub: <https://github.com/guorunjie/codex-relay-baton-guardian>
 - npm: <https://www.npmjs.com/package/codex-relay-baton-guardian>
-- Release: <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3>
+- Release: <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.5>
 - Demo: [demo-30s-rescue.md](demo-30s-rescue.md)
 - Case study: [case-study-codex-compact-failure.md](case-study-codex-compact-failure.md)
 - Validation guide: [validation-report-guide.md](validation-report-guide.md)
@@ -18,11 +18,11 @@ It should not be pitched as a generic relay, memory, or summarization tool. The 
 
 ## Short Pitch
 
-Relay Baton is a local reliability layer for Codex Desktop/CLI. It watches lifecycle hooks and local logs, detects remote compact failures or `Codex ran out of room in the model's context window`, writes a structured recovery bundle anchored on the latest real user intent, and queues one best relay for review.
+Relay Baton is a local reliability layer for Codex Desktop/CLI. It watches lifecycle hooks and local logs, detects remote compact failures or `Codex ran out of room in the model's context window`, writes a structured recovery bundle anchored on the latest real user intent, and queues one best relay for review. It also treats advisory turn-stalls conservatively so active long tasks and Relay Baton-created continuation threads do not spawn confusing blank relays.
 
 ## GitHub Description
 
-Keep Codex long tasks running while you sleep: detect compact failures and context-window overflow, preserve the latest task state, and queue one safe fork relay.
+Keep Codex long tasks running while you sleep: local compact/context recovery with audited bundles and safe one-relay handoffs.
 
 ## Launch Post
 
@@ -46,7 +46,7 @@ Relay Baton runs locally. It watches Codex lifecycle hooks and logs, detects com
 
 Install:
 
-npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
+npm install -g codex-relay-baton-guardian
 relay-baton follow install
 relay-baton follow start
 relay-baton follow doctor
@@ -61,7 +61,7 @@ I shipped Relay Baton: a local monitor that keeps Codex long tasks alive while y
 
 It detects compact failures / context-window overflow, preserves the latest task state, and queues one audited recovery bundle instead of spawning confusing blank relays.
 
-npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
+npm install -g codex-relay-baton-guardian
 ```
 
 ## Hacker News / Reddit Angle
@@ -90,7 +90,7 @@ Key points to include:
 Relay Baton 在本机运行，监控 Codex hooks 和日志，发现 compact/context-window 故障后生成 HANDOFF_MEMORY.json、RECENT_THREAD_CONTEXT.md、git 状态和 diff，只保留一个最新、可审计的恢复 bundle。后台默认 queue-only，避免睡觉时自动创建一堆空白接力。
 
 安装：
-npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
+npm install -g codex-relay-baton-guardian
 relay-baton follow install
 relay-baton follow start
 relay-baton follow doctor

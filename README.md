@@ -9,18 +9,18 @@
 
 ![Relay Baton recovery flow](docs/assets/relay-baton-demo.png)
 
-Relay Baton is a local monitor for Codex Desktop/CLI. When a long task hits remote compaction failures, unsupported compact models, or the hard context-window error `Codex ran out of room in the model's context window`, Relay Baton detects the stuck source thread, preserves the latest real task state, and queues one audited recovery bundle so the work can continue instead of dying overnight. Visible fork/Desktop relays are explicit, not a background side effect.
+Relay Baton is a local monitor for Codex Desktop/CLI. When a long task hits remote compaction failures, unsupported compact models, or the hard context-window error `Codex ran out of room in the model's context window`, Relay Baton detects the stuck source thread, preserves the latest real task state, and queues one audited recovery bundle so the work can continue instead of dying overnight. Visible fork/Desktop relays are explicit, not a background side effect, and advisory turn-stall signals stay queue-only unless you review them.
 
 The core rule is simple: keep one best relay anchored on the latest real task state, not an old title, stale summary, or abandoned direction.
 
 ```bash
-npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
+npm install -g codex-relay-baton-guardian
 relay-baton follow install
 relay-baton follow start
 relay-baton follow doctor
 ```
 
-Distribution status: the current GitHub Release is `v1.1.3`. npm currently serves `v1.1.2`, so use the GitHub install line above for the latest release bundle until npm publication catches up.
+Distribution status: the current GitHub Release and npm package are `v1.1.5`.
 
 Public evidence:
 
@@ -31,6 +31,8 @@ Public evidence:
 - High-star readiness audit: [docs/high-star-readiness-audit.md](docs/high-star-readiness-audit.md)
 - Promotion kit and launch copy: [docs/promotion-kit.md](docs/promotion-kit.md)
 - Outreach log: [docs/outreach-log.md](docs/outreach-log.md)
+
+If Relay Baton saves one overnight Codex run for you, star the repo so other long-task users can find the recovery path before their first compact failure.
 
 ## What Happens When Codex Dies Overnight?
 
@@ -53,6 +55,7 @@ Relay Baton avoids that by combining:
 - Startup backfill over recent compact failures, so restarting the monitor does not silently skip a failure that happened minutes earlier.
 - `relay-baton diagnose`, which explains why a thread was not rescued: skipped log id, missing hooks, cooldown, old handoff state, lineage mismatch, non-TTY CLI failure, or app-server unavailability.
 - Structured memory files that prioritize the latest goal, latest real user intent, concrete tool progress, current worktree state, and superseded directions.
+- Advisory long-turn stalls require both age and idle time before recovery, ignore Relay Baton-created continuation threads, and queue bundles by default so the monitor does not spawn a chain of blank relays.
 - Desktop handoff only when the user asks for a visible new Desktop conversation or when fork/CLI recovery is unavailable.
 
 ## Features
@@ -159,13 +162,13 @@ The default fallback model is `gpt-5.4`; override it with `GUARDIAN_FALLBACK_MOD
 Install directly from GitHub:
 
 ```bash
-npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
+npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.5
 relay-baton follow install
 relay-baton follow start
 relay-baton follow doctor
 ```
 
-Install from npm after `v1.1.3` publication catches up:
+Install from npm:
 
 ```bash
 npm install -g codex-relay-baton-guardian

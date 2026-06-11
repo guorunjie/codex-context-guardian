@@ -7,11 +7,11 @@ Relay Baton is technically usable, published on GitHub, and differentiated, but 
 ## Current Evidence
 
 - GitHub: `guorunjie/codex-relay-baton-guardian`, public, `1` star, `0` forks.
-- GitHub Release: `v1.1.3` published for the npm-auth advisory gate fix.
-- npm: `codex-relay-baton-guardian@1.1.2` remains `latest`; `v1.1.3` npm publication is blocked by an `NPM_TOKEN` permission failure in GitHub Actions.
+- GitHub Release: `v1.1.5` is the current public release target.
+- npm: `codex-relay-baton-guardian@1.1.5` is the current public package target.
 - CI: latest GitHub CI passes on Linux, macOS, and Windows.
 - Local monitor: LaunchAgent installed, loaded, and running on this Mac.
-- Release gate: `relay-baton release check --v1 --online` passes every GitHub/package/CI/evidence check except npm `1.1.3` publication and local/npm-token authentication.
+- Release gate: `relay-baton release check --v1 --online` should pass once `v1.1.5` release assets, npm publication, and CI success are visible.
 - Codex pain signal: open upstream issues still include `responses/compact`, `stream disconnected before completion`, and `Codex ran out of room...`.
 
 ## Competitive Read
@@ -33,7 +33,7 @@ Compact-specific repair repositories are much smaller. That means Relay Baton sh
    The README has a diagram, demo guide, and case-study document, but most evidence is still local and redacted.
 
 2. npm release operations need a fresh maintainer token.
-   GitHub Actions has an `NPM_TOKEN` secret, but the `v1.1.3` publish run failed with npm `E404` / no package permission. Replace the secret with a token from the `guorunjie` npm maintainer account before the next npm release.
+   Keep the package-scoped npm token current, rotate it after accidental exposure, and prefer local `npm publish` only when interactive OTP is available.
 
 3. First-run experience is still CLI-heavy.
    Users need to know whether hooks, monitor, app-server, npm, Codex CLI, and local databases are all healthy. `doctor`, `status`, `diagnose`, and `validate host` exist, but the next product step is a smoother guided flow.

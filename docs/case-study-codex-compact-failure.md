@@ -165,13 +165,13 @@ relay-baton recover --last --dry-run
 Relay Baton's latest verified bundle is available from the GitHub Release:
 
 ```bash
-npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.3
+npm install -g codex-relay-baton-guardian
 relay-baton follow install
 relay-baton follow start
 relay-baton follow doctor
 ```
 
-The npm install path remains the stable package route after publication catches up:
+The npm install path is the stable package route:
 
 ```bash
 npm install -g codex-relay-baton-guardian
