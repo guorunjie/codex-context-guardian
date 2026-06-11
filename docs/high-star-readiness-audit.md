@@ -7,11 +7,11 @@ Relay Baton is technically usable, published on GitHub, and differentiated, but 
 ## Current Evidence
 
 - GitHub: `guorunjie/codex-relay-baton-guardian`, public, `1` star, `0` forks.
-- GitHub Release: `v1.1.5` is the current public release target.
-- npm: `codex-relay-baton-guardian@1.1.5` is the current public package target.
+- GitHub Release: `v1.1.6` is the current public release target.
+- npm: `codex-relay-baton-guardian@1.1.6` is the current public package target.
 - CI: latest GitHub CI passes on Linux, macOS, and Windows.
 - Local monitor: LaunchAgent installed, loaded, and running on this Mac.
-- Release gate: `relay-baton release check --v1 --online` should pass once `v1.1.5` release assets, npm publication, and CI success are visible.
+- Release gate: `relay-baton release check --v1 --online` should pass once `v1.1.6` release assets, npm publication, and CI success are visible.
 - Codex pain signal: open upstream issues still include `responses/compact`, `stream disconnected before completion`, and `Codex ran out of room...`.
 
 ## Competitive Read

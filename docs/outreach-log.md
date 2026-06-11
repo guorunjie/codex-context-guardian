@@ -9,8 +9,8 @@ Relay Baton's growth goal is to earn discovery from Codex users who actually hit
 - GitHub stars: 1
 - GitHub forks: 0
 - npm package: <https://www.npmjs.com/package/codex-relay-baton-guardian>
-- Current release line: `v1.1.5`
-- npm latest: `1.1.5`
+- Current release line: `v1.1.6`
+- npm latest: `1.1.6`
 
 ## Submitted
 
@@ -29,6 +29,7 @@ Relay Baton's growth goal is to earn discovery from Codex users who actually hit
 | 2026-06-10 | `v1.1.3` GitHub Release | Complete | <https://github.com/guorunjie/codex-relay-baton-guardian/releases/tag/v1.1.3>; release target, tarball, and `SHA256SUMS` assets are present and should match the current `main` release commit. | None |
 | 2026-06-09 | `v1.1.3` npm publication | Blocked | <https://github.com/guorunjie/codex-relay-baton-guardian/actions/runs/27198149765> reached `npm publish`, signed provenance, then failed with npm `E404` / no package permission. | Replace repository `NPM_TOKEN` with a publish-capable token from the `guorunjie` npm maintainer account, then rerun `Publish npm` with `tag=v1.1.3`. |
 | 2026-06-11 | `v1.1.5` GitHub/npm release | Complete | `v1.1.5` packages the advisory turn-stall safety fix, Relay Baton continuation-thread ignore rule, README refresh, and npm-first install path. | Use this as the public launch baseline for the next outreach pass. |
+| 2026-06-11 | `v1.1.6` GitHub/npm release | Complete | `v1.1.6` aligns public docs after release, keeps npm-first install copy, and removes internal recovery-session detail from launch-facing progress notes. | Use this as the current public launch baseline. |
 
 ## Product Evidence Notes
 

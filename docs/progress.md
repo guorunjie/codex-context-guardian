@@ -37,9 +37,8 @@
 - Added release checklist and support matrix documentation.
 - Added manual npm publish workflow with provenance and CI publish dry-run coverage.
 - Added `relay-baton validate host` for shareable host validation reports.
-- Released `v1.1.5` on GitHub and npm as the current npm-first public baseline.
+- Released `v1.1.6` on GitHub and npm as the current npm-first public baseline.
 - Updated README, case study, and promotion copy so new users install from npm first and understand the queue-only safety model.
-- Recovery note, 2026-06-11: resumed the interrupted `1.1.5` release/growth task from Relay Baton bundle `019e8980-c232-7132-820b-fda919f7c77e-1781189560265`; continue from the already-applied README, promotion, changelog, and package version edits, then verify, publish, update GitHub metadata, and restart the local monitor.
 
 ## Next
 

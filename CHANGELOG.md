@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.6 - 2026-06-11
+
+- Cleaned public release docs after the recovery-session handoff so internal recovery bundle identifiers are not presented as launch-facing progress.
+- Marked the v1 release roadmap status as complete for the current public release line.
+- Refreshed README, promotion, and audit references so npm latest and GitHub Release point to the same public version.
+
 ## 1.1.5 - 2026-06-11
 
 - Fixed advisory `turn_stalled` recovery so long-running turns must also be idle before they are treated as stalled.

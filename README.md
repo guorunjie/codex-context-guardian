@@ -20,7 +20,7 @@ relay-baton follow start
 relay-baton follow doctor
 ```
 
-Distribution status: the current GitHub Release and npm package are `v1.1.5`.
+Distribution status: the current GitHub Release and npm package are `v1.1.6`.
 
 Public evidence:
 
@@ -162,7 +162,7 @@ The default fallback model is `gpt-5.4`; override it with `GUARDIAN_FALLBACK_MOD
 Install directly from GitHub:
 
 ```bash
-npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.5
+npm install -g github:guorunjie/codex-relay-baton-guardian#v1.1.6
 relay-baton follow install
 relay-baton follow start
 relay-baton follow doctor

@@ -5,12 +5,12 @@ Relay Baton has a working local recovery core. The next release work is about tr
 ## Current State
 
 - GitHub repository is public.
-- Local package version is `1.1.5`.
-- GitHub Release `v1.1.5` and npm `codex-relay-baton-guardian@1.1.5` are the current public release targets.
+- Local package version is `1.1.6`.
+- GitHub Release `v1.1.6` and npm `codex-relay-baton-guardian@1.1.6` are the current public release targets.
 - The project has a clear wedge: sleep-safe recovery for Codex long-running tasks.
 - Tests, build, release check, host validation, and monitor install commands exist.
 - Codex app-server integration exists for `thread/fork`, `thread/rollback`, `thread/compact/start`, and app-server status probing.
-- `relay-baton release check --v1 --online` should pass after the `v1.1.5` GitHub Release, npm publication, and latest CI are visible.
+- `relay-baton release check --v1 --online` should pass after the `v1.1.6` GitHub Release, npm publication, and latest CI are visible.
 
 ## Release Priorities
 

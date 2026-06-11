@@ -88,7 +88,7 @@ Status: partially complete after v0.8. Linux systemd user service generation, CI
 - Add npm publish dry-run documentation and provenance notes.
 - Add support matrix covering macOS, Linux, Windows, Codex CLI versions, and Node versions.
 
-Status: mostly complete after v0.8.2. `relay-baton release check` verifies local release readiness, npm-safe bin paths, publish dry-run coverage, npm publish workflow presence, v1 launch audit, and support intake evidence. `--online` checks GitHub Release, latest CI, npm auth, and npm package publication. `--v1` adds final evidence checks for real recovery evidence, demo media, platform validation reports, and stable CLI documentation. npm package publication is still blocked until the maintainer adds `NPM_TOKEN` or logs in locally.
+Status: complete for the v1 release line. `relay-baton release check` verifies local release readiness, npm-safe bin paths, publish dry-run coverage, npm publish workflow presence, v1 launch audit, and support intake evidence. `--online` checks GitHub Release, latest CI, npm auth, and npm package publication. `--v1` adds final evidence checks for real recovery evidence, demo media, platform validation reports, and stable CLI documentation.
 
 ### v1.0 Stable Launch
 
